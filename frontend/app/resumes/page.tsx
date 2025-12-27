@@ -221,7 +221,8 @@ export default function ResumesPage() {
                             onChange={(e) => setEditTitle(e.target.value)}
                             className="bg-slate-900 border border-slate-600 text-white px-2 py-1 rounded w-full max-w-sm"
                             autoFocus
-                            onBlur={() => setIsEditingTitle(false)}
+                            onBlur={() => { handleUpdate(); setIsEditingTitle(false); }}
+                            onKeyDown={(e) => { if (e.key === 'Enter') { handleUpdate(); setIsEditingTitle(false); } }}
                         />
                     ) : (
                         <h2 className="text-xl font-bold text-slate-100 flex items-center gap-2">
@@ -256,6 +257,14 @@ export default function ResumesPage() {
                         Feedback
                         </button>
                     </div>
+                    {activeView === 'preview' && (
+                        <button 
+                            onClick={() => window.print()}
+                            className="bg-blue-600 text-white px-4 py-1 rounded-lg text-sm font-medium hover:bg-blue-500 flex items-center gap-1"
+                        >
+                            <span className="text-lg">⬇</span> PDF
+                        </button>
+                    )}
                     {activeView === 'code' && (
                         <button 
                             onClick={handleUpdate}
@@ -269,7 +278,7 @@ export default function ResumesPage() {
               </div>
 
               {activeView === 'preview' && (
-                  <div className="w-full h-[800px] border border-slate-700 bg-white text-black p-8 rounded-xl overflow-y-auto shadow-inner">
+                  <div className="w-full h-[800px] border border-slate-700 bg-white text-black p-8 rounded-xl overflow-y-auto shadow-inner printable-area">
                       <ResumePreview data={viewResume.tailoredData || {}} />
                   </div>
               )}

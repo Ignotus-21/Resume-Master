@@ -13,9 +13,16 @@ const createResumeForJob = async (req, res) => {
 
     // 2. Get Job Description
     let jobDescription = jdText;
+    let jobTitle = 'Role';
+    let companyName = 'Company';
+
     if (jobId) {
       const job = await Job.findById(jobId);
-      if (job) jobDescription = job.jdText || job.role + " at " + job.company;
+      if (job) {
+        jobDescription = job.jdText || job.role + " at " + job.company;
+        jobTitle = job.role || 'Role';
+        companyName = job.company || 'Company';
+      }
     }
 
     if (!jobDescription) return res.status(400).json({ message: 'Job Description is required' });
@@ -27,11 +34,15 @@ const createResumeForJob = async (req, res) => {
     const latexCode = await generateLatex(tailoredData);
 
     // 5. Save
+    const userName = profile.user?.name?.split(' ')[0] || 'Resume';
+    const uniqueCode = Math.random().toString(36).substring(2, 6).toUpperCase();
+    const versionName = `${userName}_${companyName}_${jobTitle}_${uniqueCode}`.replace(/[^a-zA-Z0-9_]/g, '_');
+
     const resume = new Resume({
       job: jobId,
       latexCode,
       tailoredData,
-      versionName: `Resume for ${jobId ? 'Job' : 'Custom'} - ${new Date().toISOString()}`,
+      versionName,
     });
     
     await resume.save();

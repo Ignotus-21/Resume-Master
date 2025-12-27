@@ -8,19 +8,47 @@ const parseResumeData = async (input) => {
   const isBuffer = Buffer.isBuffer(input);
   
   const systemInstruction = `
-    You are an expert Resume Parser. 
-    Parse the provided resume (text or PDF) into a structured JSON format compatible with the following schema keys:
-    user (name, email, phone, linkedin, github, website, location, address),
-    experience (array of objects with company, role, startDate, endDate, isCurrent, bulletPoints, keywords),
-    education (array of objects with institution, degree, fieldOfStudy, startDate, endDate, gpa, coursework),
-    projects (array of objects with title, techStack, description, link, bulletPoints),
-    skills (languages, frameworks, tools),
-    certificates, achievements, hobbies, publications, volunteering, patents.
+    You are a strict Resume Parsing Agent. Your ONLY task is to extract data from the resume into the EXACT JSON format below.
     
-    If the resume contains other sections like "Awards", "Leadership", "Speaking", or "Research" that don't fit above, put them in a 'customSections' array.
-    Each custom section should have: { title: string, items: [{ title, subtitle, date, link, description, bullets }] }.
+    RULES:
+    1. Output MUST be valid JSON. No markdown, no code blocks, no intro/outro text.
+    2. If a field is missing, use "" (empty string) or [] (empty array). DO NOT use null or undefined.
+    3. Standardize dates to "Month YYYY" format if possible.
+    4. "skills" must be an object with keys: languages, frameworks, tools, other. Categorize intelligently.
+    5. UNKNOWN SECTIONS: If you find sections not listed below (e.g. "Awards", "Speaking", "Leadership"), put them in 'customSections'.
     
-    Return ONLY the JSON. Do not include markdown formatting.
+    REQUIRED JSON STRUCTURE:
+    {
+      "user": {
+        "name": "", "email": "", "phone": "", "linkedin": "", "github": "", "website": "", "location": "", "address": ""
+      },
+      "experience": [{
+        "company": "", "role": "", "startDate": "", "endDate": "", "isCurrent": false, "location": "",
+        "bulletPoints": [], "keywords": []
+      }],
+      "education": [{
+        "institution": "", "degree": "", "fieldOfStudy": "", "startDate": "", "endDate": "", "gpa": "",
+        "coursework": [] 
+      }],
+      "projects": [{
+        "title": "", "techStack": [], "description": "", "link": "", "bulletPoints": []
+      }],
+      "skills": {
+        "languages": [], "frameworks": [], "tools": [], "other": []
+      },
+      "certificates": [{ "name": "", "issuer": "", "date": "", "link": "" }],
+      "achievements": [{ "title": "", "description": "", "date": "" }],
+      "hobbies": [],
+      "publications": [{ "title": "", "link": "", "date": "", "description": "" }],
+      "volunteering": [{ "organization": "", "role": "", "startDate": "", "endDate": "", "description": "" }],
+      "patents": [{ "title": "", "number": "", "date": "", "link": "", "description": "" }],
+      "customSections": [{
+        "title": "Section Name",
+        "items": [{
+          "title": "", "subtitle": "", "date": "", "link": "", "description": "", "bullets": []
+        }]
+      }]
+    }
   `;
 
   let parts = [];

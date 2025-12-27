@@ -33,7 +33,8 @@ export default function ProfilePage() {
   const fetchProfile = async () => {
     try {
       const res = await fetch('http://localhost:5000/api/master');
-      const data = await res.json();
+      let data = await res.json();
+      data = normalizeData(data);
       setProfile(data);
       setLoading(false);
     } catch (error) {
@@ -44,7 +45,24 @@ export default function ProfilePage() {
 
   const saveProfileData = async (data: any) => {
     try {
-      const { _id, createdAt, updatedAt, __v, ...cleanData } = data;
+      // Deep strip _id to prevent conflicts
+      const stripIds = (obj: any): any => {
+        if (Array.isArray(obj)) {
+          return obj.map(stripIds);
+        } else if (obj !== null && typeof obj === 'object') {
+          const newObj: any = {};
+          for (const key in obj) {
+            if (key !== '_id' && key !== 'createdAt' && key !== 'updatedAt' && key !== '__v') {
+              newObj[key] = stripIds(obj[key]);
+            }
+          }
+          return newObj;
+        }
+        return obj;
+      };
+
+      const cleanData = stripIds(data);
+
       const res = await fetch('http://localhost:5000/api/master', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -106,18 +124,21 @@ export default function ProfilePage() {
     setIngesting(false);
   };
 
-  const handleConfirmMerge = (mergedData: any) => {
+  const handleConfirmMerge = async (mergedData: any) => {
     // Determine what to merge based on user selection in modal (implemented below)
     // For simplicity, I'll pass the *final* merged state from the modal logic.
-    setProfile(mergedData);
+    const normalized = normalizeData(mergedData);
+    setProfile(normalized);
     setImportPreview(null);
-    alert('Import merged successfully!');
+    // Force immediate save to ensure data persists before navigation
+    await saveProfileData(normalized);
+    alert('Import merged and saved successfully!');
   };
 
   if (loading) return <div className="p-8 text-center text-slate-400">Loading Master Profile...</div>;
   if (!profile) return <div className="p-8 text-center text-red-500">Error loading profile. Ensure backend is running.</div>;
 
-  const tabs = ['personal', 'experience', 'education', 'projects', 'skills', 'import'];
+  const tabs = ['personal', 'experience', 'education', 'projects', 'skills', 'additional', 'import'];
 
   return (
     <div className="p-8 max-w-5xl mx-auto min-h-screen relative">
@@ -299,6 +320,162 @@ export default function ProfilePage() {
           </div>
         )}
 
+        {/* Additional */}
+        {activeTab === 'additional' && (
+          <div className="space-y-8">
+            {/* Certificates */}
+            <div className="border border-slate-700 p-6 rounded-xl bg-slate-900/50 relative">
+                <h3 className="font-semibold mb-4 text-lg text-slate-200">Certificates</h3>
+                {profile.certificates?.map((cert: any, i: number) => (
+                    <div key={i} className="mb-4 pb-4 border-b border-slate-800 last:border-0 relative">
+                        <button onClick={() => removeItem(profile, setProfile, 'certificates', i)} className="absolute right-0 top-0 text-red-400 text-xs">Remove</button>
+                        <Input label="Name" value={cert.name} onChange={(v: string) => updateArrayItem(profile, setProfile, 'certificates', i, 'name', v)} />
+                        <Input label="Issuer" value={cert.issuer} onChange={(v: string) => updateArrayItem(profile, setProfile, 'certificates', i, 'issuer', v)} />
+                        <div className="grid grid-cols-2 gap-4">
+                            <Input label="Date" value={cert.date} onChange={(v: string) => updateArrayItem(profile, setProfile, 'certificates', i, 'date', v)} />
+                            <Input label="Link" value={cert.link} onChange={(v: string) => updateArrayItem(profile, setProfile, 'certificates', i, 'link', v)} />
+                        </div>
+                    </div>
+                ))}
+                <button onClick={() => setProfile({...profile, certificates: [...(profile.certificates || []), {}]})} className="text-blue-400 text-sm hover:underline">+ Add Certificate</button>
+            </div>
+
+            {/* Achievements */}
+            <div className="border border-slate-700 p-6 rounded-xl bg-slate-900/50 relative">
+                <h3 className="font-semibold mb-4 text-lg text-slate-200">Achievements</h3>
+                {profile.achievements?.map((ach: any, i: number) => (
+                    <div key={i} className="mb-4 pb-4 border-b border-slate-800 last:border-0 relative">
+                        <button onClick={() => removeItem(profile, setProfile, 'achievements', i)} className="absolute right-0 top-0 text-red-400 text-xs">Remove</button>
+                        <Input label="Title" value={ach.title} onChange={(v: string) => updateArrayItem(profile, setProfile, 'achievements', i, 'title', v)} />
+                        <Input label="Date" value={ach.date} onChange={(v: string) => updateArrayItem(profile, setProfile, 'achievements', i, 'date', v)} />
+                        <TextArea label="Description" value={ach.description} onChange={(v: string) => updateArrayItem(profile, setProfile, 'achievements', i, 'description', v)} />
+                    </div>
+                ))}
+                <button onClick={() => setProfile({...profile, achievements: [...(profile.achievements || []), {}]})} className="text-blue-400 text-sm hover:underline">+ Add Achievement</button>
+            </div>
+
+            {/* Hobbies */}
+            <div className="border border-slate-700 p-6 rounded-xl bg-slate-900/50 relative">
+                <h3 className="font-semibold mb-4 text-lg text-slate-200">Hobbies & Interests</h3>
+                <TextArea 
+                    label="List your hobbies (comma or newline separated)" 
+                    value={typeof profile.hobbies === 'string' ? profile.hobbies : profile.hobbies?.join('\n')} 
+                    onChange={(v: string) => setProfile({...profile, hobbies: v.split('\n')})} 
+                />
+            </div>
+
+            {/* Patents */}
+            <div className="border border-slate-700 p-6 rounded-xl bg-slate-900/50 relative">
+                <h3 className="font-semibold mb-4 text-lg text-slate-200">Patents</h3>
+                {profile.patents?.map((pat: any, i: number) => (
+                    <div key={i} className="mb-4 pb-4 border-b border-slate-800 last:border-0 relative">
+                        <button onClick={() => removeItem(profile, setProfile, 'patents', i)} className="absolute right-0 top-0 text-red-400 text-xs">Remove</button>
+                        <Input label="Title" value={pat.title} onChange={(v: string) => updateArrayItem(profile, setProfile, 'patents', i, 'title', v)} />
+                        <Input label="Patent Number" value={pat.number} onChange={(v: string) => updateArrayItem(profile, setProfile, 'patents', i, 'number', v)} />
+                        <Input label="Date" value={pat.date} onChange={(v: string) => updateArrayItem(profile, setProfile, 'patents', i, 'date', v)} />
+                        <TextArea label="Description" value={pat.description} onChange={(v: string) => updateArrayItem(profile, setProfile, 'patents', i, 'description', v)} />
+                    </div>
+                ))}
+                <button onClick={() => setProfile({...profile, patents: [...(profile.patents || []), {}]})} className="text-blue-400 text-sm hover:underline">+ Add Patent</button>
+            </div>
+
+            {/* Volunteering */}
+            <div className="border border-slate-700 p-6 rounded-xl bg-slate-900/50 relative">
+                <h3 className="font-semibold mb-4 text-lg text-slate-200">Volunteering</h3>
+                {profile.volunteering?.map((vol: any, i: number) => (
+                    <div key={i} className="mb-4 pb-4 border-b border-slate-800 last:border-0 relative">
+                        <button onClick={() => removeItem(profile, setProfile, 'volunteering', i)} className="absolute right-0 top-0 text-red-400 text-xs">Remove</button>
+                        <Input label="Organization" value={vol.organization} onChange={(v: string) => updateArrayItem(profile, setProfile, 'volunteering', i, 'organization', v)} />
+                        <Input label="Role" value={vol.role} onChange={(v: string) => updateArrayItem(profile, setProfile, 'volunteering', i, 'role', v)} />
+                        <div className="grid grid-cols-2 gap-4">
+                            <Input label="Start Date" value={vol.startDate} onChange={(v: string) => updateArrayItem(profile, setProfile, 'volunteering', i, 'startDate', v)} />
+                            <Input label="End Date" value={vol.endDate} onChange={(v: string) => updateArrayItem(profile, setProfile, 'volunteering', i, 'endDate', v)} />
+                        </div>
+                        <TextArea label="Description" value={vol.description} onChange={(v: string) => updateArrayItem(profile, setProfile, 'volunteering', i, 'description', v)} />
+                    </div>
+                ))}
+                <button onClick={() => setProfile({...profile, volunteering: [...(profile.volunteering || []), {}]})} className="text-blue-400 text-sm hover:underline">+ Add Volunteering</button>
+            </div>
+
+            {/* Custom Sections */}
+            <div>
+                <h3 className="font-semibold mb-4 text-xl text-purple-400">Custom Sections</h3>
+                {profile.customSections?.map((section: any, i: number) => (
+                    <div key={i} className="border border-slate-700 p-6 rounded-xl bg-slate-900/50 relative mb-6">
+                        <button onClick={() => removeItem(profile, setProfile, 'customSections', i)} className="absolute right-4 top-4 text-red-400 text-sm">Remove Section</button>
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-slate-400 mb-1">Section Title (e.g. Speaking, Awards)</label>
+                            <input 
+                                value={section.title} 
+                                onChange={(e) => updateArrayItem(profile, setProfile, 'customSections', i, 'title', e.target.value)}
+                                className="w-full border border-slate-700 rounded-lg px-4 py-2 bg-slate-800 text-white font-bold"
+                            />
+                        </div>
+                        
+                        <div className="space-y-4 pl-4 border-l-2 border-slate-800">
+                            {section.items?.map((item: any, j: number) => (
+                                <div key={j} className="bg-slate-800/50 p-4 rounded border border-slate-700 relative">
+                                    <button 
+                                      onClick={() => {
+                                          const newItems = [...section.items];
+                                          newItems.splice(j, 1);
+                                          updateArrayItem(profile, setProfile, 'customSections', i, 'items', newItems);
+                                      }}
+                                      className="absolute right-2 top-2 text-red-400 text-xs"
+                                    >
+                                      Delete Item
+                                    </button>
+                                    <div className="grid grid-cols-2 gap-4 mb-2">
+                                        <Input label="Heading (e.g. Talk Title)" value={item.title} onChange={(v: string) => {
+                                            const newItems = [...section.items];
+                                            newItems[j] = { ...newItems[j], title: v };
+                                            updateArrayItem(profile, setProfile, 'customSections', i, 'items', newItems);
+                                        }} />
+                                        <Input label="Sub-heading / Role" value={item.subtitle} onChange={(v: string) => {
+                                            const newItems = [...section.items];
+                                            newItems[j] = { ...newItems[j], subtitle: v };
+                                            updateArrayItem(profile, setProfile, 'customSections', i, 'items', newItems);
+                                        }} />
+                                        <Input label="Date" value={item.date} onChange={(v: string) => {
+                                            const newItems = [...section.items];
+                                            newItems[j] = { ...newItems[j], date: v };
+                                            updateArrayItem(profile, setProfile, 'customSections', i, 'items', newItems);
+                                        }} />
+                                        <Input label="Link" value={item.link} onChange={(v: string) => {
+                                            const newItems = [...section.items];
+                                            newItems[j] = { ...newItems[j], link: v };
+                                            updateArrayItem(profile, setProfile, 'customSections', i, 'items', newItems);
+                                        }} />
+                                    </div>
+                                    <TextArea label="Description / Bullet Points" value={item.description} onChange={(v: string) => {
+                                        const newItems = [...section.items];
+                                        newItems[j] = { ...newItems[j], description: v };
+                                        updateArrayItem(profile, setProfile, 'customSections', i, 'items', newItems);
+                                    }} />
+                                </div>
+                            ))}
+                            <button 
+                                onClick={() => {
+                                    const newItems = [...(section.items || []), {}];
+                                    updateArrayItem(profile, setProfile, 'customSections', i, 'items', newItems);
+                                }}
+                                className="text-green-400 text-sm font-medium hover:underline"
+                            >
+                                + Add Item to {section.title || 'Section'}
+                            </button>
+                        </div>
+                    </div>
+                ))}
+                <button 
+                    onClick={() => setProfile({...profile, customSections: [...(profile.customSections || []), { items: [] }]})}
+                    className="w-full py-3 border-2 border-dashed border-purple-500/50 rounded-xl text-purple-300 hover:bg-purple-900/20 transition font-bold"
+                >
+                    + Add New Custom Section
+                </button>
+            </div>
+          </div>
+        )}
+
         {/* Import Tab */}
         {activeTab === 'import' && (
           <div className="space-y-8">
@@ -351,18 +528,16 @@ export default function ProfilePage() {
 
 // === IMPORT REVIEW MODAL ===
 const ImportReviewModal = ({ currentProfile, importData, onCancel, onConfirm }: any) => {
-  // Simple state to track checked items. Default all true for new lists.
-  // For single fields (user info), we need selection.
   const [merged, setMerged] = useState({ ...currentProfile });
-  
-  // Initialize merged state logic
-  // This is a simplified merge UI. For a real robust one, we'd need complex state.
-  // I will just list the sections and allow "Append" or "Overwrite".
-  
-  const mergeList = (key: string) => {
-    const newList = [...(currentProfile[key] || []), ...(importData[key] || [])];
+  const [addedItems, setAddedItems] = useState<Record<string, number[]>>({});
+
+  const addItem = (key: string, item: any, index: number) => {
+    const newList = [...(merged[key] || []), item];
     setMerged({ ...merged, [key]: newList });
-    alert(`Appended ${importData[key]?.length || 0} items to ${key}.`);
+    setAddedItems({
+      ...addedItems,
+      [key]: [...(addedItems[key] || []), index]
+    });
   };
 
   const overwriteInfo = () => {
@@ -382,17 +557,25 @@ const ImportReviewModal = ({ currentProfile, importData, onCancel, onConfirm }: 
           {/* User Info */}
           <div>
             <h3 className="text-lg font-bold text-blue-400 mb-2">Personal Info</h3>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="bg-slate-900 p-4 rounded border border-slate-700">
                 <div className="font-bold text-xs text-slate-500 uppercase mb-2">Current</div>
-                <pre className="text-sm text-slate-300 whitespace-pre-wrap">{JSON.stringify(currentProfile.user, null, 2)}</pre>
+                <div className="text-sm text-slate-300 space-y-1">
+                    {Object.entries(currentProfile.user || {}).map(([k, v]: any) => (
+                        v && <div key={k}><span className="text-slate-500">{k}:</span> {typeof v === 'object' ? JSON.stringify(v) : v}</div>
+                    ))}
+                </div>
               </div>
               <div className="bg-slate-900 p-4 rounded border border-blue-900">
                 <div className="font-bold text-xs text-blue-500 uppercase mb-2">New (from PDF)</div>
-                <pre className="text-sm text-blue-200 whitespace-pre-wrap">{JSON.stringify(importData.user, null, 2)}</pre>
+                <div className="text-sm text-blue-200 space-y-1 mb-3">
+                    {Object.entries(importData.user || {}).map(([k, v]: any) => (
+                        v && <div key={k}><span className="text-blue-500">{k}:</span> {typeof v === 'object' ? JSON.stringify(v) : v}</div>
+                    ))}
+                </div>
                 <button 
                   onClick={overwriteInfo}
-                  className="mt-2 w-full bg-blue-600 text-white py-1 rounded text-sm hover:bg-blue-500"
+                  className="w-full bg-blue-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-500 transition"
                 >
                   Use New Info
                 </button>
@@ -400,28 +583,42 @@ const ImportReviewModal = ({ currentProfile, importData, onCancel, onConfirm }: 
             </div>
           </div>
 
-          {/* Arrays */}
-          {['experience', 'education', 'projects'].map((key) => (
+          {/* Arrays (Dynamic Sections) */}
+          {Object.keys(importData).filter(key => Array.isArray(importData[key])).map((key) => (
             <div key={key}>
               <h3 className="text-lg font-bold text-blue-400 mb-2 capitalize">{key}</h3>
               <div className="bg-slate-900 p-4 rounded border border-slate-700">
-                 <p className="text-sm text-slate-400 mb-2">
-                   Found <strong>{importData[key]?.length || 0}</strong> new items in PDF. 
-                   Current count: {currentProfile[key]?.length || 0}.
+                 <p className="text-sm text-slate-400 mb-3">
+                   Found <strong>{importData[key]?.length || 0}</strong> items. 
                  </p>
                  {importData[key]?.length > 0 && (
-                   <div className="space-y-2">
-                     {importData[key].map((item: any, i: number) => (
-                       <div key={i} className="text-sm p-2 bg-slate-800 rounded border border-slate-600">
-                         {item.company || item.institution || item.title || 'Item'} - {item.role || item.degree || 'Detail'}
-                       </div>
-                     ))}
-                     <button 
-                       onClick={() => mergeList(key)}
-                       className="mt-2 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-500 text-sm"
-                     >
-                       Append All {key}
-                     </button>
+                   <div className="space-y-3">
+                     {importData[key].map((item: any, i: number) => {
+                       const isAdded = addedItems[key]?.includes(i);
+                       // Determine display labels dynamically
+                       const mainLabel = item.company || item.institution || item.title || item.name || item.organization || 'Unknown Item';
+                       const subLabel = item.role || item.degree || item.issuer || item.subtitle || item.number || '';
+                       
+                       return (
+                         <div key={i} className="flex justify-between items-center p-3 bg-slate-800 rounded border border-slate-600">
+                           <div className="text-sm text-slate-200">
+                             <div className="font-bold">{mainLabel}</div>
+                             {subLabel && <div className="text-slate-400">{subLabel}</div>}
+                           </div>
+                           <button 
+                             onClick={() => addItem(key, item, i)}
+                             disabled={isAdded}
+                             className={`px-4 py-1.5 rounded-lg text-sm font-medium transition ${
+                               isAdded 
+                                 ? 'bg-green-900/50 text-green-400 border border-green-800 cursor-default' 
+                                 : 'bg-blue-600 text-white hover:bg-blue-500'
+                             }`}
+                           >
+                             {isAdded ? 'Added' : 'Add'}
+                           </button>
+                         </div>
+                       );
+                     })}
                    </div>
                  )}
               </div>
@@ -433,7 +630,7 @@ const ImportReviewModal = ({ currentProfile, importData, onCancel, onConfirm }: 
           <button onClick={onCancel} className="px-6 py-2 text-slate-300 hover:text-white">Cancel</button>
           <button 
             onClick={() => onConfirm(merged)} 
-            className="px-8 py-2 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-500 shadow-lg"
+            className="px-8 py-2 bg-green-600 text-white rounded-lg font-bold hover:bg-green-500 shadow-lg transition"
           >
             Confirm & Save Changes
           </button>
@@ -478,4 +675,21 @@ const removeItem = (profile: any, setProfile: any, arrayName: string, index: num
   const newArray = [...(profile[arrayName] || [])];
   newArray.splice(index, 1);
   setProfile({ ...profile, [arrayName]: newArray });
+};
+
+const normalizeData = (data: any) => {
+  const normalizeList = (list: any[], fieldName: string) => {
+    return list?.map(item => {
+      if (typeof item === 'string') return { [fieldName]: item };
+      return item;
+    }) || [];
+  };
+
+  if (data.certificates) data.certificates = normalizeList(data.certificates, 'name');
+  if (data.achievements) data.achievements = normalizeList(data.achievements, 'title');
+  if (data.patents) data.patents = normalizeList(data.patents, 'title');
+  if (data.volunteering) data.volunteering = normalizeList(data.volunteering, 'organization');
+  if (data.publications) data.publications = normalizeList(data.publications, 'title');
+  
+  return data;
 };

@@ -2,7 +2,6 @@ console.log('Loading masterController...');
 const MasterProfile = require('../models/MasterProfile');
 const { parseResumeData } = require('../services/geminiService');
 const fs = require('fs');
-const pdf = require('pdf-parse');
 console.log('masterController dependencies loaded');
 
 const getProfile = async (req, res) => {
@@ -20,15 +19,23 @@ const getProfile = async (req, res) => {
 
 const updateProfile = async (req, res) => {
   try {
+    // Robust update: Find the single profile and update it atomically
     let profile = await MasterProfile.findOne();
-    if (!profile) {
-      profile = new MasterProfile(req.body);
+    
+    if (profile) {
+      // Use findByIdAndUpdate to ensure clean replacement of arrays/nested fields
+      profile = await MasterProfile.findByIdAndUpdate(
+        profile._id, 
+        { $set: req.body }, 
+        { new: true, runValidators: true }
+      );
     } else {
-      Object.assign(profile, req.body);
+      profile = await MasterProfile.create(req.body);
     }
-    const updatedProfile = await profile.save();
-    res.json(updatedProfile);
+    
+    res.json(profile);
   } catch (error) {
+    console.error("Update Profile Error:", error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -73,21 +80,19 @@ const uploadResume = async (req, res) => {
   
   try {
     const dataBuffer = fs.readFileSync(req.file.path);
-    const data = await pdf(dataBuffer);
-    const text = data.text;
+    
+    // Send Buffer directly to Gemini (Multimodal)
+    const parsedData = await parseResumeData(dataBuffer);
     
     // Clean up uploaded file
     fs.unlinkSync(req.file.path);
-    
-    // Reuse ingest logic
-    const parsedData = await parseResumeData(text);
     
     // Return parsed data to frontend for review instead of auto-saving
     res.json(parsedData);
     
   } catch (error) {
-    console.error('PDF Parse Error:', error);
-    res.status(500).json({ message: 'Failed to process PDF' });
+    console.error('Resume Parse Error:', error);
+    res.status(500).json({ message: 'Failed to process resume' });
   }
 };
 

@@ -29,7 +29,7 @@ const masterProfileSchema = new mongoose.Schema({
     startDate: String,
     endDate: String,
     gpa: String,
-    coursework: String,
+    coursework: [String],
   }],
   projects: [{
     title: String,
@@ -68,6 +68,24 @@ const masterProfileSchema = new mongoose.Schema({
     startDate: String,
     endDate: String,
     description: String
+  }],
+  patents: [{
+    title: String,
+    number: String,
+    date: String,
+    link: String,
+    description: String
+  }],
+  customSections: [{
+    title: String,
+    items: [{
+      title: String,
+      subtitle: String,
+      date: String,
+      link: String,
+      description: String,
+      bullets: [String]
+    }]
   }],
   rawText: String, // For initial raw dump
 }, {

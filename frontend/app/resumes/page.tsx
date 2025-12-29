@@ -99,6 +99,12 @@ export default function ResumesPage() {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  // Compilation States
+  const [pdfData, setPdfData] = useState<string | null>(null);
+  const [compileError, setCompileError] = useState<string | null>(null);
+  const [isCompiling, setIsCompiling] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
   useEffect(() => {
     fetchResumes(selectedJobId);
     fetchJobs();
@@ -113,8 +119,50 @@ export default function ResumesPage() {
       setEditTitle(viewResume.versionName);
       setEditCode(viewResume.latexCode);
       setRecommendations(null); // Clear old recommendations when switching resumes
+      setPdfData(null);
+      setCompileError(null);
     }
   }, [viewResume]);
+
+  // Debounce Compilation
+  useEffect(() => {
+    if (activeView === 'code' && editCode) {
+      const timer = setTimeout(() => {
+        handleCompile();
+      }, 1000); // 1s debounce
+      return () => clearTimeout(timer);
+    }
+  }, [editCode]);
+
+  // Initial Compile on View Switch
+  useEffect(() => {
+    if ((activeView === 'code' || activeView === 'preview') && editCode && !pdfData) {
+        handleCompile();
+    }
+  }, [activeView]);
+
+  const handleCompile = async () => {
+    setIsCompiling(true);
+    // setCompileError(null); // Don't clear error immediately so user sees old error until new result? No, better clear.
+    try {
+      const res = await fetch('http://localhost:5000/api/resumes/compile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ latexCode: editCode }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPdfData(data.pdf);
+        setCompileError(null);
+      } else {
+        setCompileError(data.log || data.error || 'Unknown compilation error');
+      }
+    } catch (error) {
+      console.error('Compilation error:', error);
+      setCompileError('Failed to connect to compilation server');
+    }
+    setIsCompiling(false);
+  };
 
   const fetchResumes = async (filterJobId = '') => {
     const url = filterJobId 
@@ -208,7 +256,7 @@ export default function ResumesPage() {
   };
 
   return (
-    <div className="p-8 max-w-6xl mx-auto min-h-screen">
+    <div className="p-4 max-w-full mx-auto min-h-screen">
       <div className="flex justify-between items-center mb-6 no-print">
         <h1 className="text-3xl font-bold text-slate-100">Resume Creator</h1>
         {selectedJobId && (
@@ -248,8 +296,9 @@ export default function ResumesPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className={`grid grid-cols-1 ${isSidebarOpen ? 'md:grid-cols-4' : 'md:grid-cols-1'} gap-4 transition-all duration-300`}>
         {/* List */}
+        {isSidebarOpen && (
         <div className="col-span-1 border-r border-slate-700 pr-6 no-print">
           <h2 className="font-bold mb-4 text-slate-300">
             {selectedJobId ? 'Resumes for Job' : 'All Resumes'} ({resumes.length})
@@ -286,13 +335,29 @@ export default function ResumesPage() {
             {resumes.length === 0 && <div className="text-slate-500 italic">No resumes found. Generate one above.</div>}
           </div>
         </div>
+        )}
 
         {/* Viewer */}
-        <div className="col-span-2">
+        <div className={isSidebarOpen ? "col-span-3" : "col-span-1"}>
           {viewResume ? (
             <div>
               <div className="flex justify-between items-center mb-4 bg-slate-800 p-4 rounded-xl border border-slate-700 no-print">
                  <div className="flex items-center gap-4 flex-1 min-w-0">
+                    <button 
+                        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                        className="p-2 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white transition"
+                        title={isSidebarOpen ? "Collapse Sidebar" : "Expand Sidebar"}
+                    >
+                        {isSidebarOpen ? (
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                        ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                            </svg>
+                        )}
+                    </button>
                     {isEditingTitle ? (
                         <input 
                             value={editTitle}
@@ -354,19 +419,23 @@ export default function ResumesPage() {
                             <button 
                                 onClick={async () => {
                                     if (downloadFormat === 'pdf') {
-                                        const originalTitle = document.title;
-                                        const restoreTitle = () => {
-                                            document.title = originalTitle;
-                                            window.removeEventListener('afterprint', restoreTitle);
-                                        };
-                                        
-                                        document.title = ' ';
-                                        window.addEventListener('afterprint', restoreTitle);
-                                        
-                                        // Fallback in case event doesn't fire
-                                        setTimeout(restoreTitle, 1000);
-                                        
-                                        window.print();
+                                        if (pdfData) {
+                                            try {
+                                                const byteCharacters = atob(pdfData);
+                                                const byteNumbers = new Array(byteCharacters.length);
+                                                for (let i = 0; i < byteCharacters.length; i++) {
+                                                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                                                }
+                                                const byteArray = new Uint8Array(byteNumbers);
+                                                const blob = new Blob([byteArray], { type: "application/pdf" });
+                                                saveAs(blob, `${viewResume.versionName || 'resume'}.pdf`);
+                                            } catch (e) {
+                                                console.error("Download failed", e);
+                                                alert("Failed to download PDF");
+                                            }
+                                        } else {
+                                            alert("PDF not ready. Please wait for preview.");
+                                        }
                                     } else {
                                         if (viewResume?.tailoredData) {
                                             try {
@@ -398,31 +467,65 @@ export default function ResumesPage() {
               </div>
 
               {activeView === 'preview' && (
-                  <div className="w-full h-[800px] border border-slate-700 bg-slate-900/50 p-8 rounded-xl overflow-y-auto shadow-inner printable-area flex justify-center">
-                      <div 
-                        id="resume-preview-content" 
-                        className="shadow-2xl p-[10mm] md:p-[20mm] w-full max-w-[210mm] min-h-[297mm] text-black relative"
-                        style={{
-                            backgroundColor: 'white',
-                            // Visual guide for page breaks every 297mm
-                            backgroundImage: 'linear-gradient(to bottom, transparent calc(297mm - 1px), #e5e7eb calc(297mm - 1px), #e5e7eb 297mm)',
-                            backgroundSize: '100% 297mm',
-                            backgroundRepeat: 'repeat-y',
-                        }}
-                      >
-                        <ResumePreview data={viewResume.tailoredData || {}} />
-                      </div>
+                  <div className="w-full h-[calc(100vh-140px)] border border-slate-700 bg-slate-800 rounded-xl overflow-hidden relative">
+                        {isCompiling && (
+                             <div className="absolute top-0 left-0 right-0 h-1 bg-purple-500 animate-pulse z-10"></div>
+                        )}
+                        {compileError ? (
+                            <div className="p-4 bg-red-900/20 text-red-200 h-full overflow-auto font-mono text-xs whitespace-pre-wrap">
+                                <div className="font-bold mb-2">Compilation Error:</div>
+                                {compileError}
+                            </div>
+                        ) : pdfData ? (
+                            <iframe 
+                                src={`data:application/pdf;base64,${pdfData}#toolbar=0&navpanes=0&scrollbar=0`}
+                                className="w-full h-full bg-white"
+                                title="Resume PDF Preview"
+                            />
+                        ) : (
+                            <div className="flex items-center justify-center h-full text-slate-500">
+                                {isCompiling ? 'Compiling Preview...' : 'Generating Preview...'}
+                            </div>
+                        )}
                   </div>
               )}
 
               {activeView === 'code' && (
-                  <div>
-                    <p className="text-sm text-slate-500 mb-3">Edit the LaTeX code directly.</p>
-                    <textarea 
-                        value={editCode}
-                        onChange={(e) => setEditCode(e.target.value)}
-                        className="w-full h-[700px] font-mono text-sm border border-slate-700 p-4 rounded-xl bg-slate-900 text-slate-300 outline-none focus:ring-2 focus:ring-purple-500"
-                    />
+                  <div className="grid grid-cols-2 gap-4 h-[calc(100vh-140px)]">
+                    <div className="flex flex-col h-full">
+                        <div className="flex justify-between items-center mb-2">
+                             <p className="text-sm text-slate-500">LaTeX Code</p>
+                             {isCompiling && <span className="text-xs text-purple-400 animate-pulse">Compiling...</span>}
+                        </div>
+                        <textarea 
+                            value={editCode}
+                            onChange={(e) => setEditCode(e.target.value)}
+                            className="w-full flex-1 font-mono text-xs border border-slate-700 p-4 rounded-xl bg-slate-900 text-slate-300 outline-none focus:ring-2 focus:ring-purple-500 resize-none"
+                            spellCheck={false}
+                        />
+                    </div>
+                    <div className="flex flex-col h-full bg-slate-800 rounded-xl border border-slate-700 overflow-hidden relative">
+                        {isCompiling && (
+                             <div className="absolute top-0 left-0 right-0 h-1 bg-purple-500 animate-pulse z-10"></div>
+                        )}
+                        
+                        {compileError ? (
+                            <div className="p-4 bg-red-900/20 text-red-200 h-full overflow-auto font-mono text-xs whitespace-pre-wrap">
+                                <div className="font-bold mb-2">Compilation Error:</div>
+                                {compileError}
+                            </div>
+                        ) : pdfData ? (
+                            <iframe 
+                                src={`data:application/pdf;base64,${pdfData}#toolbar=0&navpanes=0&scrollbar=0`}
+                                className="w-full h-full bg-white"
+                                title="Resume PDF Preview"
+                            />
+                        ) : (
+                            <div className="flex items-center justify-center h-full text-slate-500">
+                                {isCompiling ? 'Compiling Preview...' : 'Generating Preview...'}
+                            </div>
+                        )}
+                    </div>
                   </div>
               )}
 

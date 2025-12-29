@@ -2,6 +2,7 @@ const Resume = require('../models/Resume');
 const MasterProfile = require('../models/MasterProfile');
 const Job = require('../models/Job');
 const { tailorResume, generateLatex, getRecommendations } = require('../services/geminiService');
+const { compileLatex } = require('../services/latexService');
 
 const createResumeForJob = async (req, res) => {
   const { jobId, jdText } = req.body;
@@ -125,4 +126,21 @@ const getResumeFeedback = async (req, res) => {
   }
 };
 
-module.exports = { createResumeForJob, getResumes, getResumeById, updateResume, deleteResume, getResumeFeedback };
+const compileResume = async (req, res) => {
+  const { latexCode } = req.body;
+  if (!latexCode) return res.status(400).json({ message: 'LaTeX code is required' });
+
+  try {
+    const result = await compileLatex(latexCode);
+    if (result.success) {
+      // Send PDF as base64 string
+      res.json({ success: true, pdf: result.pdf.toString('base64') });
+    } else {
+      res.json({ success: false, log: result.log, error: result.error });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { createResumeForJob, getResumes, getResumeById, updateResume, deleteResume, getResumeFeedback, compileResume };

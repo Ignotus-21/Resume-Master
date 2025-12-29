@@ -1,6 +1,83 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from 'docx';
+import { saveAs } from 'file-saver';
+
+interface ResumeData {
+  user?: {
+    name?: string;
+    email?: string;
+    phone?: string;
+    location?: string;
+    linkedin?: string;
+    github?: string;
+    website?: string;
+  };
+  experience?: Array<{
+    role: string;
+    company: string;
+    startDate: string;
+    endDate?: string;
+    bulletPoints?: string[];
+    location?: string;
+  }>;
+  education?: Array<{
+    institution: string;
+    degree: string;
+    fieldOfStudy: string;
+    startDate: string;
+    endDate: string;
+    gpa?: string;
+    coursework?: string[];
+  }>;
+  skills?: {
+    languages?: string[];
+    frameworks?: string[];
+    tools?: string[];
+    other?: string[];
+  } | string[]; // Skills can be object or array
+  projects?: Array<{
+    title: string;
+    techStack?: string[];
+    description: string;
+    link?: string;
+    bulletPoints?: string[];
+  }>;
+  certificates?: Array<{
+    name: string;
+    issuer?: string;
+    date?: string;
+    link?: string;
+  }>;
+  achievements?: Array<{
+    title: string;
+    date?: string;
+    description?: string;
+  }>;
+  patents?: Array<{
+    title: string;
+    number?: string;
+    date?: string;
+    description?: string;
+  }>;
+  volunteering?: Array<{
+    organization: string;
+    role: string;
+    startDate?: string;
+    endDate?: string;
+    description?: string;
+  }>;
+  customSections?: Array<{
+    title: string;
+    items: Array<{
+      title: string;
+      subtitle?: string;
+      date?: string;
+      description?: string;
+    }>;
+  }>;
+}
 
 export default function ResumesPage() {
   const searchParams = useSearchParams();
@@ -14,6 +91,7 @@ export default function ResumesPage() {
   const [viewResume, setViewResume] = useState<any>(null);
   const [activeView, setActiveView] = useState('preview'); // 'preview', 'code', 'feedback'
   const [recommendations, setRecommendations] = useState<any>(null);
+  const [downloadFormat, setDownloadFormat] = useState<'pdf' | 'docx'>('pdf');
   
   // Edit States
   const [editTitle, setEditTitle] = useState('');
@@ -109,7 +187,7 @@ export default function ResumesPage() {
       setResumes(resumes.map(r => r._id === updated._id ? updated : r));
       setViewResume(updated);
       setIsEditingTitle(false);
-      alert('Resume updated!');
+      // alert('Resume updated!'); // Removed alert for auto-save feel
     } catch (error) {
       console.error('Error updating resume:', error);
     }
@@ -130,8 +208,8 @@ export default function ResumesPage() {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto min-h-screen">
-      <div className="flex justify-between items-center mb-6">
+    <div className="p-8 max-w-6xl mx-auto min-h-screen">
+      <div className="flex justify-between items-center mb-6 no-print">
         <h1 className="text-3xl font-bold text-slate-100">Resume Creator</h1>
         {selectedJobId && (
             <button 
@@ -144,7 +222,7 @@ export default function ResumesPage() {
       </div>
 
       {/* Generator Section */}
-      <div className="bg-slate-800 p-6 rounded-xl shadow-lg border border-slate-700 mb-8">
+      <div className="bg-slate-800 p-6 rounded-xl shadow-lg border border-slate-700 mb-8 no-print">
         <h2 className="text-xl font-bold mb-6 text-slate-100">Create New Resume</h2>
         <div className="flex gap-4 items-end">
           <div className="flex-1">
@@ -172,7 +250,7 @@ export default function ResumesPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {/* List */}
-        <div className="col-span-1 border-r border-slate-700 pr-6">
+        <div className="col-span-1 border-r border-slate-700 pr-6 no-print">
           <h2 className="font-bold mb-4 text-slate-300">
             {selectedJobId ? 'Resumes for Job' : 'All Resumes'} ({resumes.length})
           </h2>
@@ -213,8 +291,8 @@ export default function ResumesPage() {
         <div className="col-span-2">
           {viewResume ? (
             <div>
-              <div className="flex justify-between items-center mb-4 bg-slate-800 p-4 rounded-xl border border-slate-700">
-                 <div className="flex items-center gap-4 flex-1">
+              <div className="flex justify-between items-center mb-4 bg-slate-800 p-4 rounded-xl border border-slate-700 no-print">
+                 <div className="flex items-center gap-4 flex-1 min-w-0">
                     {isEditingTitle ? (
                         <input 
                             value={editTitle}
@@ -225,18 +303,20 @@ export default function ResumesPage() {
                             onKeyDown={(e) => { if (e.key === 'Enter') { handleUpdate(); setIsEditingTitle(false); } }}
                         />
                     ) : (
-                        <h2 className="text-xl font-bold text-slate-100 flex items-center gap-2">
-                            {viewResume.versionName}
-                            <button onClick={() => setIsEditingTitle(true)} className="text-slate-500 hover:text-blue-400">
+                        <div className="flex items-center gap-2 min-w-0">
+                            <h2 className="text-xl font-bold text-slate-100 truncate" title={viewResume.versionName}>
+                                {viewResume.versionName}
+                            </h2>
+                            <button onClick={() => setIsEditingTitle(true)} className="text-slate-500 hover:text-blue-400 flex-shrink-0">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                                 </svg>
                             </button>
-                        </h2>
+                        </div>
                     )}
                  </div>
 
-                 <div className="flex gap-2">
+                 <div className="flex gap-2 flex-shrink-0">
                     <div className="flex bg-slate-900 rounded-lg p-1">
                         <button 
                         onClick={() => setActiveView('preview')}
@@ -258,12 +338,52 @@ export default function ResumesPage() {
                         </button>
                     </div>
                     {activeView === 'preview' && (
-                        <button 
-                            onClick={() => window.print()}
-                            className="bg-blue-600 text-white px-4 py-1 rounded-lg text-sm font-medium hover:bg-blue-500 flex items-center gap-1"
-                        >
-                            <span className="text-lg">⬇</span> PDF
-                        </button>
+                        <div className="flex bg-slate-900 rounded-lg p-1">
+                            <button 
+                                onClick={() => setDownloadFormat('pdf')}
+                                className={`px-3 py-1 rounded-md text-sm font-medium transition ${downloadFormat === 'pdf' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                            >
+                                PDF
+                            </button>
+                            <button 
+                                onClick={() => setDownloadFormat('docx')}
+                                className={`px-3 py-1 rounded-md text-sm font-medium transition ${downloadFormat === 'docx' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                            >
+                                DOCX
+                            </button>
+                            <button 
+                                onClick={async () => {
+                                    if (downloadFormat === 'pdf') {
+                                        const originalTitle = document.title;
+                                        const restoreTitle = () => {
+                                            document.title = originalTitle;
+                                            window.removeEventListener('afterprint', restoreTitle);
+                                        };
+                                        
+                                        document.title = ' ';
+                                        window.addEventListener('afterprint', restoreTitle);
+                                        
+                                        // Fallback in case event doesn't fire
+                                        setTimeout(restoreTitle, 1000);
+                                        
+                                        window.print();
+                                    } else {
+                                        if (viewResume?.tailoredData) {
+                                            try {
+                                                const blob = await generateDocx(viewResume.tailoredData);
+                                                saveAs(blob, `${viewResume.versionName || 'resume'}.docx`);
+                                            } catch (error) {
+                                                console.error("DOCX generation failed", error);
+                                                alert("Failed to generate DOCX");
+                                            }
+                                        }
+                                    }
+                                }}
+                                className="bg-slate-700 text-white px-3 py-1 rounded-md text-sm font-medium hover:bg-slate-600 flex items-center gap-1 ml-2"
+                            >
+                                <span className="text-lg">⬇</span>
+                            </button>
+                        </div>
                     )}
                     {activeView === 'code' && (
                         <button 
@@ -278,8 +398,20 @@ export default function ResumesPage() {
               </div>
 
               {activeView === 'preview' && (
-                  <div className="w-full h-[800px] border border-slate-700 bg-white text-black p-8 rounded-xl overflow-y-auto shadow-inner printable-area">
-                      <ResumePreview data={viewResume.tailoredData || {}} />
+                  <div className="w-full h-[800px] border border-slate-700 bg-slate-900/50 p-8 rounded-xl overflow-y-auto shadow-inner printable-area flex justify-center">
+                      <div 
+                        id="resume-preview-content" 
+                        className="shadow-2xl p-[10mm] md:p-[20mm] w-full max-w-[210mm] min-h-[297mm] text-black relative"
+                        style={{
+                            backgroundColor: 'white',
+                            // Visual guide for page breaks every 297mm
+                            backgroundImage: 'linear-gradient(to bottom, transparent calc(297mm - 1px), #e5e7eb calc(297mm - 1px), #e5e7eb 297mm)',
+                            backgroundSize: '100% 297mm',
+                            backgroundRepeat: 'repeat-y',
+                        }}
+                      >
+                        <ResumePreview data={viewResume.tailoredData || {}} />
+                      </div>
                   </div>
               )}
 
@@ -362,6 +494,174 @@ export default function ResumesPage() {
   );
 }
 
+// Generate DOCX using 'docx' library
+const generateDocx = async (data: ResumeData) => {
+    const children = [];
+
+    // Header
+    children.push(
+        new Paragraph({
+            text: data.user?.name || "Name",
+            heading: HeadingLevel.TITLE,
+            alignment: AlignmentType.CENTER,
+        }),
+        new Paragraph({
+            text: [data.user?.email, data.user?.phone, data.user?.location, data.user?.linkedin].filter(Boolean).join(" | "),
+            alignment: AlignmentType.CENTER,
+        }),
+        new Paragraph({ text: "" })
+    );
+
+    // Experience
+    if (data.experience?.length) {
+        children.push(new Paragraph({ text: "EXPERIENCE", heading: HeadingLevel.HEADING_2 }));
+        data.experience.forEach((exp) => {
+            children.push(
+                new Paragraph({ 
+                    children: [new TextRun({ text: exp.role, bold: true, size: 24 })]
+                }),
+                new Paragraph({
+                    children: [
+                        new TextRun({ text: exp.company, italics: true }),
+                        new TextRun({ text: `  |  ${exp.startDate} - ${exp.endDate || 'Present'}`, size: 20 })
+                    ]
+                }),
+            );
+            if (exp.bulletPoints?.length) {
+                exp.bulletPoints.forEach((bp: string) => {
+                    children.push(new Paragraph({ text: `• ${bp}`, indent: { left: 400 } }));
+                });
+            }
+            children.push(new Paragraph({ text: "" }));
+        });
+    }
+
+    // Education
+    if (data.education?.length) {
+        children.push(new Paragraph({ text: "EDUCATION", heading: HeadingLevel.HEADING_2 }));
+        data.education.forEach((edu) => {
+            children.push(
+                new Paragraph({ 
+                    children: [new TextRun({ text: edu.institution, bold: true })]
+                }),
+                new Paragraph({ text: `${edu.degree} in ${edu.fieldOfStudy}${edu.gpa ? ` (GPA: ${edu.gpa})` : ''}` }),
+                new Paragraph({ text: `${edu.startDate} - ${edu.endDate}` }),
+            );
+            if (edu.coursework?.length) {
+                children.push(new Paragraph({ text: `Relevant Coursework: ${edu.coursework.join(', ')}` }));
+            }
+            children.push(new Paragraph({ text: "" }));
+        });
+    }
+
+    // Skills
+    if (data.skills) {
+        children.push(new Paragraph({ text: "SKILLS", heading: HeadingLevel.HEADING_2 }));
+        if (Array.isArray(data.skills)) {
+            // Handle array format
+            children.push(new Paragraph({ text: data.skills.join(", ") }));
+        } else {
+            // Handle object format
+            if (data.skills.languages?.length) {
+                children.push(new Paragraph({ children: [new TextRun({ text: "Languages: ", bold: true }), new TextRun(data.skills.languages.join(", "))] }));
+            }
+            if (data.skills.frameworks?.length) {
+                children.push(new Paragraph({ children: [new TextRun({ text: "Frameworks: ", bold: true }), new TextRun(data.skills.frameworks.join(", "))] }));
+            }
+            if (data.skills.tools?.length) {
+                children.push(new Paragraph({ children: [new TextRun({ text: "Tools: ", bold: true }), new TextRun(data.skills.tools.join(", "))] }));
+            }
+            if (data.skills.other?.length) {
+                children.push(new Paragraph({ children: [new TextRun({ text: "Other: ", bold: true }), new TextRun(data.skills.other.join(", "))] }));
+            }
+        }
+    }
+
+    // Projects
+    if (data.projects?.length) {
+        children.push(new Paragraph({ text: "PROJECTS", heading: HeadingLevel.HEADING_2 }));
+        data.projects.forEach((proj) => {
+            children.push(
+                new Paragraph({ 
+                    children: [new TextRun({ text: proj.title, bold: true })]
+                }),
+                new Paragraph({ 
+                    children: [new TextRun({ text: `Stack: ${proj.techStack?.join(', ')}`, italics: true })] 
+                }),
+                new Paragraph({ text: proj.description }),
+                new Paragraph({ text: "" })
+            );
+        });
+    }
+
+    // Certificates
+    if (data.certificates?.length) {
+        children.push(new Paragraph({ text: "CERTIFICATES", heading: HeadingLevel.HEADING_2 }));
+        data.certificates.forEach((cert) => {
+            children.push(new Paragraph({ 
+                children: [
+                    new TextRun({ text: cert.name, bold: true }),
+                    new TextRun({ text: cert.issuer ? ` - ${cert.issuer}` : '' }),
+                    new TextRun({ text: cert.date ? ` (${cert.date})` : '', italics: true })
+                ]
+            }));
+        });
+    }
+
+    // Achievements
+    if (data.achievements?.length) {
+        children.push(new Paragraph({ text: "ACHIEVEMENTS", heading: HeadingLevel.HEADING_2 }));
+        data.achievements.forEach((ach) => {
+            children.push(new Paragraph({ 
+                children: [
+                    new TextRun({ text: ach.title, bold: true }),
+                    new TextRun({ text: ach.date ? ` (${ach.date})` : '', italics: true })
+                ]
+            }));
+            if (ach.description) children.push(new Paragraph({ text: ach.description }));
+        });
+    }
+
+    // Patents
+    if (data.patents?.length) {
+        children.push(new Paragraph({ text: "PATENTS", heading: HeadingLevel.HEADING_2 }));
+        data.patents.forEach((pat) => {
+            children.push(new Paragraph({ 
+                children: [
+                    new TextRun({ text: pat.title, bold: true }),
+                    new TextRun({ text: pat.date ? ` (${pat.date})` : '', italics: true })
+                ]
+            }));
+            if (pat.number) children.push(new Paragraph({ children: [new TextRun({ text: `Patent #: ${pat.number}`, italics: true })] }));
+            if (pat.description) children.push(new Paragraph({ text: pat.description }));
+        });
+    }
+
+    // Volunteering
+    if (data.volunteering?.length) {
+        children.push(new Paragraph({ text: "VOLUNTEERING", heading: HeadingLevel.HEADING_2 }));
+        data.volunteering.forEach((vol) => {
+            children.push(new Paragraph({ 
+                children: [
+                    new TextRun({ text: vol.organization, bold: true }),
+                    new TextRun({ text: ` - ${vol.role}`, italics: true }),
+                    ...(vol.startDate || vol.endDate ? [new TextRun({ text: `  |  ${vol.startDate || ''} - ${vol.endDate || ''}`, size: 20 })] : [])
+                ]
+            }));
+            if (vol.description) children.push(new Paragraph({ text: vol.description }));
+        });
+    }
+
+    const doc = new Document({
+        sections: [{
+            properties: {},
+            children: children,
+        }],
+    });
+
+    return await Packer.toBlob(doc);
+};
+
 // Simple HTML Resume Renderer (Unchanged)
 const ResumePreview = ({ data }: { data: any }) => {
     if (!data || !data.user) return <div className="text-center text-gray-400 mt-20">No preview data available</div>;
@@ -385,7 +685,7 @@ const ResumePreview = ({ data }: { data: any }) => {
                 <div className="mb-6">
                     <h2 className="text-sm font-bold uppercase tracking-widest border-b border-black mb-3 pb-1">Experience</h2>
                     {data.experience.map((exp: any, i: number) => (
-                        <div key={i} className="mb-4">
+                        <div key={i} className="mb-4 break-inside-avoid">
                             <div className="flex justify-between items-baseline mb-1">
                                 <h3 className="font-bold text-lg">{exp.role}</h3>
                                 <span className="text-sm text-gray-600">{exp.startDate} – {exp.endDate || 'Present'}</span>
@@ -409,7 +709,7 @@ const ResumePreview = ({ data }: { data: any }) => {
                 <div className="mb-6">
                     <h2 className="text-sm font-bold uppercase tracking-widest border-b border-black mb-3 pb-1">Projects</h2>
                     {data.projects.map((proj: any, i: number) => (
-                        <div key={i} className="mb-3">
+                        <div key={i} className="mb-3 break-inside-avoid">
                             <div className="flex justify-between items-baseline">
                                 <h3 className="font-bold">{proj.title}</h3>
                                 {proj.techStack && <span className="text-xs text-gray-500 italic">[{proj.techStack.join(', ')}]</span>}
@@ -422,12 +722,19 @@ const ResumePreview = ({ data }: { data: any }) => {
 
             {/* Skills */}
             {data.skills && (
-                <div className="mb-6">
+                <div className="mb-6 break-inside-avoid">
                     <h2 className="text-sm font-bold uppercase tracking-widest border-b border-black mb-3 pb-1">Technical Skills</h2>
                     <div className="text-sm text-gray-700 space-y-1">
-                        {data.skills.languages && <div><span className="font-bold">Languages:</span> {data.skills.languages.join(', ')}</div>}
-                        {data.skills.frameworks && <div><span className="font-bold">Frameworks:</span> {data.skills.frameworks.join(', ')}</div>}
-                        {data.skills.tools && <div><span className="font-bold">Tools:</span> {data.skills.tools.join(', ')}</div>}
+                        {Array.isArray(data.skills) ? (
+                            <div>{data.skills.join(', ')}</div>
+                        ) : (
+                            <>
+                                {data.skills.languages?.length > 0 && <div><span className="font-bold">Languages:</span> {data.skills.languages.join(', ')}</div>}
+                                {data.skills.frameworks?.length > 0 && <div><span className="font-bold">Frameworks:</span> {data.skills.frameworks.join(', ')}</div>}
+                                {data.skills.tools?.length > 0 && <div><span className="font-bold">Tools:</span> {data.skills.tools.join(', ')}</div>}
+                                {data.skills.other?.length > 0 && <div><span className="font-bold">Other:</span> {data.skills.other.join(', ')}</div>}
+                            </>
+                        )}
                     </div>
                 </div>
             )}
@@ -437,7 +744,7 @@ const ResumePreview = ({ data }: { data: any }) => {
                 <div className="mb-6">
                     <h2 className="text-sm font-bold uppercase tracking-widest border-b border-black mb-3 pb-1">Education</h2>
                     {data.education.map((edu: any, i: number) => (
-                        <div key={i} className="mb-2">
+                        <div key={i} className="mb-2 break-inside-avoid">
                             <div className="flex justify-between font-bold text-sm">
                                 <span>{edu.institution}</span>
                                 <span>{edu.startDate} – {edu.endDate}</span>
@@ -445,6 +752,72 @@ const ResumePreview = ({ data }: { data: any }) => {
                             <div className="text-sm text-gray-700">
                                 {edu.degree} in {edu.fieldOfStudy} {edu.gpa && <span>(GPA: {edu.gpa})</span>}
                             </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* Certificates */}
+            {data.certificates && data.certificates.length > 0 && (
+                <div className="mb-6">
+                    <h2 className="text-sm font-bold uppercase tracking-widest border-b border-black mb-3 pb-1">Certificates</h2>
+                    {data.certificates.map((cert: any, i: number) => (
+                        <div key={i} className="mb-2 break-inside-avoid">
+                            <div className="flex justify-between text-sm">
+                                <span className="font-bold">{cert.name}</span>
+                                <span className="text-gray-600">{cert.date}</span>
+                            </div>
+                            <div className="text-sm text-gray-700 italic">{cert.issuer}</div>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* Achievements */}
+            {data.achievements && data.achievements.length > 0 && (
+                <div className="mb-6">
+                    <h2 className="text-sm font-bold uppercase tracking-widest border-b border-black mb-3 pb-1">Achievements</h2>
+                    {data.achievements.map((ach: any, i: number) => (
+                        <div key={i} className="mb-3 break-inside-avoid">
+                            <div className="flex justify-between text-sm font-bold">
+                                <span>{ach.title}</span>
+                                <span className="text-gray-600 font-normal">{ach.date}</span>
+                            </div>
+                            <p className="text-sm text-gray-700">{ach.description}</p>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* Patents */}
+            {data.patents && data.patents.length > 0 && (
+                <div className="mb-6">
+                    <h2 className="text-sm font-bold uppercase tracking-widest border-b border-black mb-3 pb-1">Patents</h2>
+                    {data.patents.map((pat: any, i: number) => (
+                        <div key={i} className="mb-3 break-inside-avoid">
+                            <div className="flex justify-between text-sm font-bold">
+                                <span>{pat.title}</span>
+                                <span className="text-gray-600 font-normal">{pat.date}</span>
+                            </div>
+                            <div className="text-xs text-gray-500 mb-1">{pat.number}</div>
+                            <p className="text-sm text-gray-700">{pat.description}</p>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* Volunteering */}
+            {data.volunteering && data.volunteering.length > 0 && (
+                <div className="mb-6">
+                    <h2 className="text-sm font-bold uppercase tracking-widest border-b border-black mb-3 pb-1">Volunteering</h2>
+                    {data.volunteering.map((vol: any, i: number) => (
+                        <div key={i} className="mb-3 break-inside-avoid">
+                            <div className="flex justify-between text-sm font-bold">
+                                <span>{vol.organization}</span>
+                                <span className="text-gray-600 font-normal">{vol.startDate} - {vol.endDate}</span>
+                            </div>
+                            <div className="text-sm text-gray-700 italic mb-1">{vol.role}</div>
+                            <p className="text-sm text-gray-700">{vol.description}</p>
                         </div>
                     ))}
                 </div>

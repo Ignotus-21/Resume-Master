@@ -13,22 +13,59 @@ body {
 }
 
 @media print {
+  /* Remove Browser Headers/Footers */
+  @page {
+    size: auto;
+    margin: 0mm;
+  }
+
+  /* Hide everything by default to clear the page */
   body * {
     visibility: hidden;
   }
-  .printable-area, .printable-area * {
-    visibility: visible;
+
+  /* Completely remove UI elements from flow */
+  nav, .no-print {
+    display: none !important;
   }
-  .printable-area {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
+  
+  /* Reset Body */
+  body {
     background: white;
     color: black;
-    padding: 20px;
+    overflow: visible !important;
   }
-  .no-print {
-    display: none !important;
+
+  /* Style the Printable Area - Override all screen styles */
+  .printable-area {
+    visibility: visible !important;
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    height: auto !important; /* Allow full expansion */
+    max-height: none !important; /* Override scroll container limits */
+    overflow: visible !important; /* Show full content */
+    margin: 0 !important;
+    padding: 0 !important; 
+    background: white !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+
+  /* Ensure children of printable area are visible and black text */
+  .printable-area * {
+    visibility: visible !important;
+    color: black !important;
+  }
+
+  /* Prevent awkward page breaks */
+  h1, h2, h3 {
+    page-break-after: avoid;
+  }
+  /* Apply to individual items, not sections */
+  .break-inside-avoid {
+    page-break-inside: avoid;
+    break-inside: avoid;
   }
 }

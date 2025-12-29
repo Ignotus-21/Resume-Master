@@ -83,11 +83,13 @@ const tailorResume = async (masterData, jobDescription) => {
   const prompt = `
     You are an ATS Resume Optimizer.
     I have a Master Resume Data (JSON) and a Job Description.
-    Your task is to:
-    1. Select ALL relevant experience, projects, and skills. Do NOT omit core sections (Education, Skills, Experience, Projects) unless they are completely irrelevant. Ensure the resume is comprehensive.
-    2. Rewrite bullet points to include keywords from the Job Description, improving the ATS score.
-    3. Maintain a professional tone and ensure no critical details (like dates, companies, degrees) are lost.
-    4. Keep the structure JSON compatible.
+    
+    CRITICAL INSTRUCTIONS:
+    1. **INCLUDE ALL SECTIONS**: You MUST include 'skills', 'certificates', 'achievements', 'projects', 'education', 'experience' if present in the master data.
+    2. **DO NOT DROP SKILLS**: Include ALL technical skills from the master profile. Do not filter them out.
+    3. **DO NOT DROP CERTIFICATES**: Include all certificates.
+    4. **Tailor Descriptions**: Rewrite bullet points in 'experience' and 'projects' to highlight keywords from the Job Description.
+    5. **Structure**: Return valid JSON matching the Master Resume schema exactly.
     
     Master Resume: ${JSON.stringify(masterData)}
     

@@ -303,7 +303,7 @@ export default function ResumesPage() {
           <h2 className="font-bold mb-4 text-slate-300">
             {selectedJobId ? 'Resumes for Job' : 'All Resumes'} ({resumes.length})
           </h2>
-          <div className="space-y-4 max-h-[800px] overflow-y-auto">
+          <div className="space-y-4 h-[calc(100vh-140px)] overflow-y-auto pr-2 custom-scrollbar">
             {resumes.map(resume => (
               <div 
                 key={resume._id} 

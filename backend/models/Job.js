@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 
 const jobSchema = new mongoose.Schema({
+  owner: { type: String, required: true, index: true },
   company: { type: String, required: true },
   role: { type: String, required: true },
   jdText: { type: String }, // The full job description

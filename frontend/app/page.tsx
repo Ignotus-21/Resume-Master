@@ -1,10 +1,19 @@
+'use client';
 import Link from 'next/link';
-import { UserRound, LayoutDashboard, FileText, MessageSquareText, ArrowRight, LucideIcon } from 'lucide-react';
+import {
+  UserRound, LayoutDashboard, FileText, MessageSquareText, ArrowRight, LucideIcon,
+  UploadCloud, Wand2, Download, KeyRound, ShieldCheck, Rocket,
+} from 'lucide-react';
+import { useAuth } from '@/lib/auth-context';
+import { Button } from '@/components/ui/Button';
 
 export default function Home() {
+  const { user, loading } = useAuth();
+
   return (
-    <div className="flex flex-col items-center min-h-[80vh]">
-      <div className="text-center max-w-2xl mx-auto pt-16 pb-20">
+    <div className="flex flex-col items-center">
+      {/* Hero */}
+      <div className="text-center max-w-2xl mx-auto pt-16 pb-12">
         <span className="inline-block text-xs font-semibold uppercase tracking-widest text-blue-400 bg-blue-500/10 border border-blue-500/20 rounded-full px-3 py-1 mb-6">
           Powered by Gemini AI
         </span>
@@ -14,13 +23,42 @@ export default function Home() {
             get you hired
           </span>
         </h1>
-        <p className="text-lg text-slate-400 leading-relaxed">
-          Automate your job application process. Manage your master profile, track jobs,
-          and generate ATS-optimized LaTeX resumes tailored to every role.
+        <p className="text-lg text-slate-400 leading-relaxed mb-8">
+          Keep one master profile, track every application, and let AI tailor an ATS-optimized
+          LaTeX resume for each job in seconds — with real feedback on what's missing.
         </p>
+
+        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          {!loading && user ? (
+            <Link href="/dashboard">
+              <Button className="px-8 py-3 text-base">
+                Go to Dashboard <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+          ) : (
+            <>
+              <Link href="/dashboard">
+                <Button variant="secondary" className="px-8 py-3 text-base w-full sm:w-auto">
+                  Continue for Free
+                </Button>
+              </Link>
+              <Link href="/signup">
+                <Button className="px-8 py-3 text-base w-full sm:w-auto">
+                  Sign Up <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
+            </>
+          )}
+        </div>
+        {!loading && !user && (
+          <p className="text-sm text-slate-500 mt-4">
+            No account needed to try it out. <Link href="/login" className="text-blue-400 hover:underline">Already have one? Log in</Link>
+          </p>
+        )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl">
+      {/* Feature cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl mb-20">
         <FeatureCard
           icon={UserRound}
           title="Master Profile"
@@ -31,7 +69,7 @@ export default function Home() {
         <FeatureCard
           icon={LayoutDashboard}
           title="Job Tracker"
-          desc="Track applications and analyze job descriptions at a glance."
+          desc="Track applications, filter by status, and analyze job descriptions."
           link="/dashboard"
           accent="from-emerald-500 to-emerald-600"
         />
@@ -49,6 +87,42 @@ export default function Home() {
           link="/chat"
           accent="from-orange-500 to-orange-600"
         />
+      </div>
+
+      {/* How it works */}
+      <div className="w-full max-w-4xl mb-20">
+        <h2 className="text-2xl font-bold text-white text-center mb-2">How it works</h2>
+        <p className="text-slate-400 text-center mb-10">Three steps from resume to application-ready.</p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Step icon={UploadCloud} step="1" title="Import your resume" desc="Upload a PDF or paste your existing resume — Gemini extracts your experience, skills, and projects into one master profile." />
+          <Step icon={Wand2} step="2" title="Tailor it to the job" desc="Paste a job description and generate a rewritten, keyword-matched LaTeX resume in seconds, with an ATS match score and gap analysis." />
+          <Step icon={Download} step="3" title="Export and apply" desc="Download as PDF or DOCX, track the application's status, and iterate with the AI chat assistant as you go." />
+        </div>
+      </div>
+
+      {/* Pricing / quota explainer */}
+      <div className="w-full max-w-4xl mb-20 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="p-6 rounded-2xl bg-slate-800/60 border border-slate-700">
+          <Rocket className="h-8 w-8 text-blue-400 mb-3" />
+          <h3 className="text-lg font-bold text-slate-100 mb-1.5">Free to try</h3>
+          <p className="text-slate-400 text-sm leading-relaxed">
+            Every account (and guest session) gets a shared pool of free AI requests, refreshed
+            every few hours — no card required.
+          </p>
+        </div>
+        <div className="p-6 rounded-2xl bg-slate-800/60 border border-slate-700">
+          <KeyRound className="h-8 w-8 text-purple-400 mb-3" />
+          <h3 className="text-lg font-bold text-slate-100 mb-1.5">Unlimited with your own key</h3>
+          <p className="text-slate-400 text-sm leading-relaxed">
+            Sign up and add your own Gemini API key in Settings to remove the limit entirely —
+            it's encrypted at rest and only ever used for your requests.
+          </p>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2 text-slate-500 text-sm mb-16">
+        <ShieldCheck className="h-4 w-4" />
+        Guest sessions are private and never shared across devices.
       </div>
     </div>
   );
@@ -79,4 +153,15 @@ const FeatureCard = ({
       <p className="text-slate-400 text-sm leading-relaxed">{desc}</p>
     </div>
   </Link>
+);
+
+const Step = ({ icon: Icon, step, title, desc }: { icon: LucideIcon; step: string; title: string; desc: string }) => (
+  <div className="p-6 rounded-2xl bg-slate-800/40 border border-slate-800 relative">
+    <span className="absolute -top-3 -left-3 h-7 w-7 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center shadow-lg">
+      {step}
+    </span>
+    <Icon className="h-7 w-7 text-blue-400 mb-3" />
+    <h3 className="font-bold text-slate-100 mb-1.5">{title}</h3>
+    <p className="text-slate-400 text-sm leading-relaxed">{desc}</p>
+  </div>
 );

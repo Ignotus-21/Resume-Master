@@ -1,8 +1,9 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { FileText, LayoutDashboard, UserRound, MessageSquareText, Menu, X, Sparkles } from 'lucide-react';
+import { useRouter, usePathname } from 'next/navigation';
+import { FileText, LayoutDashboard, UserRound, MessageSquareText, Menu, X, Sparkles, Settings, LogOut, LogIn } from 'lucide-react';
+import { useAuth } from '@/lib/auth-context';
 
 const NAV_LINKS = [
   { href: '/dashboard', label: 'Job Tracker', icon: LayoutDashboard },
@@ -13,7 +14,15 @@ const NAV_LINKS = [
 
 const Navbar = () => {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, loading, logout } = useAuth();
   const [open, setOpen] = useState(false);
+
+  const handleLogout = async () => {
+    await logout();
+    setOpen(false);
+    router.push('/');
+  };
 
   return (
     <nav className="sticky top-0 z-50 bg-slate-900/80 backdrop-blur-md border-b border-slate-800 no-print">
@@ -43,6 +52,40 @@ const Navbar = () => {
               </Link>
             );
           })}
+
+          <div className="w-px h-6 bg-slate-800 mx-2" />
+
+          {!loading && (
+            user ? (
+              <>
+                <Link
+                  href="/settings"
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition ${
+                    pathname?.startsWith('/settings') ? 'bg-slate-800 text-blue-400' : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                  }`}
+                >
+                  <Settings className="h-4 w-4" />
+                  {user.name || user.email.split('@')[0]}
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/60 transition"
+                >
+                  <LogOut className="h-4 w-4" />
+                </button>
+              </>
+            ) : (
+              <>
+                <Link href="/login" className="flex items-center gap-2 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/60 transition">
+                  <LogIn className="h-4 w-4" />
+                  Log In
+                </Link>
+                <Link href="/signup" className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-500 transition font-semibold">
+                  Sign Up
+                </Link>
+              </>
+            )
+          )}
         </div>
 
         <button
@@ -73,6 +116,48 @@ const Navbar = () => {
               </Link>
             );
           })}
+
+          <div className="h-px bg-slate-800 my-2" />
+
+          {!loading && (
+            user ? (
+              <>
+                <Link
+                  href="/settings"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-800/60 hover:text-white"
+                >
+                  <Settings className="h-4 w-4" />
+                  Settings
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="flex w-full items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-800/60 hover:text-white"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Log Out
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-800/60 hover:text-white"
+                >
+                  <LogIn className="h-4 w-4" />
+                  Log In
+                </Link>
+                <Link
+                  href="/signup"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium bg-blue-600 text-white"
+                >
+                  Sign Up
+                </Link>
+              </>
+            )
+          )}
         </div>
       )}
     </nav>

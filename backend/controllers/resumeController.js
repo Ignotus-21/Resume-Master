@@ -3,13 +3,14 @@ const MasterProfile = require('../models/MasterProfile');
 const Job = require('../models/Job');
 const { tailorResume, generateLatex, getRecommendations } = require('../services/geminiService');
 const { compileLatex } = require('../services/latexService');
+const { enforceGeminiQuota } = require('../utils/geminiGate');
 
 const createResumeForJob = async (req, res) => {
   const { jobId, jdText } = req.body;
-  
+
   try {
     // 1. Get Master Profile
-    const profile = await MasterProfile.findOne();
+    const profile = await MasterProfile.findOne({ owner: req.identity });
     if (!profile) return res.status(404).json({ message: 'Master Profile not found' });
 
     // 2. Get Job Description
@@ -18,7 +19,7 @@ const createResumeForJob = async (req, res) => {
     let companyName = 'Company';
 
     if (jobId) {
-      const job = await Job.findById(jobId);
+      const job = await Job.findOne({ _id: jobId, owner: req.identity });
       if (job) {
         jobDescription = job.jdText || job.role + " at " + job.company;
         jobTitle = job.role || 'Role';
@@ -28,11 +29,14 @@ const createResumeForJob = async (req, res) => {
 
     if (!jobDescription) return res.status(400).json({ message: 'Job Description is required' });
 
+    const quotaRejection = await enforceGeminiQuota(req);
+    if (quotaRejection) return res.status(quotaRejection.status).json(quotaRejection.body);
+
     // 3. Tailor Resume
-    const tailoredData = await tailorResume(profile, jobDescription);
+    const tailoredData = await tailorResume(profile, jobDescription, req.geminiApiKey);
 
     // 4. Generate LaTeX
-    const latexCode = await generateLatex(tailoredData);
+    const latexCode = await generateLatex(tailoredData, req.geminiApiKey);
 
     // 5. Save
     const userName = profile.user?.name?.split(' ')[0] || 'Resume';
@@ -40,14 +44,15 @@ const createResumeForJob = async (req, res) => {
     const versionName = `${userName}_${companyName}_${jobTitle}_${uniqueCode}`.replace(/[^a-zA-Z0-9_]/g, '_');
 
     const resume = new Resume({
+      owner: req.identity,
       job: jobId,
       latexCode,
       tailoredData,
       versionName,
     });
-    
+
     await resume.save();
-    
+
     res.json(resume);
 
   } catch (error) {
@@ -59,7 +64,7 @@ const createResumeForJob = async (req, res) => {
 const getResumes = async (req, res) => {
   try {
     const { jobId } = req.query;
-    const query = jobId ? { job: jobId } : {};
+    const query = jobId ? { job: jobId, owner: req.identity } : { owner: req.identity };
     const resumes = await Resume.find(query).populate('job').sort({ createdAt: -1 });
     res.json(resumes);
   } catch (error) {
@@ -69,7 +74,7 @@ const getResumes = async (req, res) => {
 
 const getResumeById = async (req, res) => {
   try {
-    const resume = await Resume.findById(req.params.id).populate('job');
+    const resume = await Resume.findOne({ _id: req.params.id, owner: req.identity }).populate('job');
     if (!resume) return res.status(404).json({ message: 'Resume not found' });
     res.json(resume);
   } catch (error) {
@@ -84,11 +89,12 @@ const updateResume = async (req, res) => {
     if (latexCode) updateData.latexCode = latexCode;
     if (versionName) updateData.versionName = versionName;
 
-    const resume = await Resume.findByIdAndUpdate(
-      req.params.id, 
-      updateData, 
+    const resume = await Resume.findOneAndUpdate(
+      { _id: req.params.id, owner: req.identity },
+      updateData,
       { new: true }
     );
+    if (!resume) return res.status(404).json({ message: 'Resume not found' });
     res.json(resume);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -97,7 +103,8 @@ const updateResume = async (req, res) => {
 
 const deleteResume = async (req, res) => {
   try {
-    await Resume.findByIdAndDelete(req.params.id);
+    const deleted = await Resume.findOneAndDelete({ _id: req.params.id, owner: req.identity });
+    if (!deleted) return res.status(404).json({ message: 'Resume not found' });
     res.json({ message: 'Resume deleted' });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -107,18 +114,21 @@ const deleteResume = async (req, res) => {
 const getResumeFeedback = async (req, res) => {
   const { jobId, jdText } = req.body;
   try {
-    const profile = await MasterProfile.findOne();
+    const profile = await MasterProfile.findOne({ owner: req.identity });
     if (!profile) return res.status(404).json({ message: 'Master Profile not found' });
 
     let jobDescription = jdText;
     if (jobId) {
-      const job = await Job.findById(jobId);
+      const job = await Job.findOne({ _id: jobId, owner: req.identity });
       if (job) jobDescription = job.jdText || job.role + " at " + job.company;
     }
 
     if (!jobDescription) return res.status(400).json({ message: 'Job Description is required' });
 
-    const recommendations = await getRecommendations(profile, jobDescription);
+    const quotaRejection = await enforceGeminiQuota(req);
+    if (quotaRejection) return res.status(quotaRejection.status).json(quotaRejection.body);
+
+    const recommendations = await getRecommendations(profile, jobDescription, req.geminiApiKey);
     res.json(recommendations);
   } catch (error) {
     console.error(error);

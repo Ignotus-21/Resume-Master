@@ -1,15 +1,15 @@
 console.log('Loading masterController...');
 const MasterProfile = require('../models/MasterProfile');
 const { parseResumeData } = require('../services/geminiService');
+const { enforceGeminiQuota } = require('../utils/geminiGate');
 const fs = require('fs');
 console.log('masterController dependencies loaded');
 
 const getProfile = async (req, res) => {
   try {
-    // Single user mode: get the first document
-    let profile = await MasterProfile.findOne();
+    let profile = await MasterProfile.findOne({ owner: req.identity });
     if (!profile) {
-      profile = await MasterProfile.create({});
+      profile = await MasterProfile.create({ owner: req.identity });
     }
     res.json(profile);
   } catch (error) {
@@ -19,20 +19,20 @@ const getProfile = async (req, res) => {
 
 const updateProfile = async (req, res) => {
   try {
-    // Robust update: Find the single profile and update it atomically
-    let profile = await MasterProfile.findOne();
-    
+    // Robust update: Find this identity's profile and update it atomically
+    let profile = await MasterProfile.findOne({ owner: req.identity });
+
     if (profile) {
       // Use findByIdAndUpdate to ensure clean replacement of arrays/nested fields
       profile = await MasterProfile.findByIdAndUpdate(
-        profile._id, 
-        { $set: req.body }, 
+        profile._id,
+        { $set: req.body },
         { new: true, runValidators: true }
       );
     } else {
-      profile = await MasterProfile.create(req.body);
+      profile = await MasterProfile.create({ ...req.body, owner: req.identity });
     }
-    
+
     res.json(profile);
   } catch (error) {
     console.error("Update Profile Error:", error);
@@ -45,20 +45,23 @@ const ingestRawText = async (req, res) => {
   if (!text) return res.status(400).json({ message: 'No text provided' });
 
   try {
-    const parsedData = await parseResumeData(text);
-    
+    const quotaRejection = await enforceGeminiQuota(req);
+    if (quotaRejection) return res.status(quotaRejection.status).json(quotaRejection.body);
+
+    const parsedData = await parseResumeData(text, req.geminiApiKey);
+
     // Merge parsed data into existing profile
-    let profile = await MasterProfile.findOne();
+    let profile = await MasterProfile.findOne({ owner: req.identity });
     if (!profile) {
-      profile = new MasterProfile(parsedData);
+      profile = new MasterProfile({ ...parsedData, owner: req.identity });
     } else {
       // Logic to append or replace. For simplicity, we'll replace/update provided fields
       // Ideally, we should merge arrays (like adding new projects), but for now let's simple merge
       // or we can push to arrays. Let's do a smart merge for top level fields.
-      
+
       // Simple merge for User Details
       if (parsedData.user) Object.assign(profile.user, parsedData.user);
-      
+
       // For arrays, we probably want to append unique items, but let's just add them for now
       // The user can edit them in UI.
       if (parsedData.experience) profile.experience.push(...parsedData.experience);
@@ -67,7 +70,7 @@ const ingestRawText = async (req, res) => {
       if (parsedData.skills) profile.skills = parsedData.skills; // Replace skills usually
       // ... handle others
     }
-    
+
     await profile.save();
     res.json(profile);
   } catch (error) {
@@ -89,8 +92,14 @@ const uploadResume = async (req, res) => {
       return res.status(400).json({ message: 'Uploaded file is not a valid PDF' });
     }
 
+    const quotaRejection = await enforceGeminiQuota(req);
+    if (quotaRejection) {
+      fs.unlinkSync(req.file.path);
+      return res.status(quotaRejection.status).json(quotaRejection.body);
+    }
+
     // Send Buffer directly to Gemini (Multimodal)
-    const parsedData = await parseResumeData(dataBuffer);
+    const parsedData = await parseResumeData(dataBuffer, req.geminiApiKey);
 
     // Clean up uploaded file
     fs.unlinkSync(req.file.path);

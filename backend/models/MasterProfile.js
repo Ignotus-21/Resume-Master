@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 
 const masterProfileSchema = new mongoose.Schema({
+  owner: { type: String, required: true, unique: true, index: true },
   user: {
     name: String,
     email: String,

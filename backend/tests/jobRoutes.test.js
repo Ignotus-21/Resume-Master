@@ -32,7 +32,7 @@ describe('POST /api/jobs (mass-assignment whitelist)', () => {
       });
 
     expect(res.status).toBe(201);
-    expect(savedPayload).toEqual({ company: 'Acme', role: 'Engineer' });
+    expect(savedPayload).toEqual({ company: 'Acme', role: 'Engineer', owner: expect.any(String) });
     expect(savedPayload.isAdmin).toBeUndefined();
     expect(savedPayload.someInternalField).toBeUndefined();
   });
@@ -54,5 +54,40 @@ describe('CORS allow-list', () => {
       .get('/api/jobs')
       .set('Origin', 'http://localhost:3000');
     expect(res.status).toBe(200);
+  });
+});
+
+describe('ownership scoping', () => {
+  let app;
+  beforeEach(() => {
+    app = createApp();
+  });
+
+  it('scopes GET /api/jobs to the caller\'s own identity', async () => {
+    Job.find.mockReturnValue({ sort: jest.fn().mockResolvedValue([]) });
+    await request(app).get('/api/jobs');
+    expect(Job.find).toHaveBeenCalledWith({ owner: expect.any(String) });
+  });
+
+  it('gives two different guest sessions two different owner identities', async () => {
+    Job.find.mockReturnValue({ sort: jest.fn().mockResolvedValue([]) });
+
+    const first = await request(app).get('/api/jobs');
+    const second = await request(app).get('/api/jobs'); // no cookie sent, so a fresh guestId is issued
+
+    const ownerA = Job.find.mock.calls[0][0].owner;
+    const ownerB = Job.find.mock.calls[1][0].owner;
+    expect(ownerA).not.toEqual(ownerB);
+  });
+
+  it('scopes update/delete so one identity cannot touch another identity\'s job', async () => {
+    Job.findOneAndUpdate.mockResolvedValue(null);
+    const res = await request(app).put('/api/jobs/000000000000000000000000').send({ status: 'Applied' });
+    expect(Job.findOneAndUpdate).toHaveBeenCalledWith(
+      { _id: '000000000000000000000000', owner: expect.any(String) },
+      expect.any(Object),
+      expect.any(Object)
+    );
+    expect(res.status).toBe(404); // not found because it belongs to someone else / doesn't exist
   });
 });

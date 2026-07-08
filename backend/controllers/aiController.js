@@ -1,8 +1,19 @@
 const ChatSession = require('../models/ChatSession');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
+const { enforceGeminiQuota } = require('../utils/geminiGate');
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+const CHAT_MODEL_NAME = "gemini-2.5-flash";
+
+let defaultClient = null;
+const getChatModel = (apiKey) => {
+  if (apiKey) {
+    return new GoogleGenerativeAI(apiKey).getGenerativeModel({ model: CHAT_MODEL_NAME });
+  }
+  if (!defaultClient) {
+    defaultClient = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+  }
+  return defaultClient.getGenerativeModel({ model: CHAT_MODEL_NAME });
+};
 
 const MAX_MESSAGE_LENGTH = 8000;
 
@@ -13,6 +24,7 @@ const startChat = async (req, res) => {
   }
   try {
     const session = await ChatSession.create({
+      owner: req.identity,
       contextType,
       contextId,
       history: []
@@ -34,8 +46,11 @@ const sendMessage = async (req, res) => {
   }
 
   try {
-    const session = await ChatSession.findById(sessionId);
+    const session = await ChatSession.findOne({ _id: sessionId, owner: req.identity });
     if (!session) return res.status(404).json({ message: 'Session not found' });
+
+    const quotaRejection = await enforceGeminiQuota(req);
+    if (quotaRejection) return res.status(quotaRejection.status).json(quotaRejection.body);
 
     // Add user message
     session.history.push({ role: 'user', parts: [{ text: message }] });
@@ -48,6 +63,7 @@ const sendMessage = async (req, res) => {
       parts: [{ text: h.parts[0].text }]
     }));
 
+    const model = getChatModel(req.geminiApiKey);
     const chat = model.startChat({
       history: historyForGemini.slice(0, -1), // Exclude the last message we just added to send it via sendMessage
       generationConfig: {
@@ -73,7 +89,8 @@ const sendMessage = async (req, res) => {
 
 const getHistory = async (req, res) => {
   try {
-    const session = await ChatSession.findById(req.params.sessionId);
+    const session = await ChatSession.findOne({ _id: req.params.sessionId, owner: req.identity });
+    if (!session) return res.status(404).json({ message: 'Session not found' });
     res.json(session);
   } catch (error) {
     res.status(500).json({ message: error.message });

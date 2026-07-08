@@ -1,10 +1,20 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-// Using gemini-1.5-flash-001 for specific version reliability
-const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
+const MODEL_NAME = "gemini-2.5-pro";
 
-const parseResumeData = async (input) => {
+let defaultClient = null;
+const getModel = (apiKey) => {
+  if (apiKey) {
+    return new GoogleGenerativeAI(apiKey).getGenerativeModel({ model: MODEL_NAME });
+  }
+  if (!defaultClient) {
+    defaultClient = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+  }
+  return defaultClient.getGenerativeModel({ model: MODEL_NAME });
+};
+
+const parseResumeData = async (input, apiKey) => {
+  const model = getModel(apiKey);
   const isBuffer = Buffer.isBuffer(input);
   
   const systemInstruction = `
@@ -79,7 +89,8 @@ const parseResumeData = async (input) => {
   }
 };
 
-const tailorResume = async (masterData, jobDescription) => {
+const tailorResume = async (masterData, jobDescription, apiKey) => {
+  const model = getModel(apiKey);
   const prompt = `
     You are an ATS Resume Optimizer.
     I have a Master Resume Data (JSON) and a Job Description.
@@ -110,7 +121,8 @@ const tailorResume = async (masterData, jobDescription) => {
   }
 };
 
-const generateLatex = async (resumeData) => {
+const generateLatex = async (resumeData, apiKey) => {
+  const model = getModel(apiKey);
   const prompt = `
     You are a LaTeX Resume Architect.
     Convert the following JSON resume data into a professional, clean LaTeX resume code.
@@ -138,7 +150,8 @@ const generateLatex = async (resumeData) => {
   }
 };
 
-const getRecommendations = async (masterData, jobDescription) => {
+const getRecommendations = async (masterData, jobDescription, apiKey) => {
+  const model = getModel(apiKey);
   const prompt = `
     You are an expert Career Coach and ATS Analyst.
     Analyze the Candidate's Master Profile against the provided Job Description.

@@ -1,8 +1,11 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
 const { sanitizeBody } = require('./middleware/sanitize');
+const identify = require('./middleware/identify');
+const loadGeminiKey = require('./middleware/loadGeminiKey');
 
 const createApp = () => {
   const app = express();
@@ -21,10 +24,14 @@ const createApp = () => {
       }
       return callback(new Error('Not allowed by CORS'));
     },
+    credentials: true,
   }));
   app.use(helmet());
   app.use(express.json({ limit: '2mb' }));
+  app.use(cookieParser());
   app.use(sanitizeBody);
+  app.use(identify);
+  app.use(loadGeminiKey);
 
   // General rate limit across the API.
   app.use('/api', rateLimit({
@@ -48,12 +55,24 @@ const createApp = () => {
   app.use('/api/master/upload-resume', aiLimiter);
   app.use('/api/master/ingest', aiLimiter);
 
+  // Tighter limit on auth routes to slow down credential stuffing/brute force.
+  const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 20,
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+  app.use('/api/auth/signup', authLimiter);
+  app.use('/api/auth/login', authLimiter);
+  app.use('/api/auth/google', authLimiter);
+
   // Basic Route
   app.get('/', (req, res) => {
     res.send('API is running...');
   });
 
   // Routes
+  app.use('/api/auth', require('./routes/authRoutes'));
   app.use('/api/master', require('./routes/masterRoutes'));
   app.use('/api/jobs', require('./routes/jobRoutes'));
   app.use('/api/resumes', require('./routes/resumeRoutes'));

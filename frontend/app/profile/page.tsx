@@ -100,6 +100,7 @@ export default function ProfilePage() {
       const res = await fetch(`${API_URL}/api/master/upload-resume`, {
         method: 'POST',
         body: formData,
+        credentials: 'include',
       });
       const parsedData = await res.json();
       if (!res.ok) throw new Error(parsedData.message || 'Failed to upload/parse resume.');

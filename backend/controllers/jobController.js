@@ -14,7 +14,7 @@ const pickAllowed = (body) => {
 
 const getJobs = async (req, res) => {
   try {
-    const jobs = await Job.find().sort({ createdAt: -1 });
+    const jobs = await Job.find({ owner: req.identity }).sort({ createdAt: -1 });
     res.json(jobs);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -23,7 +23,7 @@ const getJobs = async (req, res) => {
 
 const createJob = async (req, res) => {
   try {
-    const job = new Job(pickAllowed(req.body));
+    const job = new Job({ ...pickAllowed(req.body), owner: req.identity });
     const savedJob = await job.save();
     res.status(201).json(savedJob);
   } catch (error) {
@@ -34,7 +34,11 @@ const createJob = async (req, res) => {
 const updateJob = async (req, res) => {
   try {
     const { id } = req.params;
-    const job = await Job.findByIdAndUpdate(id, pickAllowed(req.body), { new: true, runValidators: true });
+    const job = await Job.findOneAndUpdate(
+      { _id: id, owner: req.identity },
+      pickAllowed(req.body),
+      { new: true, runValidators: true }
+    );
     if (!job) return res.status(404).json({ message: 'Job not found' });
     res.json(job);
   } catch (error) {
@@ -45,7 +49,8 @@ const updateJob = async (req, res) => {
 const deleteJob = async (req, res) => {
   try {
     const { id } = req.params;
-    await Job.findByIdAndDelete(id);
+    const deleted = await Job.findOneAndDelete({ _id: id, owner: req.identity });
+    if (!deleted) return res.status(404).json({ message: 'Job not found' });
     res.json({ message: 'Job deleted' });
   } catch (error) {
     res.status(500).json({ message: error.message });

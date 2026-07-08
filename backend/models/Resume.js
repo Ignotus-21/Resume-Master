@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 
 const resumeSchema = new mongoose.Schema({
+  owner: { type: String, required: true, index: true },
   job: { type: mongoose.Schema.Types.ObjectId, ref: 'Job' }, // Optional link to a job
   latexCode: { type: String, required: true },
   pdfUrl: { type: String }, // If we upload it somewhere or store path

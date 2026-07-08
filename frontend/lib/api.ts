@@ -22,7 +22,7 @@ async function parseBody(res: Response) {
  * duplicating res.ok checks everywhere.
  */
 export async function apiFetch(path: string, options?: RequestInit) {
-  const res = await fetch(`${API_URL}${path}`, options);
+  const res = await fetch(`${API_URL}${path}`, { credentials: 'include', ...options });
   const body = await parseBody(res);
   if (!res.ok) {
     const message = (body && typeof body === 'object' && 'message' in body)

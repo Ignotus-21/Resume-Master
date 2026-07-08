@@ -49,7 +49,17 @@ const compileLatex = async (latexCode) => {
       ], {
         timeout: 10000,
         cwd: workDir,
-        env: { PATH: process.env.PATH },
+        // openin_any=p / openout_any=p restrict TeX file I/O to "paranoid" mode:
+        // no reading/writing of absolute paths, parent directories, or dotfiles.
+        // This blocks \input{/…/.env}, \openin, \lstinputlisting, etc. from
+        // exfiltrating server secrets into the compiled PDF — a critical fix,
+        // since -no-shell-escape only blocks \write18 shell execution, not reads.
+        env: {
+          PATH: process.env.PATH,
+          openin_any: 'p',
+          openout_any: 'p',
+          TEXMFOUTPUT: workDir,
+        },
       });
     } catch (error) {
         // compilation failed or had warnings, but we need to check log

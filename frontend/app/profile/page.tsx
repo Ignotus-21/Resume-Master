@@ -487,11 +487,35 @@ export default function ProfilePage() {
                />
                {ingesting && <p className="text-blue-400 text-sm mt-2 animate-pulse">Processing file... Please wait...</p>}
             </div>
-            
+
+            <div className="bg-slate-900/50 border border-slate-700 p-6 rounded-xl">
+               <h3 className="text-lg font-semibold text-slate-200 mb-2">Option 2: Import from LinkedIn</h3>
+               <p className="text-slate-400 text-sm mb-3">Export your LinkedIn profile as a PDF, then upload it here — we&apos;ll extract your experience, education, and skills automatically.</p>
+               <ol className="text-slate-400 text-sm list-decimal list-inside space-y-1 mb-4">
+                 <li>Open your LinkedIn profile</li>
+                 <li>Click <span className="text-slate-300 font-medium">More</span> → <span className="text-slate-300 font-medium">Save to PDF</span></li>
+                 <li>Upload the downloaded PDF below</li>
+               </ol>
+               <input
+                 type="file"
+                 accept=".pdf"
+                 onChange={handleFileUpload}
+                 disabled={ingesting}
+                 className="block w-full text-sm text-slate-400
+                   file:mr-4 file:py-2.5 file:px-6
+                   file:rounded-lg file:border-0
+                   file:text-sm file:font-semibold
+                   file:bg-[#0a66c2] file:text-white
+                   hover:file:bg-[#0958a8]
+                   file:cursor-pointer cursor-pointer
+                 "
+               />
+            </div>
+
             <div className="border-t border-slate-700 my-4"></div>
 
             <div>
-              <h3 className="text-lg font-semibold text-slate-200 mb-2">Option 2: Paste Text</h3>
+              <h3 className="text-lg font-semibold text-slate-200 mb-2">Option 3: Paste Text</h3>
               <textarea 
                 className="w-full h-64 border border-slate-700 rounded-xl p-4 bg-slate-900 text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
                 value={rawText}

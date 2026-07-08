@@ -8,7 +8,9 @@ const { consumeQuota } = require('../services/quotaService');
 const enforceGeminiQuota = async (req) => {
   if (req.geminiApiKey) return null;
 
-  const { allowed, resetAt } = await consumeQuota(req.identity);
+  // quotaIdentity is the account id for logged-in users and an IP-derived key
+  // for guests, so guests can't reset the quota by rotating the guestId cookie.
+  const { allowed, resetAt } = await consumeQuota(req.quotaIdentity || req.identity);
   if (allowed) return null;
 
   return {

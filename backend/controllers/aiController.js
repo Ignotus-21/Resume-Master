@@ -1,6 +1,8 @@
 const ChatSession = require('../models/ChatSession');
+const MasterProfile = require('../models/MasterProfile');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { enforceGeminiQuota } = require('../utils/geminiGate');
+const { generateLinkedInContent } = require('../services/geminiService');
 
 const CHAT_MODEL_NAME = "gemini-2.5-flash";
 
@@ -31,7 +33,8 @@ const startChat = async (req, res) => {
     });
     res.json(session);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('AI error:', error);
+    res.status(500).json({ message: 'Something went wrong' });
   }
 };
 
@@ -82,8 +85,8 @@ const sendMessage = async (req, res) => {
     res.json({ text, history: session.history });
 
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: error.message });
+    console.error('AI error:', error);
+    res.status(500).json({ message: 'Something went wrong' });
   }
 };
 
@@ -93,8 +96,25 @@ const getHistory = async (req, res) => {
     if (!session) return res.status(404).json({ message: 'Session not found' });
     res.json(session);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('AI error:', error);
+    res.status(500).json({ message: 'Something went wrong' });
   }
 };
 
-module.exports = { startChat, sendMessage, getHistory };
+const linkedinRewrite = async (req, res) => {
+  try {
+    const profile = await MasterProfile.findOne({ owner: req.identity });
+    if (!profile) return res.status(404).json({ message: 'Master Profile not found' });
+
+    const quotaRejection = await enforceGeminiQuota(req);
+    if (quotaRejection) return res.status(quotaRejection.status).json(quotaRejection.body);
+
+    const content = await generateLinkedInContent(profile, req.geminiApiKey);
+    res.json(content);
+  } catch (error) {
+    console.error('AI error:', error);
+    res.status(500).json({ message: 'Something went wrong' });
+  }
+};
+
+module.exports = { startChat, sendMessage, getHistory, linkedinRewrite };

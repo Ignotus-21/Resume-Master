@@ -34,4 +34,18 @@ describe('compileLatex', () => {
     // execFile never invokes a shell, so shell metacharacters in args can't be interpreted.
     expect(args.join(' ')).not.toMatch(/[;&|`$]/);
   });
+
+  it('runs pdflatex in paranoid I/O mode so \\input cannot read server files', async () => {
+    // Regression test for the critical LaTeX file-read → secret exfiltration bug.
+    await compileLatex('\\documentclass{article}\\begin{document}\\input{/etc/passwd}\\end{document}');
+    expect(execFile).toHaveBeenCalledTimes(1);
+    const opts = execFile.mock.calls[0][2];
+    // openin_any=p / openout_any=p block absolute-path and parent-dir file access.
+    expect(opts.env.openin_any).toBe('p');
+    expect(opts.env.openout_any).toBe('p');
+    // The restricted env must NOT expose app secrets to the TeX process.
+    expect(opts.env.JWT_SECRET).toBeUndefined();
+    expect(opts.env.ENCRYPTION_KEY).toBeUndefined();
+    expect(opts.env.GEMINI_API_KEY).toBeUndefined();
+  });
 });

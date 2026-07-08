@@ -1,8 +1,9 @@
 'use client';
 import Link from 'next/link';
 import {
-  UserRound, LayoutDashboard, FileText, MessageSquareText, ArrowRight, LucideIcon,
+  UserRound, LayoutDashboard, FileText, ArrowRight, LucideIcon,
   UploadCloud, Wand2, Download, KeyRound, ShieldCheck, Rocket,
+  Mail, Gauge, MessagesSquare, Contact,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { Button } from '@/components/ui/Button';
@@ -58,32 +59,67 @@ export default function Home() {
       </div>
 
       {/* Feature cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl mb-20">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-5xl mb-20">
         <FeatureCard
           icon={UserRound}
           title="Master Profile"
-          desc="Update your core experience, skills, and projects in one place."
+          desc="Keep your experience, skills, and projects in one reusable place."
           link="/profile"
           accent="from-blue-500 to-blue-600"
         />
         <FeatureCard
           icon={LayoutDashboard}
           title="Job Tracker"
-          desc="Track applications, filter by status, and analyze job descriptions."
+          desc="Track applications, filter by status, and see your funnel."
           link="/dashboard"
           accent="from-emerald-500 to-emerald-600"
         />
         <FeatureCard
           icon={FileText}
           title="Resume Creator"
-          desc="Generate tailored LaTeX resumes for specific jobs, instantly."
+          desc="Generate tailored, ATS-safe resumes for any job in seconds."
           link="/resumes"
           accent="from-purple-500 to-purple-600"
         />
         <FeatureCard
-          icon={MessageSquareText}
+          icon={Mail}
+          title="Cover Letters"
+          desc="Personalized cover letters with tone and length controls."
+          link="/cover-letters"
+          accent="from-pink-500 to-pink-600"
+        />
+        <FeatureCard
+          icon={Gauge}
+          title="ATS Checker"
+          desc="Score your profile against a job and see what's missing."
+          link="/ats-checker"
+          accent="from-cyan-500 to-cyan-600"
+        />
+        <FeatureCard
+          icon={MessagesSquare}
+          title="Mock Interview"
+          desc="Practice role-specific questions with instant AI feedback."
+          link="/interview"
+          accent="from-amber-500 to-amber-600"
+        />
+        <FeatureCard
+          icon={Contact}
+          title="LinkedIn Optimizer"
+          desc="Turn your profile into a keyword-rich LinkedIn headline & About."
+          link="/linkedin"
+          accent="from-sky-500 to-sky-600"
+        />
+        <FeatureCard
+          icon={UploadCloud}
+          title="Import from LinkedIn"
+          desc="Upload your LinkedIn PDF export and we'll fill your profile."
+          link="/profile"
+          accent="from-indigo-500 to-indigo-600"
+        />
+        <FeatureCard
+          icon={Wand2}
           title="AI Chat Assistant"
-          desc="Chat with Gemini to refine your content and get feedback."
+          desc="Chat with Gemini to refine your content and get advice."
           link="/chat"
           accent="from-orange-500 to-orange-600"
         />

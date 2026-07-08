@@ -20,6 +20,18 @@ const sanitizeBody = (req, res, next) => {
   if (req.body && typeof req.body === 'object') {
     req.body = stripOperators(req.body);
   }
+  // Query strings can also carry Mongo operators (e.g. ?jobId[$ne]=x). In
+  // Express 5 req.query is a re-parsing getter that can't be mutated in place,
+  // so redefine it with a sanitized snapshot.
+  if (req.query && typeof req.query === 'object') {
+    const cleanQuery = stripOperators({ ...req.query });
+    Object.defineProperty(req, 'query', {
+      value: cleanQuery,
+      writable: true,
+      configurable: true,
+      enumerable: true,
+    });
+  }
   next();
 };
 

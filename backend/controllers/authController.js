@@ -73,7 +73,8 @@ const signup = async (req, res) => {
     issueToken(res, user);
     res.status(201).json({ user: publicUser(user) });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Auth error:', error);
+    res.status(500).json({ message: 'Something went wrong' });
   }
 };
 
@@ -97,7 +98,8 @@ const login = async (req, res) => {
     issueToken(res, user);
     res.json({ user: publicUser(user) });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Auth error:', error);
+    res.status(500).json({ message: 'Something went wrong' });
   }
 };
 
@@ -154,7 +156,8 @@ const me = async (req, res) => {
     if (!user) return res.json({ user: null, guest: true });
     res.json({ user: publicUser(user), guest: false });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Auth error:', error);
+    res.status(500).json({ message: 'Something went wrong' });
   }
 };
 
@@ -163,10 +166,11 @@ const quota = async (req, res) => {
     if (req.geminiApiKey) {
       return res.json({ usingOwnKey: true, limit: null, remaining: null, resetAt: null });
     }
-    const status = await getQuotaStatus(req.identity);
+    const status = await getQuotaStatus(req.quotaIdentity || req.identity);
     res.json({ usingOwnKey: false, ...status });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Quota lookup error:', error);
+    res.status(500).json({ message: 'Failed to load quota' });
   }
 };
 
@@ -180,7 +184,8 @@ const setGeminiKey = async (req, res) => {
     await User.findByIdAndUpdate(req.user.id, { geminiApiKeyEncrypted: encrypted });
     res.json({ message: 'API key saved' });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Auth error:', error);
+    res.status(500).json({ message: 'Something went wrong' });
   }
 };
 
@@ -189,7 +194,8 @@ const removeGeminiKey = async (req, res) => {
     await User.findByIdAndUpdate(req.user.id, { $unset: { geminiApiKeyEncrypted: '' } });
     res.json({ message: 'API key removed' });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Auth error:', error);
+    res.status(500).json({ message: 'Something went wrong' });
   }
 };
 

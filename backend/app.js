@@ -10,6 +10,11 @@ const loadGeminiKey = require('./middleware/loadGeminiKey');
 const createApp = () => {
   const app = express();
 
+  // Trust the reverse proxy in front of the app so req.ip is the real client
+  // (used for IP-based rate limiting and the guest AI-quota key). Configurable
+  // hop count; defaults to a single proxy as in the docker-compose setup.
+  app.set('trust proxy', Number(process.env.TRUST_PROXY_HOPS ?? 1));
+
   // Restrict CORS to known frontend origin(s) instead of reflecting any origin.
   const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:3000')
     .split(',')
@@ -54,6 +59,8 @@ const createApp = () => {
   app.use('/api/resumes/feedback', aiLimiter);
   app.use('/api/master/upload-resume', aiLimiter);
   app.use('/api/master/ingest', aiLimiter);
+  app.use('/api/cover-letters/generate', aiLimiter);
+  app.use('/api/interview', aiLimiter);
 
   // Tighter limit on auth routes to slow down credential stuffing/brute force.
   const authLimiter = rateLimit({
@@ -76,6 +83,8 @@ const createApp = () => {
   app.use('/api/master', require('./routes/masterRoutes'));
   app.use('/api/jobs', require('./routes/jobRoutes'));
   app.use('/api/resumes', require('./routes/resumeRoutes'));
+  app.use('/api/cover-letters', require('./routes/coverLetterRoutes'));
+  app.use('/api/interview', require('./routes/interviewRoutes'));
   app.use('/api/ai', require('./routes/aiRoutes'));
 
   // Central error handler (also catches the CORS rejection thrown above).

@@ -9,9 +9,12 @@ const identify = (req, res, next) => {
 
   if (token) {
     try {
-      const payload = jwt.verify(token, process.env.JWT_SECRET);
+      const payload = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
       req.user = { id: payload.sub, email: payload.email, name: payload.name };
       req.identity = payload.sub;
+      // Logged-in users are quota-limited per account (not per IP), so their
+      // quota can't be reset by touching cookies.
+      req.quotaIdentity = payload.sub;
       req.isGuest = false;
       return next();
     } catch (err) {
@@ -32,6 +35,10 @@ const identify = (req, res, next) => {
   req.guestId = guestId;
   req.identity = guestId;
   req.isGuest = true;
+  // Quota is keyed on the client IP for guests so that simply rotating the
+  // guestId cookie cannot reset the free AI quota and drain the shared key.
+  // (Requires `trust proxy` to be configured so req.ip is the real client.)
+  req.quotaIdentity = `ip:${req.ip}`;
   next();
 };
 

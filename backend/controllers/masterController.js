@@ -5,6 +5,24 @@ const { enforceGeminiQuota } = require('../utils/geminiGate');
 const fs = require('fs');
 console.log('masterController dependencies loaded');
 
+// Fields a client is allowed to set on their own profile. Notably excludes
+// `owner` (and Mongo internals) so a caller can't reassign/orphan the record.
+const ALLOWED_PROFILE_FIELDS = [
+  'user', 'experience', 'education', 'projects', 'skills', 'certificates',
+  'achievements', 'hobbies', 'publications', 'volunteering', 'patents',
+  'customSections', 'rawText',
+];
+
+const pickProfileFields = (body) => {
+  const picked = {};
+  for (const field of ALLOWED_PROFILE_FIELDS) {
+    if (Object.prototype.hasOwnProperty.call(body, field)) {
+      picked[field] = body[field];
+    }
+  }
+  return picked;
+};
+
 const getProfile = async (req, res) => {
   try {
     let profile = await MasterProfile.findOne({ owner: req.identity });
@@ -13,12 +31,15 @@ const getProfile = async (req, res) => {
     }
     res.json(profile);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Get Profile Error:', error);
+    res.status(500).json({ message: 'Failed to load profile' });
   }
 };
 
 const updateProfile = async (req, res) => {
   try {
+    const updates = pickProfileFields(req.body);
+
     // Robust update: Find this identity's profile and update it atomically
     let profile = await MasterProfile.findOne({ owner: req.identity });
 
@@ -26,17 +47,17 @@ const updateProfile = async (req, res) => {
       // Use findByIdAndUpdate to ensure clean replacement of arrays/nested fields
       profile = await MasterProfile.findByIdAndUpdate(
         profile._id,
-        { $set: req.body },
+        { $set: updates },
         { new: true, runValidators: true }
       );
     } else {
-      profile = await MasterProfile.create({ ...req.body, owner: req.identity });
+      profile = await MasterProfile.create({ ...updates, owner: req.identity });
     }
 
     res.json(profile);
   } catch (error) {
     console.error("Update Profile Error:", error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: 'Failed to update profile' });
   }
 };
 
@@ -74,7 +95,8 @@ const ingestRawText = async (req, res) => {
     await profile.save();
     res.json(profile);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Ingest Text Error:', error);
+    res.status(500).json({ message: 'Failed to parse text' });
   }
 };
 

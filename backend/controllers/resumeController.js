@@ -56,8 +56,8 @@ const createResumeForJob = async (req, res) => {
     res.json(resume);
 
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: error.message });
+    console.error('Resume error:', error);
+    res.status(500).json({ message: 'Something went wrong' });
   }
 };
 
@@ -68,7 +68,8 @@ const getResumes = async (req, res) => {
     const resumes = await Resume.find(query).populate('job').sort({ createdAt: -1 });
     res.json(resumes);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Resume error:', error);
+    res.status(500).json({ message: 'Something went wrong' });
   }
 };
 
@@ -78,7 +79,8 @@ const getResumeById = async (req, res) => {
     if (!resume) return res.status(404).json({ message: 'Resume not found' });
     res.json(resume);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Resume error:', error);
+    res.status(500).json({ message: 'Something went wrong' });
   }
 };
 
@@ -97,7 +99,8 @@ const updateResume = async (req, res) => {
     if (!resume) return res.status(404).json({ message: 'Resume not found' });
     res.json(resume);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Resume error:', error);
+    res.status(500).json({ message: 'Something went wrong' });
   }
 };
 
@@ -107,7 +110,8 @@ const deleteResume = async (req, res) => {
     if (!deleted) return res.status(404).json({ message: 'Resume not found' });
     res.json({ message: 'Resume deleted' });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Resume error:', error);
+    res.status(500).json({ message: 'Something went wrong' });
   }
 };
 
@@ -131,8 +135,8 @@ const getResumeFeedback = async (req, res) => {
     const recommendations = await getRecommendations(profile, jobDescription, req.geminiApiKey);
     res.json(recommendations);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: error.message });
+    console.error('Resume error:', error);
+    res.status(500).json({ message: 'Something went wrong' });
   }
 };
 
@@ -151,7 +155,8 @@ const compileResume = async (req, res) => {
       res.json({ success: false, log: result.log, error: result.error });
     }
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Resume error:', error);
+    res.status(500).json({ message: 'Something went wrong' });
   }
 };
 

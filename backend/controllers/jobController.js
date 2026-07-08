@@ -17,7 +17,8 @@ const getJobs = async (req, res) => {
     const jobs = await Job.find({ owner: req.identity }).sort({ createdAt: -1 });
     res.json(jobs);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Job error:', error);
+    res.status(500).json({ message: 'Something went wrong' });
   }
 };
 
@@ -53,7 +54,8 @@ const deleteJob = async (req, res) => {
     if (!deleted) return res.status(404).json({ message: 'Job not found' });
     res.json({ message: 'Job deleted' });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Job error:', error);
+    res.status(500).json({ message: 'Something went wrong' });
   }
 };
 

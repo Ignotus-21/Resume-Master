@@ -1,8 +1,11 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
+import { apiFetch, apiJson } from '@/lib/api';
+import { useToast } from '@/components/ui/Toast';
+import { FileText, Sparkles } from 'lucide-react';
 
 interface ResumeData {
   user?: {
@@ -80,6 +83,15 @@ interface ResumeData {
 }
 
 export default function ResumesPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-slate-400">Loading…</div>}>
+      <ResumesPageContent />
+    </Suspense>
+  );
+}
+
+function ResumesPageContent() {
+  const { showToast } = useToast();
   const searchParams = useSearchParams();
   const preSelectedJobId = searchParams.get('jobId');
 
@@ -143,77 +155,65 @@ export default function ResumesPage() {
 
   const handleCompile = async () => {
     setIsCompiling(true);
-    // setCompileError(null); // Don't clear error immediately so user sees old error until new result? No, better clear.
     try {
-      const res = await fetch('http://localhost:5000/api/resumes/compile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ latexCode: editCode }),
-      });
-      const data = await res.json();
+      const data = await apiJson('/api/resumes/compile', 'POST', { latexCode: editCode });
       if (data.success) {
         setPdfData(data.pdf);
         setCompileError(null);
       } else {
         setCompileError(data.log || data.error || 'Unknown compilation error');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Compilation error:', error);
-      setCompileError('Failed to connect to compilation server');
+      setCompileError(error.message || 'Failed to connect to compilation server');
     }
     setIsCompiling(false);
   };
 
   const fetchResumes = async (filterJobId = '') => {
-    const url = filterJobId 
-      ? `http://localhost:5000/api/resumes?jobId=${filterJobId}` 
-      : 'http://localhost:5000/api/resumes';
-    const res = await fetch(url);
-    const data = await res.json();
-    setResumes(data);
+    try {
+      const url = filterJobId ? `/api/resumes?jobId=${filterJobId}` : '/api/resumes';
+      const data = await apiFetch(url);
+      setResumes(data);
+    } catch (error: any) {
+      showToast(error.message || 'Failed to load resumes', 'error');
+    }
   };
 
   const fetchJobs = async () => {
-    const res = await fetch('http://localhost:5000/api/jobs');
-    const data = await res.json();
-    setJobs(data);
+    try {
+      const data = await apiFetch('/api/jobs');
+      setJobs(data);
+    } catch (error: any) {
+      showToast(error.message || 'Failed to load jobs', 'error');
+    }
   };
 
   const handleGenerate = async () => {
-    if (!selectedJobId) return alert('Select a job first');
+    if (!selectedJobId) return showToast('Select a job first', 'info');
     setGenerating(true);
     try {
-      const res = await fetch('http://localhost:5000/api/resumes/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ jobId: selectedJobId }),
-      });
-      const data = await res.json();
+      const data = await apiJson('/api/resumes/generate', 'POST', { jobId: selectedJobId });
       setResumes([data, ...resumes]);
       setViewResume(data);
       setActiveView('preview');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error generating resume:', error);
-      alert('Failed to generate. Ensure Gemini Key is set.');
+      showToast(error.message || 'Failed to generate. Ensure Gemini Key is set.', 'error');
     }
     setGenerating(false);
   };
 
   const handleGetFeedback = async () => {
-    if (!viewResume || !viewResume.job) return alert('This resume is not linked to a specific job to analyze.');
+    if (!viewResume || !viewResume.job) return showToast('This resume is not linked to a specific job to analyze.', 'info');
     setAnalyzing(true);
     setActiveView('feedback');
     try {
-      const res = await fetch('http://localhost:5000/api/resumes/feedback', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ jobId: viewResume.job._id }), // Analyze Master Profile vs Job
-      });
-      const data = await res.json();
+      const data = await apiJson('/api/resumes/feedback', 'POST', { jobId: viewResume.job._id });
       setRecommendations(data);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error getting feedback:', error);
-      alert('Failed to get feedback.');
+      showToast(error.message || 'Failed to get feedback.', 'error');
     }
     setAnalyzing(false);
   };
@@ -222,22 +222,16 @@ export default function ResumesPage() {
     if (!viewResume) return;
     setSaving(true);
     try {
-      const res = await fetch(`http://localhost:5000/api/resumes/${viewResume._id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          versionName: editTitle,
-          latexCode: editCode
-        }),
+      const updated = await apiJson(`/api/resumes/${viewResume._id}`, 'PUT', {
+        versionName: editTitle,
+        latexCode: editCode,
       });
-      const updated = await res.json();
-      
       setResumes(resumes.map(r => r._id === updated._id ? updated : r));
       setViewResume(updated);
       setIsEditingTitle(false);
-      // alert('Resume updated!'); // Removed alert for auto-save feel
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating resume:', error);
+      showToast(error.message || 'Failed to save resume', 'error');
     }
     setSaving(false);
   };
@@ -245,13 +239,13 @@ export default function ResumesPage() {
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this resume?')) return;
     try {
-      await fetch(`http://localhost:5000/api/resumes/${id}`, {
-        method: 'DELETE',
-      });
+      await apiFetch(`/api/resumes/${id}`, { method: 'DELETE' });
       setResumes(resumes.filter(r => r._id !== id));
       if (viewResume?._id === id) setViewResume(null);
-    } catch (error) {
+      showToast('Resume deleted', 'success');
+    } catch (error: any) {
       console.error('Error deleting resume:', error);
+      showToast(error.message || 'Failed to delete resume', 'error');
     }
   };
 
@@ -286,11 +280,12 @@ export default function ResumesPage() {
               ))}
             </select>
           </div>
-          <button 
+          <button
             onClick={handleGenerate}
             disabled={generating || !selectedJobId}
-            className="bg-purple-600 text-white px-8 py-2 rounded-xl hover:bg-purple-500 disabled:opacity-50 h-11 font-semibold transition shadow-lg shadow-purple-900/50"
+            className="flex items-center gap-2 bg-purple-600 text-white px-8 py-2 rounded-xl hover:bg-purple-500 disabled:opacity-50 h-11 font-semibold transition shadow-lg shadow-purple-900/50"
           >
+            <Sparkles className="h-4 w-4" />
             {generating ? 'AI Generating...' : 'Generate Resume'}
           </button>
         </div>
@@ -431,10 +426,10 @@ export default function ResumesPage() {
                                                 saveAs(blob, `${viewResume.versionName || 'resume'}.pdf`);
                                             } catch (e) {
                                                 console.error("Download failed", e);
-                                                alert("Failed to download PDF");
+                                                showToast("Failed to download PDF", 'error');
                                             }
                                         } else {
-                                            alert("PDF not ready. Please wait for preview.");
+                                            showToast("PDF not ready. Please wait for preview.", 'info');
                                         }
                                     } else {
                                         if (viewResume?.tailoredData) {
@@ -443,7 +438,7 @@ export default function ResumesPage() {
                                                 saveAs(blob, `${viewResume.versionName || 'resume'}.docx`);
                                             } catch (error) {
                                                 console.error("DOCX generation failed", error);
-                                                alert("Failed to generate DOCX");
+                                                showToast("Failed to generate DOCX", 'error');
                                             }
                                         }
                                     }
@@ -587,7 +582,7 @@ export default function ResumesPage() {
             </div>
           ) : (
              <div className="flex flex-col items-center justify-center h-64 text-slate-600 bg-slate-800/30 rounded-xl border border-dashed border-slate-700">
-               <span className="mb-2 text-4xl">📄</span>
+               <FileText className="h-10 w-10 mb-2 text-slate-700" />
                <p>Select a resume from history to view or edit</p>
              </div>
           )}

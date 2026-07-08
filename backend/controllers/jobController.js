@@ -1,5 +1,17 @@
 const Job = require('../models/Job');
 
+const ALLOWED_FIELDS = ['company', 'role', 'jdText', 'jobUrl', 'status', 'dateApplied', 'keywords'];
+
+const pickAllowed = (body) => {
+  const picked = {};
+  for (const field of ALLOWED_FIELDS) {
+    if (Object.prototype.hasOwnProperty.call(body, field)) {
+      picked[field] = body[field];
+    }
+  }
+  return picked;
+};
+
 const getJobs = async (req, res) => {
   try {
     const jobs = await Job.find().sort({ createdAt: -1 });
@@ -11,7 +23,7 @@ const getJobs = async (req, res) => {
 
 const createJob = async (req, res) => {
   try {
-    const job = new Job(req.body);
+    const job = new Job(pickAllowed(req.body));
     const savedJob = await job.save();
     res.status(201).json(savedJob);
   } catch (error) {
@@ -22,7 +34,8 @@ const createJob = async (req, res) => {
 const updateJob = async (req, res) => {
   try {
     const { id } = req.params;
-    const job = await Job.findByIdAndUpdate(id, req.body, { new: true });
+    const job = await Job.findByIdAndUpdate(id, pickAllowed(req.body), { new: true, runValidators: true });
+    if (!job) return res.status(404).json({ message: 'Job not found' });
     res.json(job);
   } catch (error) {
     res.status(400).json({ message: error.message });

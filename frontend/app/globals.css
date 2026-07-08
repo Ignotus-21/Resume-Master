@@ -1,15 +1,81 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0f172a; /* Slate 900 */
-  --foreground: #f8fafc; /* Slate 50 */
+  --background: #0b1220;
+  --surface: #0f172a;
+  --surface-raised: #1e293b;
+  --foreground: #f8fafc;
+  --border: #334155;
+  --accent: #3b82f6;
+  --accent-hover: #60a5fa;
+  --success: #22c55e;
+  --danger: #ef4444;
+  --warning: #eab308;
 }
 
-/* Force dark mode */
+* {
+  scrollbar-color: #475569 transparent;
+}
+
 body {
-  background: var(--background);
+  background: linear-gradient(180deg, var(--background) 0%, #0a0f1c 100%);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  min-height: 100vh;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: #475569;
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: #64748b;
+}
+
+.custom-scrollbar {
+  scrollbar-width: thin;
+}
+
+/* Focus ring consistent with the accent palette across native controls */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-toast-in {
+  animation: toast-in 0.2s ease-out;
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fade-in-up {
+  animation: fade-in-up 0.3s ease-out both;
 }
 
 @media print {
@@ -28,7 +94,7 @@ body {
   nav, .no-print {
     display: none !important;
   }
-  
+
   /* Reset Body */
   body {
     background: white;
@@ -46,7 +112,7 @@ body {
     max-height: none !important; /* Override scroll container limits */
     overflow: visible !important; /* Show full content */
     margin: 0 !important;
-    padding: 0 !important; 
+    padding: 0 !important;
     background: white !important;
     border: none !important;
     box-shadow: none !important;

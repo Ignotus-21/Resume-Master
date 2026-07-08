@@ -128,7 +128,9 @@ const getResumeFeedback = async (req, res) => {
 
 const compileResume = async (req, res) => {
   const { latexCode } = req.body;
-  if (!latexCode) return res.status(400).json({ message: 'LaTeX code is required' });
+  if (!latexCode || typeof latexCode !== 'string') {
+    return res.status(400).json({ message: 'LaTeX code is required' });
+  }
 
   try {
     const result = await compileLatex(latexCode);

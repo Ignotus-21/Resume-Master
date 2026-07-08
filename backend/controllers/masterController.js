@@ -77,21 +77,32 @@ const ingestRawText = async (req, res) => {
 
 const uploadResume = async (req, res) => {
   if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
-  
+
   try {
     const dataBuffer = fs.readFileSync(req.file.path);
-    
+
+    // Verify the file is actually a PDF (magic bytes), not just claimed via
+    // Content-Type/extension, before forwarding it to Gemini.
+    const isPdf = dataBuffer.slice(0, 5).toString('ascii') === '%PDF-';
+    if (!isPdf) {
+      fs.unlinkSync(req.file.path);
+      return res.status(400).json({ message: 'Uploaded file is not a valid PDF' });
+    }
+
     // Send Buffer directly to Gemini (Multimodal)
     const parsedData = await parseResumeData(dataBuffer);
-    
+
     // Clean up uploaded file
     fs.unlinkSync(req.file.path);
-    
+
     // Return parsed data to frontend for review instead of auto-saving
     res.json(parsedData);
-    
+
   } catch (error) {
     console.error('Resume Parse Error:', error);
+    if (req.file?.path && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
     res.status(500).json({ message: 'Failed to process resume' });
   }
 };

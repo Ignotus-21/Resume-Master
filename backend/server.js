@@ -1,7 +1,6 @@
-const express = require('express');
 const dotenv = require('dotenv');
-const cors = require('cors');
 const connectDB = require('./config/db');
+const createApp = require('./app');
 
 dotenv.config();
 
@@ -13,31 +12,7 @@ connectDB().then(() => {
   console.error('Database connection failed immediately:', err);
 });
 
-const app = express();
-console.log('Express app initialized');
-
-app.use(cors());
-app.use(express.json());
-
-// Basic Route
-app.get('/', (req, res) => {
-  res.send('API is running...');
-});
-
-// Routes
-console.log('Loading routes...');
-try {
-  app.use('/api/master', require('./routes/masterRoutes'));
-  console.log('Master routes loaded');
-  app.use('/api/jobs', require('./routes/jobRoutes'));
-  console.log('Job routes loaded');
-  app.use('/api/resumes', require('./routes/resumeRoutes'));
-  console.log('Resume routes loaded');
-  app.use('/api/ai', require('./routes/aiRoutes'));
-  console.log('AI routes loaded');
-} catch (error) {
-  console.error('Failed to load routes:', error);
-}
+const app = createApp();
 
 const PORT = process.env.PORT || 5000;
 

@@ -4,8 +4,13 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
+const MAX_MESSAGE_LENGTH = 8000;
+
 const startChat = async (req, res) => {
   const { contextType, contextId } = req.body;
+  if (typeof contextId === 'string' && contextId.length > 200) {
+    return res.status(400).json({ message: 'contextId is too long' });
+  }
   try {
     const session = await ChatSession.create({
       contextType,
@@ -20,7 +25,14 @@ const startChat = async (req, res) => {
 
 const sendMessage = async (req, res) => {
   const { sessionId, message } = req.body;
-  
+
+  if (typeof message !== 'string' || !message.trim()) {
+    return res.status(400).json({ message: 'message is required' });
+  }
+  if (message.length > MAX_MESSAGE_LENGTH) {
+    return res.status(400).json({ message: `message exceeds maximum length of ${MAX_MESSAGE_LENGTH} characters` });
+  }
+
   try {
     const session = await ChatSession.findById(sessionId);
     if (!session) return res.status(404).json({ message: 'Session not found' });

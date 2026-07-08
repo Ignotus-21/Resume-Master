@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
+import { ToastProvider } from "@/components/ui/Toast";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -18,10 +19,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <Navbar />
-        <main className="container mx-auto p-4">
-          {children}
-        </main>
+        <ToastProvider>
+          <Navbar />
+          <main className="container mx-auto p-4">
+            {children}
+          </main>
+        </ToastProvider>
       </body>
     </html>
   );

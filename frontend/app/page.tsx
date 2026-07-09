@@ -55,7 +55,7 @@ export default function Home() {
           </motion.div>
           
           <h1 className="text-5xl md:text-7xl font-extrabold text-[#202124] leading-tight mb-8 tracking-tight">
-            Experience liftoff with <br className="hidden md:block"/>
+            Master your career with <br className="hidden md:block"/>
             <span className="bg-gradient-to-r from-[#1a73e8] via-[#ea4335] to-[#f9ab00] bg-clip-text text-transparent animate-gradient-x">
               the next-gen platform.
             </span>

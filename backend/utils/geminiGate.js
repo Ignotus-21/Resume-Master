@@ -20,7 +20,7 @@ const enforceGeminiQuota = async (req) => {
 
   // quotaIdentity is the account id for logged-in users and an IP-derived key
   // for guests, so guests can't reset the quota by rotating the guestId cookie.
-  const { allowed, resetAt } = await consumeQuota(req.quotaIdentity || req.identity);
+  const { allowed, resetAt } = await consumeQuota(req);
   if (allowed) return null;
 
   return {

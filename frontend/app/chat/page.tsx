@@ -1,10 +1,12 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import { Bot, Send, Sparkles } from 'lucide-react';
+import { Bot, Send, Sparkles, ShieldAlert } from 'lucide-react';
 import { apiJson } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
+import { useRouter } from 'next/navigation';
 
 export default function ChatPage() {
+  const router = useRouter();
   const [sessionId, setSessionId] = useState('');
   const [messages, setMessages] = useState<any[]>([]);
   const [input, setInput] = useState('');
@@ -46,8 +48,12 @@ export default function ChatPage() {
       const data = await apiJson('/api/ai/send', 'POST', { sessionId, message: userMsg.parts[0].text });
       setMessages(data.history || []);
     } catch (error: any) {
-      const errorText = error.message || 'Could not reach server.';
-      setMessages((prev) => [...prev, { role: 'model', parts: [{ text: `Error: ${errorText}` }] }]);
+      if (error.code === 'QUOTA_EXCEEDED' || (error.message && error.message.toLowerCase().includes('quota exceeded'))) {
+        setMessages((prev) => [...prev, { role: 'model', isQuotaError: true, parts: [{ text: error.message }] }]);
+      } else {
+        const errorText = error.message || 'Could not reach server.';
+        setMessages((prev) => [...prev, { role: 'model', parts: [{ text: `Error: ${errorText}` }] }]);
+      }
     }
     setSending(false);
   };
@@ -78,17 +84,35 @@ export default function ChatPage() {
             <p>Start a conversation with Gemini AI about your resume or job applications.</p>
           </div>
         )}
-        {messages && messages.map((msg, idx) => (
-          <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[80%] p-4 rounded-2xl shadow-sm whitespace-pre-wrap ${
-              msg.role === 'user'
-                ? 'bg-[#1a73e8] text-white rounded-br-none'
-                : 'bg-white text-[#202124] rounded-bl-none'
-            }`}>
-              {msg.parts && msg.parts[0] ? msg.parts[0].text : '...'}
+        {messages && messages.map((msg, idx) => {
+          if (msg.isQuotaError) {
+            return (
+              <div key={idx} className="flex justify-center my-4">
+                <div className="bg-[#fce8e6] border border-[#d93025] rounded-xl p-6 text-center max-w-sm shadow-sm">
+                  <ShieldAlert className="w-8 h-8 text-[#d93025] mx-auto mb-3" />
+                  <h3 className="text-[#d93025] font-bold text-lg mb-2">Token Limit Reached</h3>
+                  <p className="text-[#5f6368] text-sm mb-4">
+                    You have consumed all your free AI tokens. Add your own Gemini API key to continue chatting!
+                  </p>
+                  <Button onClick={() => router.push('/profile')} className="bg-[#d93025] text-white hover:bg-[#b3261e] w-full">
+                    Add API Key in Settings
+                  </Button>
+                </div>
+              </div>
+            );
+          }
+          return (
+            <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div className={`max-w-[80%] p-4 rounded-2xl shadow-sm whitespace-pre-wrap ${
+                msg.role === 'user'
+                  ? 'bg-[#1a73e8] text-white rounded-br-none'
+                  : 'bg-white text-[#202124] rounded-bl-none'
+              }`}>
+                {msg.parts && msg.parts[0] ? msg.parts[0].text : '...'}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
         {sending && (
           <div className="flex justify-start">
             <div className="bg-white text-[#5f6368] p-3 rounded-lg animate-pulse italic rounded-bl-none">

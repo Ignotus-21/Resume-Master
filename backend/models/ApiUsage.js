@@ -2,7 +2,8 @@ const mongoose = require('mongoose');
 
 const apiUsageSchema = new mongoose.Schema({
   identity: { type: String, required: true, unique: true, index: true },
-  count: { type: Number, default: 0 },
+  count: { type: Number, default: 0 }, // For backward compatibility if needed
+  usedTokens: { type: Number, default: 0 },
   windowStart: { type: Date, default: Date.now },
 });
 

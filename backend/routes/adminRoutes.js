@@ -4,6 +4,7 @@ const ApiUsage = require('../models/ApiUsage');
 const User = require('../models/User');
 const TokenUsage = require('../models/TokenUsage');
 const ActiveSession = require('../models/ActiveSession');
+const AppConfig = require('../models/AppConfig');
 
 const router = express.Router();
 
@@ -12,15 +13,11 @@ router.get('/stats', adminAuth, async (req, res) => {
     const totalUsers = await User.countDocuments();
     const verifiedUsers = await User.countDocuments({ emailVerified: true });
     
-    // Live users (active within the last 5 minutes)
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
     const liveAnonymousUsers = await ActiveSession.countDocuments({ isGuest: true, lastActiveAt: { $gte: fiveMinutesAgo } });
     const liveRegisteredUsers = await ActiveSession.countDocuments({ isGuest: false, lastActiveAt: { $gte: fiveMinutesAgo } });
-    
-    // Total historical anonymous visitors
     const totalAnonymousVisitors = await ActiveSession.countDocuments({ isGuest: true });
 
-    // Detailed token usage by service
     const tokenAggregation = await TokenUsage.aggregate([
       {
         $group: {
@@ -41,19 +38,6 @@ router.get('/stats', adminAuth, async (req, res) => {
       };
     });
 
-    // Old general quota usage limit (legacy rate limiting)
-    const usageRecords = await ApiUsage.find({});
-    let totalTokensUsed = 0; // Legacy api call counts
-    let overQuotaCount = 0;
-    const limit = parseInt(process.env.SHARED_GEMINI_RATE_LIMIT, 10) || 15;
-    
-    for (const record of usageRecords) {
-      totalTokensUsed += record.count;
-      if (record.count >= limit) {
-        overQuotaCount++;
-      }
-    }
-
     res.json({
       users: {
         total: totalUsers,
@@ -63,15 +47,78 @@ router.get('/stats', adminAuth, async (req, res) => {
         totalAnonymous: totalAnonymousVisitors,
       },
       tokens: tokenBreakdown,
-      quota: {
-        totalIdentitiesTracked: usageRecords.length,
-        totalApiRequests: totalTokensUsed,
-        identitiesOverQuota: overQuotaCount,
-      }
     });
   } catch (error) {
     console.error('Admin stats error:', error);
     res.status(500).json({ message: 'Failed to fetch admin stats' });
+  }
+});
+
+router.get('/token-breakdown', adminAuth, async (req, res) => {
+  try {
+    // Registered Users
+    const users = await User.find({}).select('email name usedTokens extraTokens createdAt');
+    
+    // Live Anonymous Users
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+    const liveSessions = await ActiveSession.find({ isGuest: true, lastActiveAt: { $gte: fiveMinutesAgo } });
+    
+    const liveGuestIdentities = liveSessions.map(s => s.identity);
+    const liveGuestsUsage = await ApiUsage.find({ identity: { $in: liveGuestIdentities } });
+    
+    // Cumulative Inactive Anonymous Users
+    const inactiveGuestUsage = await ApiUsage.aggregate([
+      { $match: { identity: { $nin: liveGuestIdentities } } },
+      { $group: { _id: null, totalUsed: { $sum: "$usedTokens" }, count: { $sum: 1 } } }
+    ]);
+    
+    let config = await AppConfig.findOne({ key: 'global' });
+    if (!config) config = { defaultTokenLimit: 15000, guestTokenLimit: 5000 };
+
+    res.json({
+      registeredUsers: users.map(u => ({
+        id: u._id,
+        email: u.email,
+        name: u.name,
+        usedTokens: u.usedTokens,
+        extraTokens: u.extraTokens,
+        totalLimit: config.defaultTokenLimit + (u.extraTokens || 0)
+      })),
+      liveGuests: liveGuestsUsage.map(g => ({
+        identity: g.identity,
+        usedTokens: g.usedTokens,
+      })),
+      cumulativeInactiveGuests: inactiveGuestUsage[0] || { totalUsed: 0, count: 0 },
+      config
+    });
+  } catch (error) {
+    console.error('Token breakdown error:', error);
+    res.status(500).json({ message: 'Failed to fetch token breakdown' });
+  }
+});
+
+router.post('/config', adminAuth, async (req, res) => {
+  try {
+    const { defaultTokenLimit, guestTokenLimit } = req.body;
+    const config = await AppConfig.findOneAndUpdate(
+      { key: 'global' },
+      { $set: { defaultTokenLimit: Number(defaultTokenLimit), guestTokenLimit: Number(guestTokenLimit) } },
+      { new: true, upsert: true }
+    );
+    res.json(config);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to update config' });
+  }
+});
+
+router.post('/users/:id/tokens', adminAuth, async (req, res) => {
+  try {
+    const { amount } = req.body;
+    const user = await User.findByIdAndUpdate(req.params.id, { $inc: { extraTokens: Number(amount) } }, { new: true });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    res.json({ message: 'Tokens granted', extraTokens: user.extraTokens });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to grant tokens' });
   }
 });
 

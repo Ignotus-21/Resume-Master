@@ -68,7 +68,7 @@ const answer = async (req, res) => {
     if (quotaRejection) return res.status(quotaRejection.status).json(quotaRejection.body);
 
     const jobDescription = session.job?.jdText || session.role;
-    const evaluation = await evaluateInterviewAnswer(question, answerText, jobDescription, req.geminiApiKey);
+    const evaluation = await evaluateInterviewAnswer(question, answerText, jobDescription, req.geminiApiKey, req);
 
     session.turns.push({
       question,

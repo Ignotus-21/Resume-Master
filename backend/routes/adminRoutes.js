@@ -2,6 +2,8 @@ const express = require('express');
 const adminAuth = require('../middleware/adminAuth');
 const ApiUsage = require('../models/ApiUsage');
 const User = require('../models/User');
+const TokenUsage = require('../models/TokenUsage');
+const ActiveSession = require('../models/ActiveSession');
 
 const router = express.Router();
 
@@ -10,10 +12,38 @@ router.get('/stats', adminAuth, async (req, res) => {
     const totalUsers = await User.countDocuments();
     const verifiedUsers = await User.countDocuments({ emailVerified: true });
     
-    // Aggregate API usage
-    const usageRecords = await ApiUsage.find({});
+    // Live users (active within the last 5 minutes)
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+    const liveAnonymousUsers = await ActiveSession.countDocuments({ isGuest: true, lastActiveAt: { $gte: fiveMinutesAgo } });
+    const liveRegisteredUsers = await ActiveSession.countDocuments({ isGuest: false, lastActiveAt: { $gte: fiveMinutesAgo } });
     
-    let totalTokensUsed = 0;
+    // Total historical anonymous visitors
+    const totalAnonymousVisitors = await ActiveSession.countDocuments({ isGuest: true });
+
+    // Detailed token usage by service
+    const tokenAggregation = await TokenUsage.aggregate([
+      {
+        $group: {
+          _id: "$service",
+          totalInputTokens: { $sum: "$inputTokens" },
+          totalOutputTokens: { $sum: "$outputTokens" },
+          totalRequests: { $sum: 1 }
+        }
+      }
+    ]);
+    
+    const tokenBreakdown = {};
+    tokenAggregation.forEach(t => {
+      tokenBreakdown[t._id] = {
+        input: t.totalInputTokens,
+        output: t.totalOutputTokens,
+        requests: t.totalRequests
+      };
+    });
+
+    // Old general quota usage limit (legacy rate limiting)
+    const usageRecords = await ApiUsage.find({});
+    let totalTokensUsed = 0; // Legacy api call counts
     let overQuotaCount = 0;
     const limit = parseInt(process.env.SHARED_GEMINI_RATE_LIMIT, 10) || 15;
     
@@ -28,10 +58,14 @@ router.get('/stats', adminAuth, async (req, res) => {
       users: {
         total: totalUsers,
         verified: verifiedUsers,
+        liveAnonymous: liveAnonymousUsers,
+        liveRegistered: liveRegisteredUsers,
+        totalAnonymous: totalAnonymousVisitors,
       },
+      tokens: tokenBreakdown,
       quota: {
         totalIdentitiesTracked: usageRecords.length,
-        totalTokensUsed,
+        totalApiRequests: totalTokensUsed,
         identitiesOverQuota: overQuotaCount,
       }
     });

@@ -67,7 +67,7 @@ const ingestRawText = async (req, res) => {
     const quotaRejection = await enforceGeminiQuota(req);
     if (quotaRejection) return res.status(quotaRejection.status).json(quotaRejection.body);
 
-    const parsedData = await parseResumeData(text, req.geminiApiKey);
+    const parsedData = await parseResumeData(text, req.geminiApiKey, req);
 
     // Merge parsed data into existing profile
     let profile = await MasterProfile.findOne({ owner: req.identity });
@@ -122,7 +122,7 @@ const uploadResume = async (req, res) => {
     }
 
     // Send Buffer directly to Gemini (Multimodal)
-    const parsedData = await parseResumeData(dataBuffer, req.geminiApiKey);
+    const parsedData = await parseResumeData(dataBuffer, req.geminiApiKey, req);
 
     // Clean up uploaded file
     fs.unlinkSync(req.file.path);

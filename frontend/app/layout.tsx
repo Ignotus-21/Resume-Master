@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Outfit } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import { VerifyEmailBanner } from "@/components/VerifyEmailBanner";
@@ -7,10 +7,10 @@ import { ToastProvider } from "@/components/ui/Toast";
 import { AuthProvider } from "@/lib/auth-context";
 import QuotaModal from "@/components/QuotaModal";
 
-const outfit = Outfit({ subsets: ["latin"] });
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Super Master Resume",
+  title: "Liftoff Careers",
   description: "AI Powered Resume Builder and Job Tracker",
 };
 
@@ -21,7 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${outfit.className} antialiased selection:bg-purple-500/30`}>
+      <body className={`${inter.className} antialiased selection:bg-blue-100`}>
         <ToastProvider>
           <AuthProvider>
             <Navbar />

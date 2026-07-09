@@ -33,10 +33,10 @@ const createResumeForJob = async (req, res) => {
     if (quotaRejection) return res.status(quotaRejection.status).json(quotaRejection.body);
 
     // 3. Tailor Resume
-    const tailoredData = await tailorResume(profile, jobDescription, req.geminiApiKey);
+    const tailoredData = await tailorResume(profile, jobDescription, req.geminiApiKey, req);
 
     // 4. Generate LaTeX
-    const latexCode = await generateLatex(tailoredData, req.geminiApiKey);
+    const latexCode = await generateLatex(tailoredData, req.geminiApiKey, req);
 
     // 5. Save
     const userName = profile.user?.name?.split(' ')[0] || 'Resume';

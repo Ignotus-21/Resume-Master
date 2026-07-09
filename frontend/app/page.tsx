@@ -41,42 +41,42 @@ export default function Home() {
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.2, duration: 0.5 }}
-          className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-purple-400 bg-purple-500/10 border border-purple-500/20 rounded-full px-4 py-1.5 mb-8"
+          className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#1a73e8] bg-blue-50 border border-blue-100 rounded-full px-5 py-2 mb-8"
         >
           <SparklesIcon className="w-4 h-4" /> Powered by Gemini AI
         </motion.div>
         
-        <h1 className="text-5xl md:text-7xl font-extrabold text-white leading-tight mb-8 tracking-tight">
-          Build resumes that <br className="hidden md:block"/>
-          <span className="bg-gradient-to-r from-purple-400 via-fuchsia-400 to-blue-400 bg-clip-text text-transparent animate-gradient-x">
-            get you hired.
+        <h1 className="text-5xl md:text-7xl font-extrabold text-[#202124] leading-tight mb-8 tracking-tight">
+          Experience liftoff with <br className="hidden md:block"/>
+          <span className="bg-gradient-to-r from-blue-500 via-red-500 to-yellow-500 bg-clip-text text-transparent animate-gradient-x">
+            the next-gen platform.
           </span>
         </h1>
         
-        <p className="text-lg md:text-xl text-zinc-400 leading-relaxed mb-10 max-w-2xl mx-auto font-light">
+        <p className="text-lg md:text-xl text-[#5f6368] leading-relaxed mb-10 max-w-2xl mx-auto font-light">
           Keep one master profile, track every application, and let AI tailor an ATS-optimized 
           LaTeX resume for each job in seconds — with real feedback on what's missing.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
           {!loading && user ? (
-            <Button className="px-8 py-4 text-lg rounded-xl shadow-lg shadow-purple-500/20 hover:shadow-purple-500/40 transition-all group" onClick={() => router.push('/dashboard')}>
+            <Button className="px-8 py-4 text-lg rounded-full shadow-[0_4px_14px_0_rgba(0,0,0,0.1)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.15)] transition-all group" onClick={() => router.push('/dashboard')}>
               Go to Dashboard <ArrowRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
             </Button>
           ) : (
             <>
-              <Button variant="secondary" className="px-8 py-4 text-lg rounded-xl w-full sm:w-auto hover:bg-white/10" onClick={() => router.push('/dashboard')}>
+              <Button variant="secondary" className="px-8 py-4 text-lg rounded-full w-full sm:w-auto" onClick={() => router.push('/dashboard')}>
                 Continue for Free
               </Button>
-              <Button className="px-8 py-4 text-lg rounded-xl shadow-lg shadow-purple-500/20 hover:shadow-purple-500/40 transition-all w-full sm:w-auto group" onClick={() => router.push('/signup')}>
+              <Button className="px-8 py-4 text-lg rounded-full shadow-[0_4px_14px_0_rgba(0,0,0,0.1)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.15)] transition-all w-full sm:w-auto group" onClick={() => router.push('/signup')}>
                 Sign Up <ArrowRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
               </Button>
             </>
           )}
         </div>
         {!loading && !user && (
-          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }} className="text-sm text-zinc-500 mt-6">
-            No account needed to try it out. <Link href="/login" className="text-purple-400 hover:text-purple-300 hover:underline transition">Already have one? Log in</Link>
+          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }} className="text-sm text-[#5f6368] mt-6">
+            No account needed to try it out. <Link href="/login" className="text-[#1a73e8] hover:text-[#174ea6] hover:underline transition">Already have one? Log in</Link>
           </motion.p>
         )}
       </motion.div>
@@ -109,12 +109,12 @@ export default function Home() {
         className="w-full max-w-5xl mb-32 px-4"
       >
         <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">How it works</h2>
-          <p className="text-zinc-400 text-lg">Three steps from resume to application-ready.</p>
+          <h2 className="text-3xl md:text-4xl font-bold text-[#202124] mb-4">How it works</h2>
+          <p className="text-[#5f6368] text-lg">Three steps from resume to application-ready.</p>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
-          <div className="hidden md:block absolute top-1/2 left-0 w-full h-px bg-gradient-to-r from-transparent via-purple-500/30 to-transparent -translate-y-1/2 z-0" />
+          <div className="hidden md:block absolute top-1/2 left-0 w-full h-px bg-gradient-to-r from-transparent via-[#dadce0] to-transparent -translate-y-1/2 z-0" />
           <Step icon={UploadCloud} step="1" title="Import your resume" desc="Upload a PDF or paste your existing resume — Gemini extracts your experience, skills, and projects into one master profile." />
           <Step icon={Wand2} step="2" title="Tailor it to the job" desc="Paste a job description and generate a rewritten, keyword-matched LaTeX resume in seconds, with an ATS match score and gap analysis." />
           <Step icon={Download} step="3" title="Export and apply" desc="Download as PDF or DOCX, track the application's status, and iterate with the AI chat assistant as you go." />
@@ -130,29 +130,29 @@ export default function Home() {
         className="w-full max-w-4xl mb-24 grid grid-cols-1 md:grid-cols-2 gap-6 px-4"
       >
         <Card className="p-8">
-          <div className="h-12 w-12 rounded-2xl bg-blue-500/10 flex items-center justify-center mb-6 border border-blue-500/20">
-            <Rocket className="h-6 w-6 text-blue-400" />
+          <div className="h-12 w-12 rounded-2xl bg-blue-50 flex items-center justify-center mb-6 border border-blue-100">
+            <Rocket className="h-6 w-6 text-[#1a73e8]" />
           </div>
-          <h3 className="text-xl font-bold text-white mb-3">Free to try</h3>
-          <p className="text-zinc-400 text-sm leading-relaxed">
+          <h3 className="text-xl font-bold text-[#202124] mb-3">Free to try</h3>
+          <p className="text-[#5f6368] text-sm leading-relaxed">
             Every account (and guest session) gets a shared pool of free AI requests, refreshed
             every few hours — no card required.
           </p>
         </Card>
         <Card className="p-8 relative overflow-hidden group">
-          <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-          <div className="h-12 w-12 rounded-2xl bg-purple-500/10 flex items-center justify-center mb-6 border border-purple-500/20 relative z-10">
-            <KeyRound className="h-6 w-6 text-purple-400" />
+          <div className="absolute inset-0 bg-gradient-to-br from-[#f8f9fa] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          <div className="h-12 w-12 rounded-2xl bg-blue-50 flex items-center justify-center mb-6 border border-blue-100 relative z-10">
+            <KeyRound className="h-6 w-6 text-[#1a73e8]" />
           </div>
-          <h3 className="text-xl font-bold text-white mb-3 relative z-10">Unlimited with your own key</h3>
-          <p className="text-zinc-400 text-sm leading-relaxed relative z-10">
+          <h3 className="text-xl font-bold text-[#202124] mb-3 relative z-10">Unlimited with your own key</h3>
+          <p className="text-[#5f6368] text-sm leading-relaxed relative z-10">
             Sign up and add your own Gemini API key in Settings to remove the limit entirely —
             it's encrypted at rest and only ever used for your requests.
           </p>
         </Card>
       </motion.div>
 
-      <div className="flex items-center gap-2 text-zinc-500 text-sm mb-16 pb-10 border-b border-white/5 w-full justify-center">
+      <div className="flex items-center gap-2 text-[#5f6368] text-sm mb-16 pb-10 border-b border-[#dadce0] w-full justify-center">
         <ShieldCheck className="h-4 w-4" />
         Guest sessions are private and never shared across devices.
       </div>
@@ -167,11 +167,11 @@ const FeatureCard = ({ icon: Icon, title, desc, link, accent }: { icon: LucideIc
         <div className={`h-12 w-12 rounded-xl bg-gradient-to-br ${accent} flex items-center justify-center mb-6 shadow-lg transform group-hover:scale-110 transition-transform duration-300`}>
           <Icon className="h-6 w-6 text-white" />
         </div>
-        <h2 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
+        <h2 className="text-xl font-bold text-[#202124] mb-2 flex items-center gap-2">
           {title}
-          <ArrowRight className="h-4 w-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 text-purple-400" />
+          <ArrowRight className="h-4 w-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 text-[#1a73e8]" />
         </h2>
-        <p className="text-zinc-400 text-sm leading-relaxed font-light">{desc}</p>
+        <p className="text-[#5f6368] text-sm leading-relaxed font-light">{desc}</p>
       </Card>
     </Link>
   </motion.div>
@@ -179,14 +179,14 @@ const FeatureCard = ({ icon: Icon, title, desc, link, accent }: { icon: LucideIc
 
 const Step = ({ icon: Icon, step, title, desc }: { icon: LucideIcon; step: string; title: string; desc: string }) => (
   <Card className="p-8 relative z-10">
-    <div className="absolute -top-4 -left-4 h-10 w-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-600 text-white font-bold flex items-center justify-center shadow-lg shadow-purple-500/30 border-4 border-[#0b1220]">
+    <div className="absolute -top-4 -left-4 h-10 w-10 rounded-full bg-[#202124] text-white font-bold flex items-center justify-center shadow-lg border-4 border-white">
       {step}
     </div>
-    <div className="h-12 w-12 rounded-xl bg-white/5 flex items-center justify-center mb-6 mt-2 border border-white/10">
-      <Icon className="h-6 w-6 text-purple-400" />
+    <div className="h-12 w-12 rounded-xl bg-blue-50 flex items-center justify-center mb-6 mt-2 border border-blue-100">
+      <Icon className="h-6 w-6 text-[#1a73e8]" />
     </div>
-    <h3 className="text-xl font-bold text-white mb-3">{title}</h3>
-    <p className="text-zinc-400 text-sm leading-relaxed font-light">{desc}</p>
+    <h3 className="text-xl font-bold text-[#202124] mb-3">{title}</h3>
+    <p className="text-[#5f6368] text-sm leading-relaxed font-light">{desc}</p>
   </Card>
 );
 

@@ -81,6 +81,10 @@ const sendMessage = async (req, res) => {
     });
 
     const result = await chat.sendMessage(message);
+    
+    const { trackUsage } = require('../utils/trackUsage');
+    await trackUsage(req, 'chatbot', result);
+
     const response = await result.response;
     const text = response.text();
 
@@ -115,7 +119,7 @@ const linkedinRewrite = async (req, res) => {
     const quotaRejection = await enforceGeminiQuota(req);
     if (quotaRejection) return res.status(quotaRejection.status).json(quotaRejection.body);
 
-    const content = await generateLinkedInContent(profile, req.geminiApiKey);
+    const content = await generateLinkedInContent(profile, req.geminiApiKey, req);
     res.json(content);
   } catch (error) {
     console.error('AI error:', error);

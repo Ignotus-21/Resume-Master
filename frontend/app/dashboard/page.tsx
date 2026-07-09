@@ -124,10 +124,10 @@ export default function DashboardPage() {
     <div className="p-4 md:p-8 max-w-6xl mx-auto min-h-screen">
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-4xl font-extrabold text-white tracking-tight mb-2">Job Tracker</h1>
-          <p className="text-zinc-400">Track your applications and generate tailored resumes.</p>
+          <h1 className="text-4xl font-extrabold text-[#202124] tracking-tight mb-2">Job Tracker</h1>
+          <p className="text-[#5f6368]">Track your applications and generate tailored resumes.</p>
         </div>
-        <Button onClick={() => (showForm ? closeForm() : openAddForm())} className="shadow-lg shadow-purple-500/20">
+        <Button onClick={() => (showForm ? closeForm() : openAddForm())}>
           {showForm ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
           {showForm ? 'Cancel' : 'Add Job Application'}
         </Button>
@@ -141,8 +141,8 @@ export default function DashboardPage() {
               onClick={() => setStatusFilter(status)}
               className={`text-xs font-bold tracking-wide rounded-full px-4 py-2 transition-all ${
                 statusFilter === status
-                  ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/30'
-                  : 'bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white'
+                  ? 'bg-[#1a73e8] text-white shadow-md'
+                  : 'bg-[#f1f3f4] text-[#5f6368] hover:bg-[#e8eaed] hover:text-[#202124]'
               }`}
             >
               {status} <span className="opacity-70 ml-1">({stats[status] ?? 0})</span>
@@ -156,45 +156,45 @@ export default function DashboardPage() {
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden mb-8">
             <Card className="p-8">
               <form onSubmit={handleSubmit}>
-                <h2 className="text-2xl font-bold mb-6 text-white">{editingId ? 'Edit Job' : 'Add New Job'}</h2>
+                <h2 className="text-2xl font-bold mb-6 text-[#202124]">{editingId ? 'Edit Job' : 'Add New Job'}</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                   <div>
-                    <label className="block text-sm font-medium text-zinc-400 mb-2">Company Name</label>
+                    <label className="block text-sm font-medium text-[#5f6368] mb-2">Company Name</label>
                     <input
-                      className="w-full border border-white/10 bg-black/40 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-purple-500 text-white transition-all"
+                      className="w-full border border-[#dadce0] bg-[#f8f9fa] rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-[#1a73e8] text-[#202124] transition-all"
                       value={form.company}
                       onChange={(e) => setForm({ ...form, company: e.target.value })}
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-zinc-400 mb-2">Role / Title</label>
+                    <label className="block text-sm font-medium text-[#5f6368] mb-2">Role / Title</label>
                     <input
-                      className="w-full border border-white/10 bg-black/40 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-purple-500 text-white transition-all"
+                      className="w-full border border-[#dadce0] bg-[#f8f9fa] rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-[#1a73e8] text-[#202124] transition-all"
                       value={form.role}
                       onChange={(e) => setForm({ ...form, role: e.target.value })}
                       required
                     />
                   </div>
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-zinc-400 mb-2">Job URL</label>
+                    <label className="block text-sm font-medium text-[#5f6368] mb-2">Job URL</label>
                     <input
-                      className="w-full border border-white/10 bg-black/40 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-purple-500 text-white transition-all"
+                      className="w-full border border-[#dadce0] bg-[#f8f9fa] rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-[#1a73e8] text-[#202124] transition-all"
                       value={form.jobUrl}
                       onChange={(e) => setForm({ ...form, jobUrl: e.target.value })}
                     />
                   </div>
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-zinc-400 mb-2">Job Description</label>
+                    <label className="block text-sm font-medium text-[#5f6368] mb-2">Job Description</label>
                     <textarea
                       placeholder="Paste the full job description here..."
-                      className="w-full border border-white/10 bg-black/40 rounded-xl px-4 py-3 h-40 outline-none focus:ring-2 focus:ring-purple-500 text-white transition-all custom-scrollbar"
+                      className="w-full border border-[#dadce0] bg-[#f8f9fa] rounded-xl px-4 py-3 h-40 outline-none focus:ring-2 focus:ring-[#1a73e8] text-[#202124] transition-all custom-scrollbar"
                       value={form.jdText}
                       onChange={(e) => setForm({ ...form, jdText: e.target.value })}
                     />
                   </div>
                 </div>
-                <Button type="submit" className="bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-900/30">
+                <Button type="submit" className="bg-[#1e8e3e] hover:bg-[#188038] text-white">
                   {editingId ? 'Save Changes' : 'Save Job'}
                 </Button>
               </form>
@@ -206,18 +206,18 @@ export default function DashboardPage() {
       {!loading && jobs.length > 0 && (
         <div className="flex flex-col sm:flex-row gap-3 mb-6">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#5f6368]" />
             <input
               placeholder="Search by company or role…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full border border-white/10 bg-black/40 rounded-xl pl-10 pr-4 py-3 outline-none focus:ring-2 focus:ring-purple-500 text-white text-sm transition-all"
+              className="w-full border border-[#dadce0] bg-[#f8f9fa] rounded-xl pl-10 pr-4 py-3 outline-none focus:ring-2 focus:ring-[#1a73e8] text-[#202124] text-sm transition-all"
             />
           </div>
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as any)}
-            className="border border-white/10 bg-black/40 rounded-xl px-4 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-purple-500 transition-all appearance-none cursor-pointer"
+            className="border border-[#dadce0] bg-[#f8f9fa] rounded-xl px-4 py-3 text-sm text-[#202124] outline-none focus:ring-2 focus:ring-[#1a73e8] transition-all appearance-none cursor-pointer"
           >
             <option value="newest">Newest first</option>
             <option value="oldest">Oldest first</option>
@@ -262,25 +262,25 @@ export default function DashboardPage() {
                   <div>
                     <div className="flex justify-between items-start mb-4">
                       <div>
-                        <h3 className="font-bold text-lg text-white leading-tight mb-1">{job.role}</h3>
-                        <p className="text-zinc-400 font-medium">{job.company}</p>
+                        <h3 className="font-bold text-lg text-[#202124] leading-tight mb-1">{job.role}</h3>
+                        <p className="text-[#5f6368] font-medium">{job.company}</p>
                       </div>
                       <select
                         value={job.status}
                         onChange={(e) => updateStatus(job, e.target.value)}
                         className={`text-xs font-bold rounded-full px-3 py-1 border-0 cursor-pointer outline-none ${StatusBadgeClass(job.status)}`}
                       >
-                        {STATUSES.map((s) => <option key={s} className="bg-slate-900">{s}</option>)}
+                        {STATUSES.map((s) => <option key={s} className="bg-white">{s}</option>)}
                       </select>
                     </div>
 
                     {job.dateApplied && (
-                      <p className="text-xs text-zinc-500 mb-2 font-medium">Applied {new Date(job.dateApplied).toLocaleDateString()}</p>
+                      <p className="text-xs text-[#5f6368] mb-2 font-medium">Applied {new Date(job.dateApplied).toLocaleDateString()}</p>
                     )}
 
-                    <p className="text-sm text-zinc-500 mb-6 truncate">
+                    <p className="text-sm text-[#5f6368] mb-6 truncate">
                       {job.jobUrl ? (
-                        <a href={job.jobUrl} target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:text-purple-300 hover:underline flex items-center gap-1 transition">
+                        <a href={job.jobUrl} target="_blank" rel="noopener noreferrer" className="text-[#1a73e8] hover:text-[#174ea6] hover:underline flex items-center gap-1 transition">
                           View Posting <ExternalLink className="h-3 w-3" />
                         </a>
                       ) : (
@@ -289,15 +289,15 @@ export default function DashboardPage() {
                     </p>
                   </div>
 
-                  <div className="flex justify-between items-center text-sm pt-4 border-t border-white/5 mt-auto">
-                    <Link href={`/resumes?jobId=${job._id}`} className="text-purple-400 hover:text-purple-300 font-medium transition">
+                  <div className="flex justify-between items-center text-sm pt-4 border-t border-[#dadce0] mt-auto">
+                    <Link href={`/resumes?jobId=${job._id}`} className="text-[#1a73e8] hover:text-[#174ea6] font-medium transition">
                       Generate Resume
                     </Link>
                     <div className="flex items-center gap-3">
-                      <button onClick={() => openEditForm(job)} className="text-zinc-500 hover:text-purple-400 transition" aria-label="Edit job">
+                      <button onClick={() => openEditForm(job)} className="text-[#5f6368] hover:text-[#1a73e8] transition" aria-label="Edit job">
                         <Pencil className="h-4 w-4" />
                       </button>
-                      <button onClick={() => deleteJob(job._id)} className="text-zinc-500 hover:text-red-400 transition" aria-label="Delete job">
+                      <button onClick={() => deleteJob(job._id)} className="text-[#5f6368] hover:text-[#d93025] transition" aria-label="Delete job">
                         <Trash2 className="h-4 w-4" />
                       </button>
                     </div>

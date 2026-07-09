@@ -39,6 +39,18 @@ const identify = (req, res, next) => {
   // guestId cookie cannot reset the free AI quota and drain the shared key.
   // (Requires `trust proxy` to be configured so req.ip is the real client.)
   req.quotaIdentity = `ip:${req.ip}`;
+
+  // Asynchronously track live user session
+  try {
+    const ActiveSession = require('../models/ActiveSession');
+    const trackId = req.user ? req.user.id : req.quotaIdentity;
+    ActiveSession.updateOne(
+      { identity: trackId },
+      { $set: { isGuest: req.isGuest, lastActiveAt: new Date() } },
+      { upsert: true }
+    ).catch(() => {});
+  } catch (err) {}
+
   next();
 };
 

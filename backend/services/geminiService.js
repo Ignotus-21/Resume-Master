@@ -1,7 +1,7 @@
 const { trackUsage } = require('../utils/trackUsage');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-const MODEL_NAME = "gemini-3.5-flash";
+const MODEL_NAME = process.env.GEMINI_MODEL || "gemini-2.5-flash";
 
 let defaultClient = null;
 const getModel = (apiKey) => {

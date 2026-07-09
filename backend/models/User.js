@@ -20,5 +20,10 @@ const userSchema = new mongoose.Schema({
   timestamps: true,
 });
 
+// Token lookups happen on verify/reset; sparse indexes keep them off a full
+// collection scan while ignoring the many docs where these are unset.
+userSchema.index({ emailVerifyTokenHash: 1 }, { sparse: true });
+userSchema.index({ passwordResetTokenHash: 1 }, { sparse: true });
+
 const User = mongoose.model('User', userSchema);
 module.exports = User;

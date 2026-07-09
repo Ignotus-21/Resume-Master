@@ -21,8 +21,13 @@ RUN npm ci --omit=dev
 
 COPY . .
 
-# The uploads/ and temp_latex/ dirs are created at runtime by the app.
+# Pre-create the runtime dirs and hand /app to the built-in non-root `node`
+# user, then drop privileges — the process should not run as root.
+RUN mkdir -p uploads temp_latex && chown -R node:node /app
+
 ENV NODE_ENV=production
 EXPOSE 5000
+
+USER node
 
 CMD ["node", "server.js"]

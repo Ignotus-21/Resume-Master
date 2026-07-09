@@ -18,6 +18,8 @@ const send = async ({ to, subject, html }) => {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ from: EMAIL_FROM, to, subject, html }),
+    // Bound the request so a slow provider can't stall signup/verify/reset.
+    signal: AbortSignal.timeout(10000),
   });
 
   if (!res.ok) {

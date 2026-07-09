@@ -33,8 +33,9 @@ export default function SignupPage() {
       router.push('/dashboard');
     } catch (error: any) {
       showToast(error.message || 'Failed to sign up', 'error');
+    } finally {
+      setSubmitting(false);
     }
-    setSubmitting(false);
   };
 
   const handleGoogle = async (credential: string) => {

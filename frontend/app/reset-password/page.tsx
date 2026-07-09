@@ -31,8 +31,9 @@ function ResetPasswordContent() {
       router.push('/login');
     } catch (e: any) {
       showToast(e.message || 'Failed to reset password', 'error');
+    } finally {
+      setSubmitting(false);
     }
-    setSubmitting(false);
   };
 
   return (

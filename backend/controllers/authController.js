@@ -87,7 +87,9 @@ const publicUser = (user) => ({
 
 const signup = async (req, res) => {
   const { email, password, name, turnstileToken } = req.body;
-  if (!email || !password || password.length < 8) {
+  // Type-check like login/resetPassword: a numeric password has length
+  // undefined, so `undefined < 8` is false and bcrypt would then throw a 500.
+  if (typeof email !== 'string' || typeof password !== 'string' || password.length < 8) {
     return res.status(400).json({ message: 'Email and a password of at least 8 characters are required' });
   }
 

@@ -14,6 +14,8 @@ const verifyTurnstile = async (token, remoteip) => {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body,
+      // Bound the request so signup can't hang if Cloudflare is slow.
+      signal: AbortSignal.timeout(5000),
     });
     const data = await res.json();
     return data.success === true;

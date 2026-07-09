@@ -22,8 +22,9 @@ export default function ForgotPasswordPage() {
     } catch (e: any) {
       // The endpoint is intentionally generic; still show a friendly message.
       showToast(e.message || 'Something went wrong', 'error');
+    } finally {
+      setSubmitting(false);
     }
-    setSubmitting(false);
   };
 
   return (

@@ -27,9 +27,9 @@ function VerifyEmailContent() {
         await apiJson('/api/auth/verify-email', 'POST', { token });
         setStatus('ok');
         await refresh();
-      } catch (e: any) {
+      } catch (e) {
         setStatus('error');
-        setMessage(e.message || 'Verification failed.');
+        setMessage(e instanceof Error ? e.message : 'Verification failed.');
       }
     })();
   }, [token, refresh]);

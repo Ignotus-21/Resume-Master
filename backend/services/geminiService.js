@@ -1,6 +1,6 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-const MODEL_NAME = "gemini-2.5-pro";
+const MODEL_NAME = "gemini-3.5-flash";
 
 let defaultClient = null;
 const getModel = (apiKey) => {
@@ -128,12 +128,12 @@ const generateLatex = async (resumeData, apiKey) => {
     Convert the following JSON resume data into a professional, clean LaTeX resume code.
     
     Design Requirements:
-    1. Use a modern, clean, and professional layout (e.g., modified 'article' class or a clean resume class).
-    2. **MULTI-PAGE SUPPORT IS ESSENTIAL**: Do NOT try to squeeze everything onto one page. If the content is long, let it flow naturally to a second page.
+    1. Use a modern, clean, and professional layout (e.g., modified 'article' class).
+    2. **MULTI-PAGE SUPPORT**: Do NOT try to squeeze everything onto one page.
     3. Use readable font sizes (10pt-12pt) and standard margins (0.5in - 0.75in).
-    4. Ensure ALL sections from the JSON (Education, Experience, Projects, Skills, etc.) are included. Do not drop content.
-    5. Ensure all special characters are escaped properly for LaTeX.
-    6. **SKILLS HANDLING**: The 'skills' field is likely an object with categories (e.g., { languages: [...], frameworks: [...] }). You MUST iterate through each category key and list the items (e.g., "**Languages:** JavaScript, Python"). Do NOT output an empty Skills section.
+    4. Ensure ALL sections from the JSON are included. Do not drop content.
+    5. Ensure all special characters are escaped properly.
+    6. **CRITICAL: DO NOT use the 'fullpage' package. Use '\\usepackage[margin=0.5in]{geometry}' instead, as 'fullpage' is not installed on this system.**
     
     Resume Data: ${JSON.stringify(resumeData)}
     

@@ -95,7 +95,7 @@ const updateResume = async (req, res) => {
       { _id: req.params.id, owner: req.identity },
       updateData,
       { new: true }
-    );
+    ).populate('job');
     if (!resume) return res.status(404).json({ message: 'Resume not found' });
     res.json(resume);
   } catch (error) {

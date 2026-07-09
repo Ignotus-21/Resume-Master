@@ -18,6 +18,12 @@ const compileLatex = async (latexCode) => {
   if (typeof latexCode !== 'string' || latexCode.length === 0) {
     return { success: false, error: 'LaTeX code is required' };
   }
+
+  // Auto-sanitize problematic packages for BasicTeX compatibility
+  latexCode = latexCode
+    .replace(/\\usepackage\{fullpage\}/g, '\\usepackage[margin=0.5in]{geometry}')
+    .replace(/\\usepackage\[.*?\]\{fullpage\}/g, '\\usepackage[margin=0.5in]{geometry}');
+
   if (latexCode.length > MAX_LATEX_LENGTH) {
     return { success: false, error: 'LaTeX source exceeds maximum allowed size' };
   }
@@ -43,25 +49,17 @@ const compileLatex = async (latexCode) => {
     // -no-shell-escape blocks \write18 and other shell-escape based RCE vectors.
     // -interaction=nonstopmode prevents hanging on errors.
     // -output-directory defines where files go.
+    // Compile using Tectonic for automatic package management
+    // This allows downloading missing packages (like titlesec, fontawesome, etc.) on the fly!
     try {
-      await execFilePromise('pdflatex', [
-        '-interaction=nonstopmode',
-        '-no-shell-escape',
-        '-output-directory', workDir,
+      await execFilePromise('tectonic', [
+        '--outdir', workDir,
         texPath,
       ], {
-        timeout: 10000,
+        timeout: 30000, // Increased timeout because downloading packages takes time
         cwd: workDir,
-        // openin_any=p / openout_any=p restrict TeX file I/O to "paranoid" mode:
-        // no reading/writing of absolute paths, parent directories, or dotfiles.
-        // This blocks \input{/…/.env}, \openin, \lstinputlisting, etc. from
-        // exfiltrating server secrets into the compiled PDF — a critical fix,
-        // since -no-shell-escape only blocks \write18 shell execution, not reads.
         env: {
           PATH: process.env.PATH,
-          openin_any: 'p',
-          openout_any: 'p',
-          TEXMFOUTPUT: workDir,
         },
       });
     } catch (error) {

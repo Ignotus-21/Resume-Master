@@ -4,7 +4,7 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { enforceGeminiQuota } = require('../utils/geminiGate');
 const { generateLinkedInContent } = require('../services/geminiService');
 
-const CHAT_MODEL_NAME = "gemini-2.5-flash";
+const CHAT_MODEL_NAME = "gemini-3.5-flash";
 
 let defaultClient = null;
 const getChatModel = (apiKey) => {

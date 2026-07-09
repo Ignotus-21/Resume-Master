@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { MessagesSquare, Sparkles, ChevronRight, RotateCcw } from 'lucide-react';
+import { MessagesSquare, Sparkles, ChevronRight, RotateCcw, History, ChevronLeft } from 'lucide-react';
 import { apiFetch, apiJson } from '@/lib/api';
 import { useToast } from '@/components/ui/Toast';
 import { Card } from '@/components/ui/Card';
@@ -10,6 +10,12 @@ function scoreColor(score: number) {
   if (score >= 75) return 'text-emerald-400';
   if (score >= 50) return 'text-yellow-400';
   return 'text-red-400';
+}
+
+function avgScore(turns: any[]) {
+  const scored = (turns || []).filter((t) => typeof t.score === 'number');
+  if (scored.length === 0) return null;
+  return Math.round(scored.reduce((sum, t) => sum + t.score, 0) / scored.length);
 }
 
 export default function InterviewPage() {
@@ -22,10 +28,15 @@ export default function InterviewPage() {
   const [starting, setStarting] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [lastFeedback, setLastFeedback] = useState<any>(null);
+  const [pastSessions, setPastSessions] = useState<any[]>([]);
+  const [reviewing, setReviewing] = useState<any>(null);
 
-  useEffect(() => { fetchJobs(); }, []);
+  useEffect(() => { fetchJobs(); fetchSessions(); }, []);
   const fetchJobs = async () => {
     try { setJobs(await apiFetch('/api/jobs')); } catch { /* non-fatal */ }
+  };
+  const fetchSessions = async () => {
+    try { setPastSessions(await apiFetch('/api/interview')); } catch { /* non-fatal */ }
   };
 
   const startInterview = async () => {
@@ -67,6 +78,15 @@ export default function InterviewPage() {
     setLastFeedback(null);
     setAnswer('');
     setCurrent(0);
+    fetchSessions();
+  };
+
+  const openReview = async (id: string) => {
+    try {
+      setReviewing(await apiFetch(`/api/interview/${id}`));
+    } catch (e: any) {
+      showToast(e.message || 'Failed to load session', 'error');
+    }
   };
 
   const isLast = session && current >= session.questions.length - 1;
@@ -81,7 +101,39 @@ export default function InterviewPage() {
         <p className="text-slate-400">Practice role-specific questions and get instant AI feedback.</p>
       </div>
 
-      {!session ? (
+      {reviewing ? (
+        <div>
+          <button onClick={() => setReviewing(null)} className="text-sm text-slate-400 hover:text-white flex items-center gap-1 mb-4">
+            <ChevronLeft className="h-4 w-4" /> Back
+          </button>
+          <Card className="p-6">
+            <div className="flex justify-between items-center mb-1">
+              <h2 className="text-lg font-bold text-slate-100">{reviewing.job ? `${reviewing.job.role} @ ${reviewing.job.company}` : reviewing.role}</h2>
+              {avgScore(reviewing.turns) !== null && (
+                <span className={`text-lg font-bold ${scoreColor(avgScore(reviewing.turns)!)}`}>{avgScore(reviewing.turns)}/100 avg</span>
+              )}
+            </div>
+            <p className="text-xs text-slate-500 mb-6">{new Date(reviewing.createdAt).toLocaleString()}</p>
+            {(!reviewing.turns || reviewing.turns.length === 0) ? (
+              <p className="text-slate-500 text-sm">No answers were recorded in this session.</p>
+            ) : (
+              <div className="space-y-5">
+                {reviewing.turns.map((t: any, i: number) => (
+                  <div key={i} className="border-b border-slate-800 last:border-0 pb-5 last:pb-0">
+                    <p className="font-semibold text-slate-200 mb-1">{t.question}</p>
+                    <p className="text-slate-400 text-sm mb-3 whitespace-pre-wrap">{t.answer}</p>
+                    <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-3">
+                      {typeof t.score === 'number' && <div className={`text-sm font-bold mb-1 ${scoreColor(t.score)}`}>{t.score}/100</div>}
+                      <p className="text-slate-300 text-sm">{t.feedback}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+        </div>
+      ) : !session ? (
+        <>
         <Card className="p-6">
           <label className="block text-sm font-medium text-slate-400 mb-2">Interview for</label>
           <select
@@ -96,6 +148,33 @@ export default function InterviewPage() {
             <Sparkles className="h-4 w-4" /> Start Interview
           </Button>
         </Card>
+
+        {pastSessions.length > 0 && (
+          <div className="mt-8">
+            <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <History className="h-4 w-4" /> Past interviews
+            </h2>
+            <div className="space-y-3">
+              {pastSessions.map((s) => {
+                const avg = avgScore(s.turns);
+                return (
+                  <button
+                    key={s._id}
+                    onClick={() => openReview(s._id)}
+                    className="w-full text-left p-4 border border-slate-700 bg-slate-800/50 rounded-xl hover:bg-slate-800 hover:border-slate-600 transition flex justify-between items-center gap-4"
+                  >
+                    <div className="min-w-0">
+                      <div className="font-semibold text-slate-200 truncate">{s.job ? `${s.job.role} @ ${s.job.company}` : s.role || 'Interview'}</div>
+                      <div className="text-xs text-slate-500">{new Date(s.createdAt).toLocaleDateString()} · {s.turns?.length || 0} answered</div>
+                    </div>
+                    {avg !== null && <span className={`text-sm font-bold shrink-0 ${scoreColor(avg)}`}>{avg}/100</span>}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+        </>
       ) : finished ? (
         <Card className="p-8 text-center">
           <h2 className="text-xl font-bold text-white mb-2">Interview complete 🎉</h2>

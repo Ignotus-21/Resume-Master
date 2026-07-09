@@ -4,8 +4,14 @@ services:
   mongodb:
     image: mongo:latest
     container_name: master_resume_db
+    environment:
+      # Values come from the repo-root .env (see .env.example). The `:?` guard
+      # makes Compose refuse to start if the variable is unset — no secret is
+      # stored in this file.
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?}
     ports:
-      - "27017:27017"
+      - "127.0.0.1:27017:27017"
     volumes:
       - mongodb_data:/data/db
     restart: always

@@ -1,10 +1,20 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-// Using gemini-1.5-flash-001 for specific version reliability
-const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
+const MODEL_NAME = "gemini-2.5-pro";
 
-const parseResumeData = async (input) => {
+let defaultClient = null;
+const getModel = (apiKey) => {
+  if (apiKey) {
+    return new GoogleGenerativeAI(apiKey).getGenerativeModel({ model: MODEL_NAME });
+  }
+  if (!defaultClient) {
+    defaultClient = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+  }
+  return defaultClient.getGenerativeModel({ model: MODEL_NAME });
+};
+
+const parseResumeData = async (input, apiKey) => {
+  const model = getModel(apiKey);
   const isBuffer = Buffer.isBuffer(input);
   
   const systemInstruction = `
@@ -79,7 +89,8 @@ const parseResumeData = async (input) => {
   }
 };
 
-const tailorResume = async (masterData, jobDescription) => {
+const tailorResume = async (masterData, jobDescription, apiKey) => {
+  const model = getModel(apiKey);
   const prompt = `
     You are an ATS Resume Optimizer.
     I have a Master Resume Data (JSON) and a Job Description.
@@ -110,7 +121,8 @@ const tailorResume = async (masterData, jobDescription) => {
   }
 };
 
-const generateLatex = async (resumeData) => {
+const generateLatex = async (resumeData, apiKey) => {
+  const model = getModel(apiKey);
   const prompt = `
     You are a LaTeX Resume Architect.
     Convert the following JSON resume data into a professional, clean LaTeX resume code.
@@ -138,7 +150,8 @@ const generateLatex = async (resumeData) => {
   }
 };
 
-const getRecommendations = async (masterData, jobDescription) => {
+const getRecommendations = async (masterData, jobDescription, apiKey) => {
+  const model = getModel(apiKey);
   const prompt = `
     You are an expert Career Coach and ATS Analyst.
     Analyze the Candidate's Master Profile against the provided Job Description.
@@ -172,9 +185,129 @@ const getRecommendations = async (masterData, jobDescription) => {
   }
 };
 
+const generateCoverLetter = async (masterData, jobDescription, options, apiKey) => {
+  const model = getModel(apiKey);
+  const tone = options?.tone || 'Professional';
+  const length = options?.length || 'Medium';
+
+  const prompt = `
+    You are an expert cover letter writer.
+    Write a compelling, personalized cover letter for the candidate below, tailored to the job description.
+
+    REQUIREMENTS:
+    1. Tone: ${tone}.
+    2. Length: ${length} (Short = ~200 words, Medium = ~320 words, Long = ~450 words).
+    3. Use concrete achievements from the candidate profile that match the job's requirements.
+    4. Do NOT invent facts, employers, or metrics that are not in the profile.
+    5. Structure: greeting, a strong opening hook, 1-2 body paragraphs mapping experience to the role, and a confident closing with a call to action.
+    6. Return ONLY the cover letter text. No markdown, no commentary, no placeholders like [Company] unless the info is genuinely missing.
+
+    Candidate Profile: ${JSON.stringify(masterData)}
+
+    Job Description: ${jobDescription}
+  `;
+
+  try {
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    return response.text().replace(/```/g, '').trim();
+  } catch (error) {
+    console.error("Gemini Cover Letter Error:", error);
+    throw new Error("Failed to generate cover letter");
+  }
+};
+
+const generateInterviewQuestions = async (jobDescription, masterData, apiKey) => {
+  const model = getModel(apiKey);
+  const prompt = `
+    You are an experienced technical and behavioral interviewer.
+    Based on the job description (and candidate background if provided), produce a set of realistic interview questions.
+
+    RULES:
+    1. Return 6 questions: a mix of behavioral, role-specific technical, and situational.
+    2. Order them from warm-up to more challenging.
+    3. Return ONLY valid JSON: { "questions": ["...", "..."] }. No markdown.
+
+    Job Description: ${jobDescription}
+
+    Candidate Background (optional): ${JSON.stringify(masterData || {})}
+  `;
+
+  try {
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text().replace(/```json/g, '').replace(/```/g, '');
+    const parsed = JSON.parse(text);
+    return Array.isArray(parsed.questions) ? parsed.questions : [];
+  } catch (error) {
+    console.error("Gemini Interview Questions Error:", error);
+    throw new Error("Failed to generate interview questions");
+  }
+};
+
+const evaluateInterviewAnswer = async (question, answer, jobDescription, apiKey) => {
+  const model = getModel(apiKey);
+  const prompt = `
+    You are an interview coach. Evaluate the candidate's answer to an interview question.
+
+    Question: ${question}
+    Candidate's Answer: ${answer}
+    Job Context: ${jobDescription || 'General role'}
+
+    Return ONLY valid JSON with this structure:
+    {
+      "score": number (0-100),
+      "feedback": string (2-4 sentences: what was strong, what to improve, and a concrete tip)
+    }
+    No markdown.
+  `;
+
+  try {
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text().replace(/```json/g, '').replace(/```/g, '');
+    return JSON.parse(text);
+  } catch (error) {
+    console.error("Gemini Interview Eval Error:", error);
+    throw new Error("Failed to evaluate answer");
+  }
+};
+
+const generateLinkedInContent = async (masterData, apiKey) => {
+  const model = getModel(apiKey);
+  const prompt = `
+    You are a LinkedIn personal-branding expert.
+    Using the candidate's profile, write optimized LinkedIn content.
+
+    Return ONLY valid JSON with this structure:
+    {
+      "headline": string (max 220 chars, keyword-rich, punchy),
+      "about": string (first-person "About" section, 3-5 short paragraphs),
+      "experienceHighlights": [string] (5-7 achievement-oriented bullet points suitable for LinkedIn experience entries)
+    }
+    Do NOT invent facts not present in the profile. No markdown.
+
+    Candidate Profile: ${JSON.stringify(masterData)}
+  `;
+
+  try {
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text().replace(/```json/g, '').replace(/```/g, '');
+    return JSON.parse(text);
+  } catch (error) {
+    console.error("Gemini LinkedIn Error:", error);
+    throw new Error("Failed to generate LinkedIn content");
+  }
+};
+
 module.exports = {
   parseResumeData,
   tailorResume,
   generateLatex,
-  getRecommendations
+  getRecommendations,
+  generateCoverLetter,
+  generateInterviewQuestions,
+  evaluateInterviewAnswer,
+  generateLinkedInContent,
 };

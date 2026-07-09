@@ -1,10 +1,13 @@
 const fs = require('fs');
 const path = require('path');
-const { exec } = require('child_process');
+const crypto = require('crypto');
+const { execFile } = require('child_process');
 const util = require('util');
-const execPromise = util.promisify(exec);
+const execFilePromise = util.promisify(execFile);
 
 const TEMP_DIR = path.join(__dirname, '..', 'temp_latex');
+const MAX_LATEX_LENGTH = 200000; // ~200KB of LaTeX source is already generous
+const MAX_PDF_SIZE = 20 * 1024 * 1024; // 20MB safety cap on the compiled output
 
 // Ensure temp directory exists
 if (!fs.existsSync(TEMP_DIR)) {
@@ -12,13 +15,22 @@ if (!fs.existsSync(TEMP_DIR)) {
 }
 
 const compileLatex = async (latexCode) => {
-  const jobId = Math.random().toString(36).substring(7);
+  if (typeof latexCode !== 'string' || latexCode.length === 0) {
+    return { success: false, error: 'LaTeX code is required' };
+  }
+  if (latexCode.length > MAX_LATEX_LENGTH) {
+    return { success: false, error: 'LaTeX source exceeds maximum allowed size' };
+  }
+
+  // Collision-resistant per-job directory so concurrent compiles never share a
+  // working dir (which would risk mixing one user's output into another's).
+  const jobId = crypto.randomUUID();
   const workDir = path.join(TEMP_DIR, jobId);
-  
+
   try {
     // Create isolated working directory for this job
     await fs.promises.mkdir(workDir, { recursive: true });
-    
+
     const texPath = path.join(workDir, 'resume.tex');
     const pdfPath = path.join(workDir, 'resume.pdf');
     const logPath = path.join(workDir, 'resume.log');
@@ -27,16 +39,42 @@ const compileLatex = async (latexCode) => {
     await fs.promises.writeFile(texPath, latexCode);
 
     // Compile
-    // -interaction=nonstopmode prevents hanging on errors
-    // -output-directory defines where files go
+    // execFile (no shell) avoids shell-metacharacter injection via the path.
+    // -no-shell-escape blocks \write18 and other shell-escape based RCE vectors.
+    // -interaction=nonstopmode prevents hanging on errors.
+    // -output-directory defines where files go.
     try {
-      await execPromise(`pdflatex -interaction=nonstopmode -output-directory="${workDir}" "${texPath}"`, { timeout: 10000 });
+      await execFilePromise('pdflatex', [
+        '-interaction=nonstopmode',
+        '-no-shell-escape',
+        '-output-directory', workDir,
+        texPath,
+      ], {
+        timeout: 10000,
+        cwd: workDir,
+        // openin_any=p / openout_any=p restrict TeX file I/O to "paranoid" mode:
+        // no reading/writing of absolute paths, parent directories, or dotfiles.
+        // This blocks \input{/…/.env}, \openin, \lstinputlisting, etc. from
+        // exfiltrating server secrets into the compiled PDF — a critical fix,
+        // since -no-shell-escape only blocks \write18 shell execution, not reads.
+        env: {
+          PATH: process.env.PATH,
+          openin_any: 'p',
+          openout_any: 'p',
+          TEXMFOUTPUT: workDir,
+        },
+      });
     } catch (error) {
         // compilation failed or had warnings, but we need to check log
     }
 
     // Check if PDF exists
     if (fs.existsSync(pdfPath)) {
+      const stat = await fs.promises.stat(pdfPath);
+      if (stat.size > MAX_PDF_SIZE) {
+        await cleanup(workDir);
+        return { success: false, error: 'Compiled PDF exceeds maximum allowed size' };
+      }
       const pdfBuffer = await fs.promises.readFile(pdfPath);
       await cleanup(workDir);
       return { success: true, pdf: pdfBuffer };

@@ -1,7 +1,11 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
+import { apiFetch, apiJson, API_URL } from '@/lib/api';
+import { useToast } from '@/components/ui/Toast';
+import { PageSpinner } from '@/components/ui/Spinner';
 
 export default function ProfilePage() {
+  const { showToast } = useToast();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('personal');
@@ -32,13 +36,13 @@ export default function ProfilePage() {
 
   const fetchProfile = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/master');
-      let data = await res.json();
+      let data = await apiFetch('/api/master');
       data = normalizeData(data);
       setProfile(data);
-      setLoading(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching profile:', error);
+      showToast(error.message || 'Failed to load profile', 'error');
+    } finally {
       setLoading(false);
     }
   };
@@ -63,16 +67,8 @@ export default function ProfilePage() {
 
       const cleanData = stripIds(data);
 
-      const res = await fetch('http://localhost:5000/api/master', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(cleanData),
-      });
-      if (res.ok) {
-        setSaveStatus('saved');
-      } else {
-        setSaveStatus('error');
-      }
+      await apiJson('/api/master', 'POST', cleanData);
+      setSaveStatus('saved');
     } catch (error) {
       console.error('Error saving profile:', error);
       setSaveStatus('error');
@@ -82,22 +78,13 @@ export default function ProfilePage() {
   const handleIngest = async () => {
     setIngesting(true);
     try {
-      const res = await fetch('http://localhost:5000/api/master/ingest', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: rawText }),
-      });
-      // The backend ingest still autosaves (legacy), but let's assume we want to update it later to be smart too.
-      // For now, this is "Paste Text" which user asked to be safer too, but PDF is priority.
-      // Actually backend /ingest DOES save. I should probably update that too if I want full consistency, 
-      // but the user focused on PDF upload.
-      const data = await res.json();
+      const data = await apiJson('/api/master/ingest', 'POST', { text: rawText });
       setProfile(data);
-      alert('Resume parsed and merged!');
+      showToast('Resume parsed and merged!', 'success');
       setRawText('');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error ingesting text:', error);
-      alert('Failed to parse text.');
+      showToast(error.message || 'Failed to parse text.', 'error');
     }
     setIngesting(false);
   };
@@ -105,21 +92,23 @@ export default function ProfilePage() {
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files?.[0]) return;
     setIngesting(true);
-    
+
     const formData = new FormData();
     formData.append('resume', e.target.files[0]);
 
     try {
-      const res = await fetch('http://localhost:5000/api/master/upload-resume', {
+      const res = await fetch(`${API_URL}/api/master/upload-resume`, {
         method: 'POST',
         body: formData,
+        credentials: 'include',
       });
       const parsedData = await res.json();
+      if (!res.ok) throw new Error(parsedData.message || 'Failed to upload/parse resume.');
       // Set preview for review modal instead of auto-merging
       setImportPreview(parsedData);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error uploading resume:', error);
-      alert('Failed to upload/parse resume.');
+      showToast(error.message || 'Failed to upload/parse resume.', 'error');
     }
     setIngesting(false);
   };
@@ -132,11 +121,11 @@ export default function ProfilePage() {
     setImportPreview(null);
     // Force immediate save to ensure data persists before navigation
     await saveProfileData(normalized);
-    alert('Import merged and saved successfully!');
+    showToast('Import merged and saved successfully!', 'success');
   };
 
-  if (loading) return <div className="p-8 text-center text-slate-400">Loading Master Profile...</div>;
-  if (!profile) return <div className="p-8 text-center text-red-500">Error loading profile. Ensure backend is running.</div>;
+  if (loading) return <PageSpinner label="Loading Master Profile..." />;
+  if (!profile) return <div className="p-8 text-center text-red-400">Error loading profile. Ensure backend is running.</div>;
 
   const tabs = ['personal', 'experience', 'education', 'projects', 'skills', 'additional', 'import'];
 
@@ -498,11 +487,35 @@ export default function ProfilePage() {
                />
                {ingesting && <p className="text-blue-400 text-sm mt-2 animate-pulse">Processing file... Please wait...</p>}
             </div>
-            
+
+            <div className="bg-slate-900/50 border border-slate-700 p-6 rounded-xl">
+               <h3 className="text-lg font-semibold text-slate-200 mb-2">Option 2: Import from LinkedIn</h3>
+               <p className="text-slate-400 text-sm mb-3">Export your LinkedIn profile as a PDF, then upload it here — we&apos;ll extract your experience, education, and skills automatically.</p>
+               <ol className="text-slate-400 text-sm list-decimal list-inside space-y-1 mb-4">
+                 <li>Open your LinkedIn profile</li>
+                 <li>Click <span className="text-slate-300 font-medium">More</span> → <span className="text-slate-300 font-medium">Save to PDF</span></li>
+                 <li>Upload the downloaded PDF below</li>
+               </ol>
+               <input
+                 type="file"
+                 accept=".pdf"
+                 onChange={handleFileUpload}
+                 disabled={ingesting}
+                 className="block w-full text-sm text-slate-400
+                   file:mr-4 file:py-2.5 file:px-6
+                   file:rounded-lg file:border-0
+                   file:text-sm file:font-semibold
+                   file:bg-[#0a66c2] file:text-white
+                   hover:file:bg-[#0958a8]
+                   file:cursor-pointer cursor-pointer
+                 "
+               />
+            </div>
+
             <div className="border-t border-slate-700 my-4"></div>
 
             <div>
-              <h3 className="text-lg font-semibold text-slate-200 mb-2">Option 2: Paste Text</h3>
+              <h3 className="text-lg font-semibold text-slate-200 mb-2">Option 3: Paste Text</h3>
               <textarea 
                 className="w-full h-64 border border-slate-700 rounded-xl p-4 bg-slate-900 text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
                 value={rawText}
@@ -540,9 +553,10 @@ const ImportReviewModal = ({ currentProfile, importData, onCancel, onConfirm }: 
     });
   };
 
+  const [infoUpdated, setInfoUpdated] = useState(false);
   const overwriteInfo = () => {
     setMerged({ ...merged, user: { ...merged.user, ...importData.user } });
-    alert('Updated Personal Info.');
+    setInfoUpdated(true);
   };
 
   return (
@@ -573,11 +587,11 @@ const ImportReviewModal = ({ currentProfile, importData, onCancel, onConfirm }: 
                         v && <div key={k}><span className="text-blue-500">{k}:</span> {typeof v === 'object' ? JSON.stringify(v) : v}</div>
                     ))}
                 </div>
-                <button 
+                <button
                   onClick={overwriteInfo}
                   className="w-full bg-blue-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-500 transition"
                 >
-                  Use New Info
+                  {infoUpdated ? 'Info Updated ✓' : 'Use New Info'}
                 </button>
               </div>
             </div>

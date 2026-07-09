@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 
 const chatSessionSchema = new mongoose.Schema({
+  owner: { type: String, required: true, index: true },
   contextType: { type: String, enum: ['General', 'Job', 'Resume'], default: 'General' },
   contextId: { type: mongoose.Schema.Types.ObjectId }, // ID of Job or Resume
   history: [{

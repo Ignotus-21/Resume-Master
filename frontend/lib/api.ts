@@ -28,7 +28,9 @@ async function parseBody(res: Response) {
  * duplicating res.ok checks everywhere.
  */
 export async function apiFetch(path: string, options?: RequestInit) {
-  const res = await fetch(`${API_URL}${path}`, { credentials: 'include', ...options });
+  // Force credentials last so a caller's options can't accidentally drop the
+  // auth/session cookies — apiFetch always sends them.
+  const res = await fetch(`${API_URL}${path}`, { ...options, credentials: 'include' });
   const body = await parseBody(res);
   if (!res.ok) {
     const message = (body && typeof body === 'object' && 'message' in body)

@@ -9,6 +9,7 @@ jest.mock('../models/ChatSession');
 jest.mock('../models/ApiUsage');
 
 const User = require('../models/User');
+const MasterProfile = require('../models/MasterProfile');
 const createApp = require('../app');
 
 describe('POST /api/auth/signup', () => {
@@ -47,6 +48,38 @@ describe('POST /api/auth/signup', () => {
 
     const setCookie = res.headers['set-cookie'] || [];
     expect(setCookie.some((c) => c.startsWith('token='))).toBe(true);
+  });
+
+  it('drops the guest MasterProfile instead of reassigning when the account already has one', async () => {
+    // Regression: MasterProfile.owner is unique, so reassigning a guest profile
+    // onto an account that already has one must NOT be attempted (dup key -> 500).
+    User.findOne.mockResolvedValue(null);
+    User.create.mockResolvedValue({ _id: 'acct1', email: 'x@b.com', name: 'X', geminiApiKeyEncrypted: null });
+    MasterProfile.exists.mockResolvedValue({ _id: 'existing' });
+
+    const res = await request(app)
+      .post('/api/auth/signup')
+      .set('Cookie', 'guestId=guest-123')
+      .send({ email: 'x@b.com', password: 'longenough1' });
+
+    expect(res.status).toBe(201);
+    expect(MasterProfile.deleteOne).toHaveBeenCalledWith({ owner: 'guest-123' });
+    expect(MasterProfile.updateOne).not.toHaveBeenCalled();
+  });
+
+  it('reassigns the guest MasterProfile when the account has none', async () => {
+    User.findOne.mockResolvedValue(null);
+    User.create.mockResolvedValue({ _id: 'acct2', email: 'y@b.com', name: 'Y', geminiApiKeyEncrypted: null });
+    MasterProfile.exists.mockResolvedValue(null);
+
+    const res = await request(app)
+      .post('/api/auth/signup')
+      .set('Cookie', 'guestId=guest-456')
+      .send({ email: 'y@b.com', password: 'longenough1' });
+
+    expect(res.status).toBe(201);
+    expect(MasterProfile.updateOne).toHaveBeenCalledWith({ owner: 'guest-456' }, { $set: { owner: 'acct2' } });
+    expect(MasterProfile.deleteOne).not.toHaveBeenCalled();
   });
 });
 

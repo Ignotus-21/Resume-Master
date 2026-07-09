@@ -32,11 +32,21 @@ const issueToken = (res, user) => {
 // Reassigns any guest-owned records onto the newly authenticated account, so
 // work done before signing up/in isn't lost.
 const migrateGuestData = async (guestId, userId) => {
-  if (!guestId) return;
+  if (!guestId || guestId === userId) return;
   const ownerFilter = { owner: guestId };
   const ownerUpdate = { $set: { owner: userId } };
+
+  // MasterProfile.owner is unique, so reassigning the guest profile would throw
+  // a duplicate-key error if the account already has one. Only claim the guest
+  // profile when the account has none; otherwise drop it (keep the account's).
+  const existingProfile = await MasterProfile.exists({ owner: userId });
+  if (existingProfile) {
+    await MasterProfile.deleteOne(ownerFilter);
+  } else {
+    await MasterProfile.updateOne(ownerFilter, ownerUpdate);
+  }
+
   await Promise.all([
-    MasterProfile.updateMany(ownerFilter, ownerUpdate),
     Job.updateMany(ownerFilter, ownerUpdate),
     Resume.updateMany(ownerFilter, ownerUpdate),
     ChatSession.updateMany(ownerFilter, ownerUpdate),

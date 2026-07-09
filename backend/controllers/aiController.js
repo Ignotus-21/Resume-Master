@@ -18,16 +18,22 @@ const getChatModel = (apiKey) => {
 };
 
 const MAX_MESSAGE_LENGTH = 8000;
+const VALID_CONTEXT_TYPES = ['General', 'Job', 'Resume'];
 
 const startChat = async (req, res) => {
   const { contextType, contextId } = req.body;
   if (typeof contextId === 'string' && contextId.length > 200) {
     return res.status(400).json({ message: 'contextId is too long' });
   }
+  // Normalize/validate contextType against the schema enum so a stray value
+  // (e.g. an old client sending "job") returns a clean 400 rather than a 500.
+  if (contextType !== undefined && !VALID_CONTEXT_TYPES.includes(contextType)) {
+    return res.status(400).json({ message: 'Invalid contextType' });
+  }
   try {
     const session = await ChatSession.create({
       owner: req.identity,
-      contextType,
+      contextType: contextType || 'General',
       contextId,
       history: []
     });

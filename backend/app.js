@@ -6,6 +6,7 @@ const rateLimit = require('express-rate-limit');
 const { sanitizeBody } = require('./middleware/sanitize');
 const identify = require('./middleware/identify');
 const loadGeminiKey = require('./middleware/loadGeminiKey');
+const morgan = require('morgan');
 
 const createApp = () => {
   const app = express();
@@ -33,6 +34,7 @@ const createApp = () => {
     credentials: true,
   }));
   app.use(helmet());
+  app.use(morgan('dev'));
   app.use(express.json({ limit: '2mb' }));
   app.use(cookieParser());
   app.use(sanitizeBody);
@@ -91,6 +93,7 @@ const createApp = () => {
   app.use('/api/cover-letters', require('./routes/coverLetterRoutes'));
   app.use('/api/interview', require('./routes/interviewRoutes'));
   app.use('/api/ai', require('./routes/aiRoutes'));
+  app.use('/api/admin', require('./routes/adminRoutes'));
 
   // Central error handler (also catches the CORS rejection thrown above).
   app.use((err, req, res, next) => {

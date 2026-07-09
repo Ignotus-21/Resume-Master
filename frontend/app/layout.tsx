@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Outfit } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import { VerifyEmailBanner } from "@/components/VerifyEmailBanner";
 import { ToastProvider } from "@/components/ui/Toast";
 import { AuthProvider } from "@/lib/auth-context";
+import QuotaModal from "@/components/QuotaModal";
 
-const inter = Inter({ subsets: ["latin"] });
+const outfit = Outfit({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Super Master Resume",
@@ -20,7 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className={`${outfit.className} antialiased selection:bg-purple-500/30`}>
         <ToastProvider>
           <AuthProvider>
             <Navbar />
@@ -28,6 +29,7 @@ export default function RootLayout({
             <main className="container mx-auto p-4">
               {children}
             </main>
+            <QuotaModal />
           </AuthProvider>
         </ToastProvider>
       </body>

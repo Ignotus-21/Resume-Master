@@ -26,6 +26,7 @@ const enforceGeminiQuota = async (req) => {
   return {
     status: 429,
     body: {
+      code: 'QUOTA_EXCEEDED',
       message: `Free AI quota exceeded. Add your own Gemini API key in Settings for unlimited use, or try again after ${resetAt.toISOString()}.`,
       resetAt,
     },

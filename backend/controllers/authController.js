@@ -83,6 +83,7 @@ const publicUser = (user) => ({
   name: user.name,
   hasOwnKey: Boolean(user.geminiApiKeyEncrypted),
   emailVerified: Boolean(user.emailVerified),
+  isAdmin: Boolean(user.isAdmin),
 });
 
 const signup = async (req, res) => {

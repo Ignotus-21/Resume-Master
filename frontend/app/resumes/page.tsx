@@ -5,7 +5,9 @@ import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } fro
 import { saveAs } from 'file-saver';
 import { apiFetch, apiJson } from '@/lib/api';
 import { useToast } from '@/components/ui/Toast';
-import { FileText, Sparkles } from 'lucide-react';
+import { FileText, Sparkles, Loader2, ChevronRight, ChevronLeft } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Card } from '@/components/ui/Card';
 
 interface ResumeData {
   user?: {
@@ -264,15 +266,18 @@ function ResumesPageContent() {
       </div>
 
       {/* Generator Section */}
-      <div className="bg-slate-800 p-6 rounded-xl shadow-lg border border-slate-700 mb-8 no-print">
-        <h2 className="text-xl font-bold mb-6 text-slate-100">Create New Resume</h2>
-        <div className="flex gap-4 items-end">
-          <div className="flex-1">
-            <label className="block text-sm font-medium mb-2 text-slate-400">Select Job Application</label>
+      <Card className="p-8 mb-8 no-print relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-900/10 via-transparent to-blue-900/10 pointer-events-none" />
+        <h2 className="text-2xl font-bold mb-6 text-white relative z-10 flex items-center gap-2">
+          <Sparkles className="h-6 w-6 text-purple-400" /> Create New Resume
+        </h2>
+        <div className="flex flex-col md:flex-row gap-4 items-end relative z-10">
+          <div className="flex-1 w-full">
+            <label className="block text-sm font-medium mb-2 text-zinc-400">Select Job Application</label>
             <select 
               value={selectedJobId}
               onChange={(e) => setSelectedJobId(e.target.value)}
-              className="w-full border border-slate-600 bg-slate-900 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-purple-500 h-11 text-white"
+              className="w-full border border-white/10 bg-black/40 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-purple-500 text-white transition-all appearance-none cursor-pointer"
             >
               <option value="">-- Choose a Job (Filter List) --</option>
               {jobs.map(job => (
@@ -283,54 +288,62 @@ function ResumesPageContent() {
           <button
             onClick={handleGenerate}
             disabled={generating || !selectedJobId}
-            className="flex items-center gap-2 bg-purple-600 text-white px-8 py-2 rounded-xl hover:bg-purple-500 disabled:opacity-50 h-11 font-semibold transition shadow-lg shadow-purple-900/50"
+            className="flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-8 py-3 rounded-xl hover:opacity-90 disabled:opacity-50 font-semibold transition-all shadow-lg shadow-purple-900/30 w-full md:w-auto h-12"
           >
-            <Sparkles className="h-4 w-4" />
+            {generating ? <Loader2 className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
             {generating ? 'AI Generating...' : 'Generate Resume'}
           </button>
         </div>
-      </div>
+      </Card>
 
       <div className={`grid grid-cols-1 ${isSidebarOpen ? 'md:grid-cols-4' : 'md:grid-cols-1'} gap-4 transition-all duration-300`}>
         {/* List */}
-        {isSidebarOpen && (
-        <div className="col-span-1 border-r border-slate-700 pr-6 no-print">
-          <h2 className="font-bold mb-4 text-slate-300">
-            {selectedJobId ? 'Resumes for Job' : 'All Resumes'} ({resumes.length})
-          </h2>
-          <div className="space-y-4 h-[calc(100vh-140px)] overflow-y-auto pr-2 custom-scrollbar">
-            {resumes.map(resume => (
-              <div 
-                key={resume._id} 
-                onClick={() => setViewResume(resume)}
-                className={`p-4 border rounded-xl cursor-pointer transition relative group ${viewResume?._id === resume._id ? 'border-purple-500 bg-purple-900/20 ring-1 ring-purple-500/50' : 'hover:bg-slate-800 border-slate-700 bg-slate-800/50'}`}
-              >
-                <div className="font-bold text-slate-200 mb-1 pr-6 truncate">{resume.versionName}</div>
-                {resume.job && (
-                    <div className="text-xs text-blue-300 mb-2 truncate">
-                        Linked: {resume.job.role} @ {resume.job.company}
-                    </div>
-                )}
-                <div className="text-sm text-slate-500 flex justify-between">
-                    <span>{new Date(resume.createdAt).toLocaleDateString()}</span>
-                    {resume.atsScore && <span className="text-green-400 font-medium">ATS: {resume.atsScore}</span>}
-                </div>
-                
-                <button 
-                    onClick={(e) => { e.stopPropagation(); handleDelete(resume._id); }}
-                    className="absolute top-2 right-2 text-slate-600 hover:text-red-500 p-1 opacity-0 group-hover:opacity-100 transition"
-                    title="Delete Resume"
+        <AnimatePresence>
+          {isSidebarOpen && (
+          <motion.div 
+            initial={{ opacity: 0, width: 0 }}
+            animate={{ opacity: 1, width: 'auto' }}
+            exit={{ opacity: 0, width: 0 }}
+            className="col-span-1 border-r border-white/5 pr-6 no-print overflow-hidden"
+          >
+            <h2 className="font-bold mb-4 text-zinc-300">
+              {selectedJobId ? 'Resumes for Job' : 'All Resumes'} ({resumes.length})
+            </h2>
+            <div className="space-y-4 h-[calc(100vh-140px)] overflow-y-auto pr-2 custom-scrollbar">
+              {resumes.map(resume => (
+                <motion.div 
+                  layout
+                  key={resume._id} 
+                  onClick={() => setViewResume(resume)}
+                  className={`p-4 border rounded-xl cursor-pointer transition-all relative group ${viewResume?._id === resume._id ? 'border-purple-500 bg-purple-900/20 ring-1 ring-purple-500/50 shadow-lg shadow-purple-900/20' : 'hover:bg-white/5 border-white/5 bg-black/20 hover:border-white/10'}`}
                 >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                </button>
-              </div>
-            ))}
-            {resumes.length === 0 && <div className="text-slate-500 italic">No resumes found. Generate one above.</div>}
-          </div>
-        </div>
-        )}
+                  <div className="font-bold text-white mb-1 pr-6 truncate">{resume.versionName}</div>
+                  {resume.job && (
+                      <div className="text-xs text-purple-300 mb-2 truncate">
+                          Linked: {resume.job.role} @ {resume.job.company}
+                      </div>
+                  )}
+                  <div className="text-sm text-zinc-500 flex justify-between">
+                      <span>{new Date(resume.createdAt).toLocaleDateString()}</span>
+                      {resume.atsScore && <span className="text-emerald-400 font-medium">ATS: {resume.atsScore}</span>}
+                  </div>
+                  
+                  <button 
+                      onClick={(e) => { e.stopPropagation(); handleDelete(resume._id); }}
+                      className="absolute top-2 right-2 text-zinc-600 hover:text-red-500 p-1 opacity-0 group-hover:opacity-100 transition"
+                      title="Delete Resume"
+                  >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                  </button>
+                </motion.div>
+              ))}
+              {resumes.length === 0 && <div className="text-zinc-500 italic">No resumes found. Generate one above.</div>}
+            </div>
+          </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Viewer */}
         <div className={isSidebarOpen ? "col-span-3" : "col-span-1"}>

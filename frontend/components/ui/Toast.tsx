@@ -23,9 +23,9 @@ const VARIANT_STYLES: Record<ToastVariant, string> = {
 };
 
 const VARIANT_ICONS: Record<ToastVariant, React.ReactNode> = {
-  success: <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0" />,
-  error: <XCircle className="h-5 w-5 text-red-400 shrink-0" />,
-  info: <Info className="h-5 w-5 text-blue-400 shrink-0" />,
+  success: <CheckCircle2 className="h-5 w-5 text-[#1e8e3e] shrink-0" />,
+  error: <XCircle className="h-5 w-5 text-[#d93025] shrink-0" />,
+  info: <Info className="h-5 w-5 text-[#1a73e8] shrink-0" />,
 };
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {

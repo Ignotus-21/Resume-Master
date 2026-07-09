@@ -54,27 +54,27 @@ export default function ChatPage() {
 
   return (
     <div className="p-4 md:p-8 max-w-4xl mx-auto h-[85vh] flex flex-col">
-      <h1 className="text-3xl font-bold mb-6 text-slate-100 flex items-center gap-2">
-        <Sparkles className="h-6 w-6 text-blue-400" />
+      <h1 className="text-3xl font-bold mb-6 text-[#202124] flex items-center gap-2">
+        <Sparkles className="h-6 w-6 text-[#1a73e8]" />
         AI Chat Assistant
       </h1>
 
       {error && (
-        <div className="bg-red-900/50 text-red-200 p-3 rounded-xl mb-4 border border-red-800 text-sm flex items-center justify-between gap-3">
+        <div className="bg-[#fce8e6] text-[#d93025] p-3 rounded-xl mb-4 border border-[#d93025] text-sm flex items-center justify-between gap-3">
           <span>{error}</span>
           {!sessionId && (
-            <button onClick={startSession} className="shrink-0 font-semibold underline hover:text-white">Retry</button>
+            <button onClick={startSession} className="shrink-0 font-semibold underline hover:text-[#202124]">Retry</button>
           )}
         </div>
       )}
 
       <div
         ref={scrollRef}
-        className="flex-1 bg-slate-800/60 border border-slate-700 rounded-2xl shadow-lg backdrop-blur-sm p-6 overflow-y-auto mb-4 space-y-4 custom-scrollbar"
+        className="flex-1 bg-[#f8f9fa]/60 border border-[#dadce0] rounded-2xl shadow-lg backdrop-blur-sm p-6 overflow-y-auto mb-4 space-y-4 custom-scrollbar"
       >
         {(!messages || messages.length === 0) && (
-          <div className="text-center text-slate-500 mt-20">
-            <Bot className="h-10 w-10 mx-auto mb-4 text-slate-600" />
+          <div className="text-center text-[#5f6368] mt-20">
+            <Bot className="h-10 w-10 mx-auto mb-4 text-[#5f6368]" />
             <p>Start a conversation with Gemini AI about your resume or job applications.</p>
           </div>
         )}
@@ -82,8 +82,8 @@ export default function ChatPage() {
           <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div className={`max-w-[80%] p-4 rounded-2xl shadow-sm whitespace-pre-wrap ${
               msg.role === 'user'
-                ? 'bg-blue-600 text-white rounded-br-none'
-                : 'bg-slate-700 text-slate-100 rounded-bl-none'
+                ? 'bg-[#1a73e8] text-white rounded-br-none'
+                : 'bg-white text-[#202124] rounded-bl-none'
             }`}>
               {msg.parts && msg.parts[0] ? msg.parts[0].text : '...'}
             </div>
@@ -91,7 +91,7 @@ export default function ChatPage() {
         ))}
         {sending && (
           <div className="flex justify-start">
-            <div className="bg-slate-700 text-slate-400 p-3 rounded-lg animate-pulse italic rounded-bl-none">
+            <div className="bg-white text-[#5f6368] p-3 rounded-lg animate-pulse italic rounded-bl-none">
               Gemini is typing...
             </div>
           </div>
@@ -100,7 +100,7 @@ export default function ChatPage() {
 
       <form onSubmit={handleSend} className="flex gap-4">
         <input
-          className="flex-1 border border-slate-700 bg-slate-900 text-white p-4 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500 outline-none transition placeholder-slate-500"
+          className="flex-1 border border-[#dadce0] bg-[#f8f9fa] text-[#202124] p-4 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500 outline-none transition placeholder-slate-500"
           placeholder="Ask for advice..."
           value={input}
           onChange={(e) => setInput(e.target.value)}

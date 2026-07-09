@@ -10,7 +10,7 @@ import QuotaModal from "@/components/QuotaModal";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Liftoff Careers",
+  title: "Resume Master",
   description: "AI Powered Resume Builder and Job Tracker",
 };
 

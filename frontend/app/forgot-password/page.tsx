@@ -31,31 +31,31 @@ export default function ForgotPasswordPage() {
     <div className="flex flex-col items-center justify-center min-h-[70vh] px-4">
       <Card className="w-full max-w-sm p-8">
         <div className="flex items-center gap-2 justify-center mb-6">
-          <Mail className="h-6 w-6 text-blue-400" />
-          <h1 className="text-2xl font-bold text-white">Reset password</h1>
+          <Mail className="h-6 w-6 text-[#1a73e8]" />
+          <h1 className="text-2xl font-bold text-[#202124]">Reset password</h1>
         </div>
 
         {sent ? (
           <div className="text-center">
-            <p className="text-slate-300 text-sm mb-6">
+            <p className="text-[#202124] text-sm mb-6">
               If an account exists for <span className="font-medium">{email}</span>, a reset link is on its way. Check your inbox.
             </p>
             <Link href="/login"><Button variant="secondary" className="w-full">Back to log in</Button></Link>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
-            <p className="text-slate-400 text-sm">Enter your email and we&apos;ll send you a link to reset your password.</p>
+            <p className="text-[#5f6368] text-sm">Enter your email and we&apos;ll send you a link to reset your password.</p>
             <input
               type="email"
               required
               placeholder="you@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full border border-slate-700 bg-slate-900 rounded-lg px-4 py-2.5 text-white outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-[#dadce0] bg-[#f8f9fa] rounded-lg px-4 py-2.5 text-[#202124] outline-none focus:ring-2 focus:ring-blue-500"
             />
             <Button type="submit" loading={submitting} className="w-full">Send reset link</Button>
-            <p className="text-center text-sm text-slate-500">
-              <Link href="/login" className="hover:text-slate-300 hover:underline">Back to log in</Link>
+            <p className="text-center text-sm text-[#5f6368]">
+              <Link href="/login" className="hover:text-[#202124] hover:underline">Back to log in</Link>
             </p>
           </form>
         )}

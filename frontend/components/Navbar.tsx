@@ -59,7 +59,7 @@ const Navbar = () => {
           <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 via-red-500 to-yellow-500 shadow-md group-hover:scale-105 transition-transform duration-300">
             <Sparkles className="h-5 w-5 text-white" />
           </span>
-          Liftoff Careers
+          Resume Master
         </Link>
 
         <div className="hidden md:flex items-center gap-1 text-sm font-medium">

@@ -31,55 +31,64 @@ export default function Home() {
   return (
     <div className="flex flex-col items-center overflow-x-hidden">
       {/* Hero */}
-      <motion.div 
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, ease: "easeOut" }}
-        className="text-center max-w-3xl mx-auto pt-24 pb-20 px-4"
-      >
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
-          className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#1a73e8] bg-blue-50 border border-blue-100 rounded-full px-5 py-2 mb-8"
-        >
-          <SparklesIcon className="w-4 h-4" /> Powered by Gemini AI
-        </motion.div>
-        
-        <h1 className="text-5xl md:text-7xl font-extrabold text-[#202124] leading-tight mb-8 tracking-tight">
-          Experience liftoff with <br className="hidden md:block"/>
-          <span className="bg-gradient-to-r from-blue-500 via-red-500 to-yellow-500 bg-clip-text text-transparent animate-gradient-x">
-            the next-gen platform.
-          </span>
-        </h1>
-        
-        <p className="text-lg md:text-xl text-[#5f6368] leading-relaxed mb-10 max-w-2xl mx-auto font-light">
-          Keep one master profile, track every application, and let AI tailor an ATS-optimized 
-          LaTeX resume for each job in seconds — with real feedback on what's missing.
-        </p>
-
-        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-          {!loading && user ? (
-            <Button className="px-8 py-4 text-lg rounded-full shadow-[0_4px_14px_0_rgba(0,0,0,0.1)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.15)] transition-all group" onClick={() => router.push('/dashboard')}>
-              Go to Dashboard <ArrowRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
-            </Button>
-          ) : (
-            <>
-              <Button variant="secondary" className="px-8 py-4 text-lg rounded-full w-full sm:w-auto" onClick={() => router.push('/dashboard')}>
-                Continue for Free
-              </Button>
-              <Button className="px-8 py-4 text-lg rounded-full shadow-[0_4px_14px_0_rgba(0,0,0,0.1)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.15)] transition-all w-full sm:w-auto group" onClick={() => router.push('/signup')}>
-                Sign Up <ArrowRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
-              </Button>
-            </>
-          )}
+      <div className="relative w-full overflow-hidden flex justify-center pt-24 pb-20 px-4">
+        {/* Animated Background Blobs */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl h-full z-0 opacity-50 pointer-events-none">
+          <div className="absolute top-0 -left-10 w-96 h-96 bg-[#1a73e8] rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
+          <div className="absolute top-0 -right-10 w-96 h-96 bg-[#34a853] rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
+          <div className="absolute -bottom-20 left-20 w-96 h-96 bg-[#ea4335] rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000"></div>
         </div>
-        {!loading && !user && (
-          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }} className="text-sm text-[#5f6368] mt-6">
-            No account needed to try it out. <Link href="/login" className="text-[#1a73e8] hover:text-[#174ea6] hover:underline transition">Already have one? Log in</Link>
-          </motion.p>
-        )}
-      </motion.div>
+
+        <motion.div 
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="relative z-10 text-center max-w-3xl mx-auto"
+        >
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2, duration: 0.5 }}
+            className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#1a73e8] bg-blue-50 border border-blue-100 rounded-full px-5 py-2 mb-8"
+          >
+            <SparklesIcon className="w-4 h-4" /> Powered by Gemini AI
+          </motion.div>
+          
+          <h1 className="text-5xl md:text-7xl font-extrabold text-[#202124] leading-tight mb-8 tracking-tight">
+            Experience liftoff with <br className="hidden md:block"/>
+            <span className="bg-gradient-to-r from-[#1a73e8] via-[#ea4335] to-[#f9ab00] bg-clip-text text-transparent animate-gradient-x">
+              the next-gen platform.
+            </span>
+          </h1>
+          
+          <p className="text-lg md:text-xl text-[#5f6368] leading-relaxed mb-10 max-w-2xl mx-auto font-light">
+            Keep one master profile, track every application, and let AI tailor an ATS-optimized 
+            LaTeX resume for each job in seconds — with real feedback on what's missing.
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            {!loading && user ? (
+              <Button className="px-8 py-4 text-lg rounded-full shadow-[0_4px_14px_0_rgba(0,0,0,0.1)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.15)] transition-all group" onClick={() => router.push('/dashboard')}>
+                Go to Dashboard <ArrowRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
+              </Button>
+            ) : (
+              <>
+                <Button variant="secondary" className="px-8 py-4 text-lg rounded-full w-full sm:w-auto bg-white" onClick={() => router.push('/dashboard')}>
+                  Continue for Free
+                </Button>
+                <Button className="px-8 py-4 text-lg rounded-full shadow-[0_4px_14px_0_rgba(0,0,0,0.1)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.15)] transition-all w-full sm:w-auto group" onClick={() => router.push('/signup')}>
+                  Sign Up <ArrowRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </>
+            )}
+          </div>
+          {!loading && !user && (
+            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }} className="text-sm text-[#5f6368] mt-6">
+              No account needed to try it out. <Link href="/login" className="text-[#1a73e8] hover:text-[#174ea6] hover:underline transition">Already have one? Log in</Link>
+            </motion.p>
+          )}
+        </motion.div>
+      </div>
 
       {/* Feature cards */}
       <motion.div 

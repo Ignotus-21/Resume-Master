@@ -1,9 +1,9 @@
 const STATUS_STYLES: Record<string, string> = {
   Applied: 'bg-blue-900/50 text-blue-200 border-blue-800',
-  Interviewing: 'bg-yellow-900/50 text-yellow-200 border-yellow-800',
+  Interviewing: 'bg-yellow-900/50 text-yellow-700 border-yellow-200',
   Offer: 'bg-emerald-900/50 text-emerald-200 border-emerald-800',
-  Rejected: 'bg-red-900/50 text-red-200 border-red-800',
-  Wishlist: 'bg-slate-700 text-slate-300 border-slate-600',
+  Rejected: 'bg-[#fce8e6] text-[#d93025] border-[#d93025]',
+  Wishlist: 'bg-white text-[#202124] border-[#dadce0]',
 };
 
 export function Badge({ children, className = '' }: { children: React.ReactNode; className?: string }) {

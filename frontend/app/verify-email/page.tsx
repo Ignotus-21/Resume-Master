@@ -41,16 +41,16 @@ function VerifyEmailContent() {
       <Card className="w-full max-w-sm p-8 text-center">
         {status === 'ok' ? (
           <>
-            <CheckCircle2 className="h-10 w-10 text-emerald-400 mx-auto mb-4" />
-            <h1 className="text-xl font-bold text-white mb-2">Email verified</h1>
-            <p className="text-slate-400 text-sm mb-6">Your account is fully unlocked. You can now use every AI feature.</p>
+            <CheckCircle2 className="h-10 w-10 text-[#1e8e3e] mx-auto mb-4" />
+            <h1 className="text-xl font-bold text-[#202124] mb-2">Email verified</h1>
+            <p className="text-[#5f6368] text-sm mb-6">Your account is fully unlocked. You can now use every AI feature.</p>
             <Link href="/dashboard"><Button className="w-full">Go to Dashboard</Button></Link>
           </>
         ) : (
           <>
-            <XCircle className="h-10 w-10 text-red-400 mx-auto mb-4" />
-            <h1 className="text-xl font-bold text-white mb-2">Verification failed</h1>
-            <p className="text-slate-400 text-sm mb-6">{message}</p>
+            <XCircle className="h-10 w-10 text-[#d93025] mx-auto mb-4" />
+            <h1 className="text-xl font-bold text-[#202124] mb-2">Verification failed</h1>
+            <p className="text-[#5f6368] text-sm mb-6">{message}</p>
             <Link href="/settings"><Button variant="secondary" className="w-full">Resend from Settings</Button></Link>
           </>
         )}

@@ -457,7 +457,7 @@ export default function ProfilePage() {
                 ))}
                 <button 
                     onClick={() => setProfile({...profile, customSections: [...(profile.customSections || []), { items: [] }]})}
-                    className="w-full py-3 border-2 border-dashed border-purple-300/50 rounded-xl text-purple-300 hover:bg-purple-50 transition font-bold"
+                    className="w-full py-3 border-2 border-dashed border-[#dadce0] rounded-xl text-[#5f6368] hover:border-[#1a73e8] hover:text-[#1a73e8] hover:bg-[#f8f9fa] transition font-bold"
                 >
                     + Add New Custom Section
                 </button>
@@ -480,7 +480,7 @@ export default function ProfilePage() {
                    file:mr-4 file:py-2.5 file:px-6
                    file:rounded-lg file:border-0
                    file:text-sm file:font-semibold
-                   file:bg-blue-600 file:text-[#202124]
+                   file:bg-blue-600 file:text-white
                    hover:file:bg-blue-500
                    file:cursor-pointer cursor-pointer
                  "
@@ -505,7 +505,7 @@ export default function ProfilePage() {
                    file:mr-4 file:py-2.5 file:px-6
                    file:rounded-lg file:border-0
                    file:text-sm file:font-semibold
-                   file:bg-[#0a66c2] file:text-[#202124]
+                   file:bg-[#0a66c2] file:text-white
                    hover:file:bg-[#0958a8]
                    file:cursor-pointer cursor-pointer
                  "
@@ -580,11 +580,11 @@ const ImportReviewModal = ({ currentProfile, importData, onCancel, onConfirm }: 
                     ))}
                 </div>
               </div>
-              <div className="bg-[#f8f9fa] p-4 rounded border border-blue-900">
-                <div className="font-bold text-xs text-blue-500 uppercase mb-2">New (from PDF)</div>
-                <div className="text-sm text-blue-200 space-y-1 mb-3">
+              <div className="bg-[#f8f9fa] p-4 rounded border border-[#1a73e8]">
+                <div className="font-bold text-xs text-[#1a73e8] uppercase mb-2">New (from PDF)</div>
+                <div className="text-sm text-[#202124] space-y-1 mb-3">
                     {Object.entries(importData.user || {}).map(([k, v]: any) => (
-                        v && <div key={k}><span className="text-blue-500">{k}:</span> {typeof v === 'object' ? JSON.stringify(v) : v}</div>
+                        v && <div key={k}><span className="text-[#1a73e8]">{k}:</span> {typeof v === 'object' ? JSON.stringify(v) : v}</div>
                     ))}
                 </div>
                 <button
@@ -623,8 +623,8 @@ const ImportReviewModal = ({ currentProfile, importData, onCancel, onConfirm }: 
                              onClick={() => addItem(key, item, i)}
                              disabled={isAdded}
                              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition ${
-                               isAdded 
-                                 ? 'bg-green-900/50 text-[#1e8e3e] border border-green-800 cursor-default' 
+                               isAdded
+                                 ? 'bg-[#e6f4ea] text-[#1e8e3e] border border-[#1e8e3e]/30 cursor-default'
                                  : 'bg-[#1a73e8] text-white hover:bg-blue-500'
                              }`}
                            >
@@ -641,10 +641,10 @@ const ImportReviewModal = ({ currentProfile, importData, onCancel, onConfirm }: 
         </div>
 
         <div className="p-6 border-t border-[#dadce0] flex justify-end gap-4">
-          <button onClick={onCancel} className="px-6 py-2 text-[#202124] hover:text-[#202124]">Cancel</button>
-          <button 
-            onClick={() => onConfirm(merged)} 
-            className="px-8 py-2 bg-green-600 text-[#202124] rounded-lg font-bold hover:bg-green-500 shadow-lg transition"
+          <button onClick={onCancel} className="px-6 py-2 text-[#5f6368] hover:text-[#202124]">Cancel</button>
+          <button
+            onClick={() => onConfirm(merged)}
+            className="px-8 py-2 bg-[#1e8e3e] text-white rounded-lg font-bold hover:bg-[#188038] shadow-lg transition"
           >
             Confirm & Save Changes
           </button>

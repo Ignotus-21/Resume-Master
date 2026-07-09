@@ -3,6 +3,7 @@ const MasterProfile = require('../models/MasterProfile');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { enforceGeminiQuota } = require('../utils/geminiGate');
 const { generateLinkedInContent } = require('../services/geminiService');
+const { trackUsage } = require('../utils/trackUsage');
 
 const CHAT_MODEL_NAME = process.env.GEMINI_MODEL || "gemini-2.5-flash";
 
@@ -81,8 +82,6 @@ const sendMessage = async (req, res) => {
     });
 
     const result = await chat.sendMessage(message);
-    
-    const { trackUsage } = require('../utils/trackUsage');
     await trackUsage(req, 'chatbot', result);
 
     const response = await result.response;

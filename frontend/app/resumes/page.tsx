@@ -319,7 +319,7 @@ function ResumesPageContent() {
                 >
                   <div className="font-bold text-[#202124] mb-1 pr-6 truncate">{resume.versionName}</div>
                   {resume.job && (
-                      <div className="text-xs text-purple-300 mb-2 truncate">
+                      <div className="text-xs text-purple-700 mb-2 truncate">
                           Linked: {resume.job.role} @ {resume.job.company}
                       </div>
                   )}
@@ -393,13 +393,13 @@ function ResumesPageContent() {
                     <div className="flex bg-[#f8f9fa] rounded-lg p-1">
                         <button 
                         onClick={() => setActiveView('preview')}
-                        className={`px-3 py-1 rounded-md text-sm font-medium transition ${activeView === 'preview' ? 'bg-[#1a73e8] text-[#202124]' : 'text-[#5f6368] hover:text-[#202124]'}`}
+                        className={`px-3 py-1 rounded-md text-sm font-medium transition ${activeView === 'preview' ? 'bg-[#1a73e8] text-white' : 'text-[#5f6368] hover:text-[#202124]'}`}
                         >
                         Preview
                         </button>
                         <button 
                         onClick={() => setActiveView('code')}
-                        className={`px-3 py-1 rounded-md text-sm font-medium transition ${activeView === 'code' ? 'bg-[#1a73e8] text-[#202124]' : 'text-[#5f6368] hover:text-[#202124]'}`}
+                        className={`px-3 py-1 rounded-md text-sm font-medium transition ${activeView === 'code' ? 'bg-[#1a73e8] text-white' : 'text-[#5f6368] hover:text-[#202124]'}`}
                         >
                         Code
                         </button>
@@ -466,7 +466,7 @@ function ResumesPageContent() {
                         <button 
                             onClick={handleUpdate}
                             disabled={saving}
-                            className="bg-green-600 text-[#202124] px-4 py-1 rounded-lg text-sm font-medium hover:bg-green-500 disabled:opacity-50"
+                            className="bg-green-600 text-white px-4 py-1 rounded-lg text-sm font-medium hover:bg-green-500 disabled:opacity-50"
                         >
                             {saving ? 'Saving...' : 'Save'}
                         </button>

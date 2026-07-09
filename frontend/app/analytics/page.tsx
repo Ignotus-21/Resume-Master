@@ -110,7 +110,7 @@ export default function AnalyticsPage() {
                       className="h-full rounded-lg transition-all flex items-center justify-end px-2"
                       style={{ width: `${(stats.counts[s] / stats.maxCount) * 100}%`, backgroundColor: STATUS_HEX[s], minWidth: stats.counts[s] > 0 ? '1.75rem' : 0 }}
                     >
-                      {stats.counts[s] > 0 && <span className="text-xs font-bold text-[#202124]/90">{stats.counts[s]}</span>}
+                      {stats.counts[s] > 0 && <span className="text-xs font-bold text-white">{stats.counts[s]}</span>}
                     </div>
                   </div>
                 </div>

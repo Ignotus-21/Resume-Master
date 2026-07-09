@@ -189,16 +189,20 @@ export default function AdminDashboard() {
                     </span>
                   </div>
                   <div className="w-full bg-[#f8f9fa] rounded-full h-3 border border-[#dadce0] overflow-hidden flex">
-                    <div 
-                      className="bg-[#1a73e8] h-full" 
-                      style={{ width: `${Math.max(5, (usage.input / (usage.input + usage.output)) * 100)}%` }}
-                      title={`Input: ${usage.input}`}
-                    />
-                    <div 
-                      className="bg-[#e77c40] h-full" 
-                      style={{ width: `${Math.max(5, (usage.output / (usage.input + usage.output)) * 100)}%` }}
-                      title={`Output: ${usage.output}`}
-                    />
+                    {usage.input + usage.output > 0 && (
+                      <>
+                        <div
+                          className="bg-[#1a73e8] h-full"
+                          style={{ width: `${(usage.input / (usage.input + usage.output)) * 100}%` }}
+                          title={`Input: ${usage.input}`}
+                        />
+                        <div
+                          className="bg-[#e77c40] h-full"
+                          style={{ width: `${(usage.output / (usage.input + usage.output)) * 100}%` }}
+                          title={`Output: ${usage.output}`}
+                        />
+                      </>
+                    )}
                   </div>
                   <div className="flex justify-between mt-1 text-xs text-[#5f6368]">
                     <span>{usage.input.toLocaleString()} Input</span>
@@ -315,7 +319,7 @@ export default function AdminDashboard() {
                 <div className="w-2/3">
                   <div className="flex justify-between text-sm mb-1">
                     <span className="font-medium text-[#202124]">{g.usedTokens.toLocaleString()} tokens used</span>
-                    <span className="text-[#5f6368]">Limit: {guestTokens}</span>
+                    <span className="text-[#5f6368]">Limit: {(breakdown.config?.guestTokenLimit ?? guestTokens).toLocaleString()}</span>
                   </div>
                   <ServiceBreakdownBars services={g.services} totalTokens={g.usedTokens} />
                 </div>

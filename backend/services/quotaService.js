@@ -11,10 +11,13 @@ const getConfig = async () => {
   if (cachedConfig && Date.now() - lastConfigFetch < 60000) {
     return cachedConfig;
   }
-  let config = await AppConfig.findOne({ key: 'global' });
-  if (!config) {
-    config = await AppConfig.create({ key: 'global', defaultTokenLimit: 15000, guestTokenLimit: 5000 });
-  }
+  // Atomic upsert so concurrent cold requests can't both miss findOne() and
+  // race into create(), which would throw a duplicate-key error on `key`.
+  const config = await AppConfig.findOneAndUpdate(
+    { key: 'global' },
+    { $setOnInsert: { key: 'global', defaultTokenLimit: 15000, guestTokenLimit: 5000 } },
+    { new: true, upsert: true, setDefaultsOnInsert: true }
+  );
   cachedConfig = config;
   lastConfigFetch = Date.now();
   return config;
@@ -32,14 +35,17 @@ const consumeQuota = async (req) => {
     const user = await User.findById(req.user.id);
     if (!user) return { allowed: false, remaining: 0 };
     
-    // Bypass for BYOK
-    if (user.geminiApiKeyEncrypted) {
+    // Bypass for BYOK — check the key actually usable on this request (set by
+    // loadGeminiKey), not just whether one is stored: if decryption fails
+    // (e.g. after an ENCRYPTION_KEY rotation), the request silently falls
+    // back to the shared key and must still be quota-checked.
+    if (req.geminiApiKey) {
       return { allowed: true, remaining: Infinity, isByok: true };
     }
-    
+
     const totalLimit = config.defaultTokenLimit + (user.extraTokens || 0);
     const used = user.usedTokens || 0;
-    
+
     if (used >= totalLimit) {
       return { allowed: false, remaining: 0, resetAt: null }; // Lifetime limit reached
     }
@@ -66,13 +72,16 @@ const consumeQuota = async (req) => {
       }
     }
     
-    // Reset window if expired
+    // Reset window if expired. A concurrent request may have already reset
+    // the same window, in which case this match returns null — re-fetch
+    // rather than crash on a null `usage` below.
     if (usage.windowStart < windowFloor) {
-      usage = await ApiUsage.findOneAndUpdate(
+      const resetUsage = await ApiUsage.findOneAndUpdate(
         { identity, windowStart: { $lt: windowFloor } },
         { $set: { count: 0, usedTokens: 0, windowStart: now } },
         { new: true }
       );
+      usage = resetUsage || await ApiUsage.findOne({ identity });
     }
     
     // Check tokens
@@ -98,7 +107,7 @@ const getQuotaStatus = async (req) => {
   if (req.user) {
     const user = await User.findById(req.user.id);
     if (!user) return { limit: 0, remaining: 0 };
-    if (user.geminiApiKeyEncrypted) {
+    if (req.geminiApiKey) {
       return { limit: Infinity, remaining: Infinity, isByok: true };
     }
     const totalLimit = config.defaultTokenLimit + (user.extraTokens || 0);

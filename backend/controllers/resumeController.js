@@ -132,7 +132,7 @@ const getResumeFeedback = async (req, res) => {
     const quotaRejection = await enforceGeminiQuota(req);
     if (quotaRejection) return res.status(quotaRejection.status).json(quotaRejection.body);
 
-    const recommendations = await getRecommendations(profile, jobDescription, req.geminiApiKey);
+    const recommendations = await getRecommendations(profile, jobDescription, req.geminiApiKey, req);
     res.json(recommendations);
   } catch (error) {
     console.error('Resume error:', error);

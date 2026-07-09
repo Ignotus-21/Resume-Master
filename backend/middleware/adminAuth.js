@@ -11,8 +11,7 @@ const adminAuth = async (req, res, next) => {
       return res.status(403).json({ message: 'Forbidden: Admins only' });
     }
     
-    // Attach the full user to the request for convenience
-    req.user.isAdmin = true;
+    req.user.isAdmin = user.isAdmin;
     next();
   } catch (err) {
     console.error("Admin Auth Error:", err);

@@ -56,6 +56,7 @@ const compileLatex = async (latexCode) => {
     // flagging it here rather than claiming it's covered.
     try {
       await execFilePromise('tectonic', [
+        '--untrusted',
         '--outdir', workDir,
         texPath,
       ], {
@@ -66,7 +67,11 @@ const compileLatex = async (latexCode) => {
         },
       });
     } catch (error) {
-        // compilation failed or had warnings, but we need to check log
+        // Compilation errors are diagnosed from resume.log below, but non-LaTeX
+        // failures (missing binary, network error fetching a package, timeout)
+        // won't produce one — log the raw error so those aren't silently a
+        // generic "Unknown LaTeX Compilation Error".
+        console.error('Tectonic compilation error:', error.message || error);
     }
 
     // Check if PDF exists

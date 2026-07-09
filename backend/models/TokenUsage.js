@@ -8,5 +8,8 @@ const tokenUsageSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+tokenUsageSchema.index({ identity: 1, createdAt: -1 });
+tokenUsageSchema.index({ createdAt: -1 });
+
 const TokenUsage = mongoose.model('TokenUsage', tokenUsageSchema);
 module.exports = TokenUsage;

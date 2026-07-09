@@ -34,7 +34,7 @@ const createApp = () => {
     credentials: true,
   }));
   app.use(helmet());
-  app.use(morgan('dev'));
+  app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
   app.use(express.json({ limit: '2mb' }));
   app.use(cookieParser());
   app.use(sanitizeBody);

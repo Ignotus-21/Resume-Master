@@ -118,10 +118,15 @@ router.get('/token-breakdown', adminAuth, async (req, res) => {
 
 router.post('/config', adminAuth, async (req, res) => {
   try {
-    const { defaultTokenLimit, guestTokenLimit } = req.body;
+    const defaultTokenLimit = Number(req.body.defaultTokenLimit);
+    const guestTokenLimit = Number(req.body.guestTokenLimit);
+    if (!Number.isSafeInteger(defaultTokenLimit) || defaultTokenLimit < 0 ||
+        !Number.isSafeInteger(guestTokenLimit) || guestTokenLimit < 0) {
+      return res.status(400).json({ message: 'Token limits must be non-negative integers' });
+    }
     const config = await AppConfig.findOneAndUpdate(
       { key: 'global' },
-      { $set: { defaultTokenLimit: Number(defaultTokenLimit), guestTokenLimit: Number(guestTokenLimit) } },
+      { $set: { defaultTokenLimit, guestTokenLimit } },
       { new: true, upsert: true }
     );
     res.json(config);
@@ -132,8 +137,11 @@ router.post('/config', adminAuth, async (req, res) => {
 
 router.post('/users/:id/tokens', adminAuth, async (req, res) => {
   try {
-    const { amount } = req.body;
-    const user = await User.findByIdAndUpdate(req.params.id, { $inc: { extraTokens: Number(amount) } }, { new: true });
+    const amount = Number(req.body.amount);
+    if (!Number.isSafeInteger(amount) || amount <= 0) {
+      return res.status(400).json({ message: 'Token grant amount must be a positive integer' });
+    }
+    const user = await User.findByIdAndUpdate(req.params.id, { $inc: { extraTokens: amount } }, { new: true });
     if (!user) return res.status(404).json({ message: 'User not found' });
     res.json({ message: 'Tokens granted', extraTokens: user.extraTokens });
   } catch (error) {

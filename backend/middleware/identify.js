@@ -14,8 +14,10 @@ const trackActiveSession = (req) => {
       { identity: trackId },
       { $set: { isGuest: req.isGuest, lastActiveAt: new Date() } },
       { upsert: true }
-    ).catch(() => {});
-  } catch (err) {}
+    ).catch((err) => console.error('Failed to track active session:', err));
+  } catch (err) {
+    console.error('ActiveSession require error:', err);
+  }
 };
 
 const identify = (req, res, next) => {

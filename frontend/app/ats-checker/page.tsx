@@ -61,9 +61,9 @@ export default function AtsCheckerPage() {
           </select>
         </div>
         <div className="flex items-center gap-3 my-4">
-          <div className="h-px bg-white flex-1" />
+          <div className="h-px bg-[#dadce0] flex-1" />
           <span className="text-xs text-[#5f6368] uppercase">or paste a description</span>
-          <div className="h-px bg-white flex-1" />
+          <div className="h-px bg-[#dadce0] flex-1" />
         </div>
         <textarea
           value={jdText}

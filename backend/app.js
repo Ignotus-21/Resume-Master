@@ -73,6 +73,10 @@ const createApp = () => {
   app.use('/api/auth/signup', authLimiter);
   app.use('/api/auth/login', authLimiter);
   app.use('/api/auth/google', authLimiter);
+  app.use('/api/auth/verify-email', authLimiter);
+  app.use('/api/auth/resend-verification', authLimiter);
+  app.use('/api/auth/request-password-reset', authLimiter);
+  app.use('/api/auth/reset-password', authLimiter);
 
   // Basic Route
   app.get('/', (req, res) => {

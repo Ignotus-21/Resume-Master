@@ -8,6 +8,7 @@ import { useToast } from '@/components/ui/Toast';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { GoogleSignInButton } from '@/components/GoogleSignInButton';
+import { Turnstile, turnstileEnabled } from '@/components/Turnstile';
 
 export default function SignupPage() {
   const { signup, loginWithGoogle } = useAuth();
@@ -16,14 +17,19 @@ export default function SignupPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [captchaToken, setCaptchaToken] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (turnstileEnabled && !captchaToken) {
+      showToast('Please complete the CAPTCHA', 'info');
+      return;
+    }
     setSubmitting(true);
     try {
-      await signup(email, password, name);
-      showToast('Account created! Your guest data was carried over.', 'success');
+      await signup(email, password, name, captchaToken);
+      showToast('Account created! Check your inbox to verify your email.', 'success');
       router.push('/dashboard');
     } catch (error: any) {
       showToast(error.message || 'Failed to sign up', 'error');
@@ -88,6 +94,7 @@ export default function SignupPage() {
             />
             <p className="text-xs text-slate-500 mt-1">At least 8 characters</p>
           </div>
+          <Turnstile onToken={setCaptchaToken} />
           <Button type="submit" loading={submitting} className="w-full">
             <UserPlus className="h-4 w-4" />
             Sign Up

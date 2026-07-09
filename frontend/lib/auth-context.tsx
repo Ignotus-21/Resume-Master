@@ -7,6 +7,7 @@ export interface AuthUser {
   email: string;
   name?: string;
   hasOwnKey: boolean;
+  emailVerified: boolean;
 }
 
 interface AuthContextValue {
@@ -14,7 +15,7 @@ interface AuthContextValue {
   loading: boolean;
   refresh: () => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, name?: string) => Promise<void>;
+  signup: (email: string, password: string, name?: string, turnstileToken?: string) => Promise<void>;
   loginWithGoogle: (credential: string) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -50,8 +51,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(data.user);
   }, []);
 
-  const signup = useCallback(async (email: string, password: string, name?: string) => {
-    const data = await apiJson('/api/auth/signup', 'POST', { email, password, name });
+  const signup = useCallback(async (email: string, password: string, name?: string, turnstileToken?: string) => {
+    const data = await apiJson('/api/auth/signup', 'POST', { email, password, name, turnstileToken });
     setUser(data.user);
   }, []);
 

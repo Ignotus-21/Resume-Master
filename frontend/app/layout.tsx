@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
+import { VerifyEmailBanner } from "@/components/VerifyEmailBanner";
 import { ToastProvider } from "@/components/ui/Toast";
 import { AuthProvider } from "@/lib/auth-context";
 
@@ -23,6 +24,7 @@ export default function RootLayout({
         <ToastProvider>
           <AuthProvider>
             <Navbar />
+            <VerifyEmailBanner />
             <main className="container mx-auto p-4">
               {children}
             </main>

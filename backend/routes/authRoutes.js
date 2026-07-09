@@ -10,6 +10,10 @@ const {
   quota,
   setGeminiKey,
   removeGeminiKey,
+  verifyEmail,
+  resendVerification,
+  requestPasswordReset,
+  resetPassword,
 } = require('../controllers/authController');
 
 router.post('/signup', signup);
@@ -20,5 +24,10 @@ router.get('/me', me);
 router.get('/quota', quota);
 router.put('/gemini-key', requireAuth, setGeminiKey);
 router.delete('/gemini-key', requireAuth, removeGeminiKey);
+
+router.post('/verify-email', verifyEmail);
+router.post('/resend-verification', requireAuth, resendVerification);
+router.post('/request-password-reset', requestPasswordReset);
+router.post('/reset-password', resetPassword);
 
 module.exports = router;

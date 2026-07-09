@@ -28,8 +28,11 @@ const getConfig = async () => {
  * Takes the `req` object to check user authentication and BYOK status.
  */
 const consumeQuota = async (req) => {
+  if (!req.user && !(req.quotaIdentity || req.identity)) {
+    throw new Error('consumeQuota called without an identified request (identify middleware must run first)');
+  }
   const config = await getConfig();
-  
+
   if (req.user) {
     // Logged in user
     const user = await User.findById(req.user.id);
@@ -102,8 +105,11 @@ const consumeQuota = async (req) => {
 };
 
 const getQuotaStatus = async (req) => {
+  if (!req.user && !(req.quotaIdentity || req.identity)) {
+    throw new Error('getQuotaStatus called without an identified request (identify middleware must run first)');
+  }
   const config = await getConfig();
-  
+
   if (req.user) {
     const user = await User.findById(req.user.id);
     if (!user) return { limit: 0, remaining: 0 };

@@ -54,6 +54,7 @@ const compileLatex = async (latexCode) => {
     // user can access. That risk existed before this change too (no
     // openin_any/texmf.cnf restriction is configured anywhere in this repo);
     // flagging it here rather than claiming it's covered.
+    let execError = null;
     try {
       await execFilePromise('tectonic', [
         '--untrusted',
@@ -69,9 +70,9 @@ const compileLatex = async (latexCode) => {
     } catch (error) {
         // Compilation errors are diagnosed from resume.log below, but non-LaTeX
         // failures (missing binary, network error fetching a package, timeout)
-        // won't produce one — log the raw error so those aren't silently a
-        // generic "Unknown LaTeX Compilation Error".
+        // won't produce one — keep the raw error to surface if there's no log.
         console.error('Tectonic compilation error:', error.message || error);
+        execError = error.message || String(error);
     }
 
     // Check if PDF exists
@@ -91,6 +92,12 @@ const compileLatex = async (latexCode) => {
             log = await fs.promises.readFile(logPath, 'utf8');
         }
         await cleanup(workDir);
+        // No log at all (e.g. missing binary, network error, timeout) means
+        // parseLatexErrors would fall back to a generic message — surface the
+        // actual execFile error instead when there's nothing else to go on.
+        if (!log && execError) {
+          return { success: false, log: execError };
+        }
         return { success: false, log: parseLatexErrors(log) };
     }
 

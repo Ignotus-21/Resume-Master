@@ -105,11 +105,15 @@ export default function AdminDashboard() {
   };
 
   const handleUpdateConfig = async () => {
+    const defaultTokenLimit = parseInt(defaultTokens, 10);
+    const guestTokenLimit = parseInt(guestTokens, 10);
+    if (!Number.isFinite(defaultTokenLimit) || defaultTokenLimit < 0 ||
+        !Number.isFinite(guestTokenLimit) || guestTokenLimit < 0) {
+      showToast('Token limits must be non-negative numbers', 'error');
+      return;
+    }
     try {
-      await apiJson('/api/admin/config', 'POST', {
-        defaultTokenLimit: parseInt(defaultTokens),
-        guestTokenLimit: parseInt(guestTokens)
-      });
+      await apiJson('/api/admin/config', 'POST', { defaultTokenLimit, guestTokenLimit });
       showToast('Global Config Updated Successfully', 'success');
       fetchData();
     } catch (err: any) {

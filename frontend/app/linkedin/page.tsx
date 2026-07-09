@@ -8,10 +8,15 @@ import { Button } from '@/components/ui/Button';
 
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
+  const { showToast } = useToast();
   const copy = async () => {
-    await navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      showToast('Copy failed — your browser blocked clipboard access', 'error');
+    }
   };
   return (
     <button onClick={copy} className="text-slate-400 hover:text-blue-400 transition flex items-center gap-1 text-sm" aria-label="Copy">

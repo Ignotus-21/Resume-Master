@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   UserRound, LayoutDashboard, FileText, ArrowRight, LucideIcon,
   UploadCloud, Wand2, Download, KeyRound, ShieldCheck, Rocket,
@@ -10,6 +11,7 @@ import { Button } from '@/components/ui/Button';
 
 export default function Home() {
   const { user, loading } = useAuth();
+  const router = useRouter();
 
   return (
     <div className="flex flex-col items-center">
@@ -31,23 +33,17 @@ export default function Home() {
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           {!loading && user ? (
-            <Link href="/dashboard">
-              <Button className="px-8 py-3 text-base">
-                Go to Dashboard <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
+            <Button className="px-8 py-3 text-base" onClick={() => router.push('/dashboard')}>
+              Go to Dashboard <ArrowRight className="h-4 w-4" />
+            </Button>
           ) : (
             <>
-              <Link href="/dashboard">
-                <Button variant="secondary" className="px-8 py-3 text-base w-full sm:w-auto">
-                  Continue for Free
-                </Button>
-              </Link>
-              <Link href="/signup">
-                <Button className="px-8 py-3 text-base w-full sm:w-auto">
-                  Sign Up <ArrowRight className="h-4 w-4" />
-                </Button>
-              </Link>
+              <Button variant="secondary" className="px-8 py-3 text-base w-full sm:w-auto" onClick={() => router.push('/dashboard')}>
+                Continue for Free
+              </Button>
+              <Button className="px-8 py-3 text-base w-full sm:w-auto" onClick={() => router.push('/signup')}>
+                Sign Up <ArrowRight className="h-4 w-4" />
+              </Button>
             </>
           )}
         </div>

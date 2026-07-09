@@ -29,8 +29,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const data = await apiFetch('/api/auth/me');
       setUser(data.user);
-    } catch {
-      setUser(null);
+    } catch (err) {
+      // Only treat an explicit auth rejection as "logged out". A transient 500
+      // or network blip shouldn't visually sign the user out when their cookie
+      // is still valid.
+      if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
+        setUser(null);
+      }
     } finally {
       setLoading(false);
     }

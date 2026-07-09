@@ -19,8 +19,9 @@ describe('POST /api/master/upload-resume', () => {
   let app;
   beforeEach(() => {
     app = createApp();
-    ApiUsage.findOne.mockResolvedValue(null);
-    ApiUsage.create.mockResolvedValue({ identity: 'guest', count: 1, windowStart: new Date() });
+    // Allow the shared-key quota gate (atomic flow: upsert + conditional inc).
+    ApiUsage.updateOne.mockResolvedValue({});
+    ApiUsage.findOneAndUpdate.mockResolvedValue({ identity: 'guest', count: 1, windowStart: new Date() });
   });
 
   it('rejects non-PDF mimetypes', async () => {

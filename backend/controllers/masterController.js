@@ -1,9 +1,7 @@
-console.log('Loading masterController...');
 const MasterProfile = require('../models/MasterProfile');
 const { parseResumeData } = require('../services/geminiService');
 const { enforceGeminiQuota } = require('../utils/geminiGate');
 const fs = require('fs');
-console.log('masterController dependencies loaded');
 
 // Fields a client is allowed to set on their own profile. Notably excludes
 // `owner` (and Mongo internals) so a caller can't reassign/orphan the record.
@@ -80,8 +78,11 @@ const ingestRawText = async (req, res) => {
       // Ideally, we should merge arrays (like adding new projects), but for now let's simple merge
       // or we can push to arrays. Let's do a smart merge for top level fields.
 
-      // Simple merge for User Details
-      if (parsedData.user) Object.assign(profile.user, parsedData.user);
+      // Simple merge for User Details (profile.user may be undefined on a
+      // profile that was created with only { owner }).
+      if (parsedData.user) {
+        profile.user = Object.assign(profile.user || {}, parsedData.user);
+      }
 
       // For arrays, we probably want to append unique items, but let's just add them for now
       // The user can edit them in UI.

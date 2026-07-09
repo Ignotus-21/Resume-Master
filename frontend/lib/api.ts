@@ -11,7 +11,13 @@ export class ApiError extends Error {
 async function parseBody(res: Response) {
   const contentType = res.headers.get('content-type') || '';
   if (contentType.includes('application/json')) {
-    return res.json();
+    // A non-2xx response can carry an empty/invalid JSON body (e.g. from a
+    // proxy); don't let res.json()'s SyntaxError escape as a raw error.
+    try {
+      return await res.json();
+    } catch {
+      return null;
+    }
   }
   return res.text();
 }

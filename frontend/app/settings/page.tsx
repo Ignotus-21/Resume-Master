@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { KeyRound, Trash2, User as UserIcon, LogOut, ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { apiFetch, apiJson, ApiError } from '@/lib/api';
@@ -19,6 +19,7 @@ interface Quota {
 export default function SettingsPage() {
   const { user, loading, logout, refresh } = useAuth();
   const { showToast } = useToast();
+  const router = useRouter();
   const [apiKey, setApiKey] = useState('');
   const [saving, setSaving] = useState(false);
   const [quota, setQuota] = useState<Quota | null>(null);
@@ -72,9 +73,7 @@ export default function SettingsPage() {
           <p className="text-slate-400 text-sm mb-6">
             Bringing your own Gemini API key (for unlimited AI requests) requires an account so we can store it securely.
           </p>
-          <Link href="/signup">
-            <Button className="w-full">Create an account</Button>
-          </Link>
+          <Button className="w-full" onClick={() => router.push('/signup')}>Create an account</Button>
         </Card>
       </div>
     );

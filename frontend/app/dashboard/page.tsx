@@ -88,7 +88,7 @@ export default function DashboardPage() {
         payload.dateApplied = new Date().toISOString();
       }
       await apiJson(`/api/jobs/${job._id}`, 'PUT', payload);
-      fetchJobs();
+      await fetchJobs();
     } catch (error: any) {
       showToast(error.message || 'Failed to update status', 'error');
     }
@@ -98,7 +98,7 @@ export default function DashboardPage() {
     if (!confirm('Are you sure?')) return;
     try {
       await apiFetch(`/api/jobs/${id}`, { method: 'DELETE' });
-      fetchJobs();
+      await fetchJobs();
       showToast('Job deleted', 'success');
     } catch (error: any) {
       showToast(error.message || 'Failed to delete job', 'error');

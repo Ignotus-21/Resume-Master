@@ -60,13 +60,19 @@ export default function AnalyticsPage() {
   }, [jobs]);
 
   const byMonth = useMemo(() => {
-    const map: Record<string, number> = {};
+    // Bucket by month, tracking a sort key so the timeline reads oldest→newest
+    // regardless of the order jobs arrive in.
+    const map: Record<string, { count: number; sortKey: number }> = {};
     for (const j of jobs) {
       const d = new Date(j.dateApplied || j.createdAt);
       const key = d.toLocaleString('en-US', { month: 'short', year: '2-digit' });
-      map[key] = (map[key] || 0) + 1;
+      const sortKey = d.getFullYear() * 12 + d.getMonth();
+      if (!map[key]) map[key] = { count: 0, sortKey };
+      map[key].count += 1;
     }
-    const entries = Object.entries(map);
+    const entries = Object.entries(map)
+      .sort((a, b) => a[1].sortKey - b[1].sortKey)
+      .map(([month, { count }]) => [month, count] as [string, number]);
     const max = Math.max(1, ...entries.map(([, v]) => v));
     return { entries, max };
   }, [jobs]);

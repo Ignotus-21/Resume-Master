@@ -18,6 +18,10 @@ const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
 export function GoogleSignInButton({ onCredential }: { onCredential: (credential: string) => void }) {
   const containerRef = useRef<HTMLDivElement>(null);
+  // Keep the latest callback in a ref so the init effect can run exactly once
+  // per mount even though callers pass a new inline function each render.
+  const onCredentialRef = useRef(onCredential);
+  onCredentialRef.current = onCredential;
 
   useEffect(() => {
     if (!GOOGLE_CLIENT_ID) return;
@@ -26,7 +30,7 @@ export function GoogleSignInButton({ onCredential }: { onCredential: (credential
       if (!window.google || !containerRef.current) return;
       window.google.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID,
-        callback: (response) => onCredential(response.credential),
+        callback: (response) => onCredentialRef.current(response.credential),
       });
       window.google.accounts.id.renderButton(containerRef.current, {
         theme: 'outline',
@@ -51,7 +55,7 @@ export function GoogleSignInButton({ onCredential }: { onCredential: (credential
     return () => {
       script.onload = null;
     };
-  }, [onCredential]);
+  }, []);
 
   if (!GOOGLE_CLIENT_ID) return null;
 

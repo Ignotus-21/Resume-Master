@@ -11,9 +11,10 @@ const createApp = () => {
   const app = express();
 
   // Trust the reverse proxy in front of the app so req.ip is the real client
-  // (used for IP-based rate limiting and the guest AI-quota key). Configurable
-  // hop count; defaults to a single proxy as in the docker-compose setup.
-  app.set('trust proxy', Number(process.env.TRUST_PROXY_HOPS ?? 1));
+  // (used for IP-based rate limiting and the guest AI-quota key). Defaults to 0
+  // (disabled) so X-Forwarded-For can't be spoofed when NOT behind a trusted
+  // proxy; set TRUST_PROXY_HOPS to the real hop count in a proxied deployment.
+  app.set('trust proxy', Number(process.env.TRUST_PROXY_HOPS ?? 0));
 
   // Restrict CORS to known frontend origin(s) instead of reflecting any origin.
   const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:3000')

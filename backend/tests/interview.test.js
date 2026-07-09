@@ -17,6 +17,7 @@ jest.mock('../services/geminiService', () => ({
 
 const InterviewSession = require('../models/InterviewSession');
 const MasterProfile = require('../models/MasterProfile');
+const ApiUsage = require('../models/ApiUsage');
 
 process.env.CORS_ORIGIN = 'http://localhost:3000';
 const createApp = require('../app');
@@ -26,6 +27,9 @@ describe('mock interview endpoints', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     app = createApp();
+    // Allow the shared-key quota gate (atomic flow).
+    ApiUsage.updateOne.mockResolvedValue({});
+    ApiUsage.findOneAndUpdate.mockResolvedValue({ count: 1, windowStart: new Date() });
   });
 
   it('start generates questions and scopes the session to the owner', async () => {

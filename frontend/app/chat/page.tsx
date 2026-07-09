@@ -22,6 +22,7 @@ export default function ChatPage() {
 
   const startSession = async () => {
     try {
+      setError('');
       const data = await apiJson('/api/ai/start', 'POST', { contextType: 'General' });
       setSessionId(data._id);
       setMessages(data.history || []);
@@ -58,7 +59,14 @@ export default function ChatPage() {
         AI Chat Assistant
       </h1>
 
-      {error && <div className="bg-red-900/50 text-red-200 p-3 rounded-xl mb-4 border border-red-800 text-sm">{error}</div>}
+      {error && (
+        <div className="bg-red-900/50 text-red-200 p-3 rounded-xl mb-4 border border-red-800 text-sm flex items-center justify-between gap-3">
+          <span>{error}</span>
+          {!sessionId && (
+            <button onClick={startSession} className="shrink-0 font-semibold underline hover:text-white">Retry</button>
+          )}
+        </div>
+      )}
 
       <div
         ref={scrollRef}

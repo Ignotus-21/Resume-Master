@@ -118,6 +118,13 @@ const googleLogin = async (req, res) => {
     });
     const payload = ticket.getPayload();
 
+    // Require a verified email before trusting it for account lookup/linking,
+    // otherwise a Google token carrying an unverified email could be used to
+    // take over an existing email/password account.
+    if (!payload.email || payload.email_verified !== true) {
+      return res.status(401).json({ message: 'Google account email is not verified' });
+    }
+
     let user = await User.findOne({ googleId: payload.sub });
     if (!user) {
       user = await User.findOne({ email: payload.email.toLowerCase() });

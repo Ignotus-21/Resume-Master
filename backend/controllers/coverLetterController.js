@@ -16,6 +16,10 @@ const pickAllowed = (body) => {
 const generate = async (req, res) => {
   const { jobId, jdText, tone, length } = req.body;
 
+  if (jobId !== undefined && typeof jobId !== 'string') {
+    return res.status(400).json({ message: 'Invalid jobId' });
+  }
+
   try {
     const profile = await MasterProfile.findOne({ owner: req.identity });
     if (!profile) return res.status(404).json({ message: 'Master Profile not found' });

@@ -1,10 +1,16 @@
-console.log('Loading masterRoutes...');
 const express = require('express');
+const path = require('path');
+const fs = require('fs');
 const router = express.Router();
 const multer = require('multer');
 
+// Ensure the upload target exists — it's gitignored, so a fresh clone/container
+// won't have it and multer would otherwise throw ENOENT on first upload.
+const UPLOAD_DIR = path.join(__dirname, '..', 'uploads');
+fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+
 const upload = multer({
-  dest: 'uploads/',
+  dest: UPLOAD_DIR,
   limits: { fileSize: 5 * 1024 * 1024, files: 1 },
   fileFilter: (req, file, cb) => {
     if (file.mimetype !== 'application/pdf') {
@@ -15,7 +21,6 @@ const upload = multer({
 });
 
 const { getProfile, updateProfile, ingestRawText, uploadResume } = require('../controllers/masterController');
-console.log('masterRoutes loaded controller');
 
 router.get('/', getProfile);
 router.post('/', updateProfile);

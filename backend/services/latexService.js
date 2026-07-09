@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const { execFile } = require('child_process');
 const util = require('util');
 const execFilePromise = util.promisify(execFile);
@@ -21,7 +22,9 @@ const compileLatex = async (latexCode) => {
     return { success: false, error: 'LaTeX source exceeds maximum allowed size' };
   }
 
-  const jobId = Math.random().toString(36).substring(7);
+  // Collision-resistant per-job directory so concurrent compiles never share a
+  // working dir (which would risk mixing one user's output into another's).
+  const jobId = crypto.randomUUID();
   const workDir = path.join(TEMP_DIR, jobId);
 
   try {

@@ -82,10 +82,14 @@ export default function CoverLettersPage() {
   };
 
   const downloadDocx = async () => {
-    const paragraphs = editBody.split('\n').map((line) => new Paragraph({ text: line }));
-    const doc = new Document({ sections: [{ children: paragraphs }] });
-    const blob = await Packer.toBlob(doc);
-    saveAs(blob, `${active.versionName || 'cover-letter'}.docx`);
+    try {
+      const paragraphs = editBody.split('\n').map((line) => new Paragraph({ text: line }));
+      const doc = new Document({ sections: [{ children: paragraphs }] });
+      const blob = await Packer.toBlob(doc);
+      saveAs(blob, `${active.versionName || 'cover-letter'}.docx`);
+    } catch (e: any) {
+      showToast(e.message || 'Failed to generate DOCX', 'error');
+    }
   };
 
   const downloadPdf = () => window.print();

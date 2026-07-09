@@ -7,6 +7,10 @@ const { enforceGeminiQuota } = require('../utils/geminiGate');
 const start = async (req, res) => {
   const { jobId, jdText } = req.body;
 
+  if (jobId !== undefined && typeof jobId !== 'string') {
+    return res.status(400).json({ message: 'Invalid jobId' });
+  }
+
   try {
     let jobDescription = jdText;
     let role = 'the role';
@@ -46,6 +50,12 @@ const start = async (req, res) => {
 const answer = async (req, res) => {
   const { sessionId, question, answer: answerText } = req.body;
 
+  if (typeof sessionId !== 'string' || !sessionId) {
+    return res.status(400).json({ message: 'A valid sessionId is required' });
+  }
+  if (typeof question !== 'string' || !question.trim()) {
+    return res.status(400).json({ message: 'A question is required' });
+  }
   if (typeof answerText !== 'string' || !answerText.trim()) {
     return res.status(400).json({ message: 'An answer is required' });
   }

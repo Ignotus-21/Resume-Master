@@ -72,6 +72,23 @@ router.get('/token-breakdown', adminAuth, async (req, res) => {
       { $group: { _id: null, totalUsed: { $sum: "$usedTokens" }, count: { $sum: 1 } } }
     ]);
     
+    // Fetch service breakdown per identity
+    const serviceBreakdown = await TokenUsage.aggregate([
+      {
+        $group: {
+          _id: { identity: "$identity", service: "$service" },
+          total: { $sum: { $add: ["$inputTokens", "$outputTokens"] } }
+        }
+      }
+    ]);
+
+    const usageMap = {};
+    serviceBreakdown.forEach(b => {
+      const id = b._id && b._id.identity ? b._id.identity.toString() : 'unknown';
+      if (!usageMap[id]) usageMap[id] = {};
+      usageMap[id][b._id && b._id.service ? b._id.service : 'unknown'] = b.total;
+    });
+
     let config = await AppConfig.findOne({ key: 'global' });
     if (!config) config = { defaultTokenLimit: 15000, guestTokenLimit: 5000 };
 
@@ -82,11 +99,13 @@ router.get('/token-breakdown', adminAuth, async (req, res) => {
         name: u.name,
         usedTokens: u.usedTokens,
         extraTokens: u.extraTokens,
-        totalLimit: config.defaultTokenLimit + (u.extraTokens || 0)
+        totalLimit: config.defaultTokenLimit + (u.extraTokens || 0),
+        services: u._id ? (usageMap[u._id.toString()] || {}) : {}
       })),
       liveGuests: liveGuestsUsage.map(g => ({
         identity: g.identity,
         usedTokens: g.usedTokens,
+        services: g.identity ? (usageMap[g.identity.toString()] || {}) : {}
       })),
       cumulativeInactiveGuests: inactiveGuestUsage[0] || { totalUsed: 0, count: 0 },
       config

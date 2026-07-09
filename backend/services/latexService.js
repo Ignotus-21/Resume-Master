@@ -44,13 +44,16 @@ const compileLatex = async (latexCode) => {
     // Write LaTeX code to file
     await fs.promises.writeFile(texPath, latexCode);
 
-    // Compile
-    // execFile (no shell) avoids shell-metacharacter injection via the path.
-    // -no-shell-escape blocks \write18 and other shell-escape based RCE vectors.
-    // -interaction=nonstopmode prevents hanging on errors.
-    // -output-directory defines where files go.
-    // Compile using Tectonic for automatic package management
-    // This allows downloading missing packages (like titlesec, fontawesome, etc.) on the fly!
+    // Compile using Tectonic for automatic package management. It fetches
+    // missing packages (titlesec, fontawesome, etc.) on the fly, and — unlike
+    // pdflatex — has no \write18/shell-escape support at all, so there's no
+    // flag needed to disable it. execFile (no shell) avoids shell-metacharacter
+    // injection via the path/args.
+    // NOTE: this does not sandbox filesystem reads — a crafted \input/\openin
+    // with an absolute or ../ path can still read any file the `node` process
+    // user can access. That risk existed before this change too (no
+    // openin_any/texmf.cnf restriction is configured anywhere in this repo);
+    // flagging it here rather than claiming it's covered.
     try {
       await execFilePromise('tectonic', [
         '--outdir', workDir,

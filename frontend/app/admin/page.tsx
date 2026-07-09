@@ -9,17 +9,25 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/components/ui/Toast';
 
 const SERVICE_COLORS: Record<string, string> = {
-  chat: 'bg-[#1a73e8]',
-  resume: 'bg-[#1e8e3e]',
-  ats_checker: 'bg-[#9333ea]',
-  linkedin_optimizer: 'bg-[#e77c40]',
+  chatbot: 'bg-[#1a73e8]',
+  'resume-parser': 'bg-[#1e8e3e]',
+  'resume-tailor': 'bg-[#1e8e3e]',
+  'latex-generator': 'bg-[#f9ab00]',
+  'cover-letter': 'bg-[#9333ea]',
+  'interview-prep': 'bg-[#e77c40]',
+  'linkedin-optimizer': 'bg-[#0f9d58]',
+  other: 'bg-[#5f6368]',
 };
 
 const SERVICE_LABELS: Record<string, { label: string, icon: any }> = {
-  chat: { label: 'AI Chat', icon: Bot },
-  resume: { label: 'Resume Gen', icon: FileText },
-  ats_checker: { label: 'ATS Checker', icon: CheckCircle },
-  linkedin_optimizer: { label: 'LinkedIn Opt', icon: Briefcase },
+  chatbot: { label: 'AI Chat', icon: Bot },
+  'resume-parser': { label: 'Resume Parser', icon: FileText },
+  'resume-tailor': { label: 'Resume Tailor', icon: FileText },
+  'latex-generator': { label: 'LaTeX Generator', icon: CheckCircle },
+  'cover-letter': { label: 'Cover Letter', icon: Briefcase },
+  'interview-prep': { label: 'Interview Prep', icon: Briefcase },
+  'linkedin-optimizer': { label: 'LinkedIn Optimizer', icon: Briefcase },
+  other: { label: 'Other', icon: Server },
 };
 
 const ServiceBreakdownBars = ({ services, totalTokens }: { services: any, totalTokens: number }) => {

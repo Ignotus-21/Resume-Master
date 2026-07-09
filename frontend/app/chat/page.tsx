@@ -48,7 +48,7 @@ export default function ChatPage() {
       const data = await apiJson('/api/ai/send', 'POST', { sessionId, message: userMsg.parts[0].text });
       setMessages(data.history || []);
     } catch (error: any) {
-      if (error.code === 'QUOTA_EXCEEDED' || (error.message && error.message.toLowerCase().includes('quota exceeded'))) {
+      if (error.body?.code === 'QUOTA_EXCEEDED' || (error.message && error.message.toLowerCase().includes('quota exceeded'))) {
         setMessages((prev) => [...prev, { role: 'model', isQuotaError: true, parts: [{ text: error.message }] }]);
       } else {
         const errorText = error.message || 'Could not reach server.';
@@ -94,7 +94,7 @@ export default function ChatPage() {
                   <p className="text-[#5f6368] text-sm mb-4">
                     You have consumed all your free AI tokens. Add your own Gemini API key to continue chatting!
                   </p>
-                  <Button onClick={() => router.push('/profile')} className="bg-[#d93025] text-white hover:bg-[#b3261e] w-full">
+                  <Button onClick={() => router.push('/settings')} className="bg-[#d93025] text-white hover:bg-[#b3261e] w-full">
                     Add API Key in Settings
                   </Button>
                 </div>

@@ -312,7 +312,7 @@ const quota = async (req, res) => {
     if (req.geminiApiKey) {
       return res.json({ usingOwnKey: true, limit: null, remaining: null, resetAt: null });
     }
-    const status = await getQuotaStatus(req.quotaIdentity || req.identity);
+    const status = await getQuotaStatus(req);
     res.json({ usingOwnKey: false, ...status });
   } catch (error) {
     console.error('Quota lookup error:', error);

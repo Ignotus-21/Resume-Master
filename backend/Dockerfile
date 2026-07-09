@@ -5,12 +5,19 @@ FROM node:22-slim
 
 # Tectonic is a self-contained LaTeX engine (statically linked, no texlive
 # install needed) that fetches missing packages on the fly — this is the
-# binary backend/services/latexService.js actually shells out to.
+# binary backend/services/latexService.js actually shells out to. Pinned to a
+# specific release and fetched as a plain tarball from GitHub Releases over
+# HTTPS (not a "curl | sh" installer script) for a reproducible, auditable
+# build; bump TECTONIC_VERSION deliberately rather than tracking "latest".
+ENV TECTONIC_VERSION=0.16.9
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     ca-certificates \
-    && curl --proto '=https' --tlsv1.2 -fsSL https://drop-sh.fullyjustified.net | sh \
-    && mv tectonic /usr/local/bin/tectonic \
+    && curl --proto '=https' --tlsv1.2 -fsSL \
+       -o /tmp/tectonic.tar.gz \
+       "https://github.com/tectonic-typesetting/tectonic/releases/download/tectonic%40${TECTONIC_VERSION}/tectonic-${TECTONIC_VERSION}-x86_64-unknown-linux-musl.tar.gz" \
+    && tar -xzf /tmp/tectonic.tar.gz -C /usr/local/bin tectonic \
+    && rm /tmp/tectonic.tar.gz \
     && apt-get purge -y --auto-remove curl \
     && rm -rf /var/lib/apt/lists/*
 

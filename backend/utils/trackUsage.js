@@ -19,10 +19,20 @@ const trackUsage = async (req, service, responseResult) => {
       outputTokens
     });
 
+    // Tokens spent on a user's own Gemini key don't draw from the shared-key
+    // quota, so don't count them against usedTokens (otherwise removing a
+    // BYOK key later would leave the account pre-charged against the shared
+    // limit for usage that never touched it).
+    if (req.geminiApiKey) return;
+
     if (req.user) {
       await User.findByIdAndUpdate(req.user.id, { $inc: { usedTokens: totalTokens } });
     } else {
-      await ApiUsage.findOneAndUpdate({ identity }, { $inc: { usedTokens: totalTokens } });
+      await ApiUsage.findOneAndUpdate(
+        { identity },
+        { $inc: { usedTokens: totalTokens }, $setOnInsert: { identity, count: 0, windowStart: new Date() } },
+        { upsert: true }
+      );
     }
   } catch (error) {
     console.error("Failed to track token usage:", error);

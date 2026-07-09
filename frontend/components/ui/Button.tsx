@@ -1,6 +1,6 @@
 import { Loader2 } from 'lucide-react';
 
-type Variant = 'primary' | 'secondary' | 'danger' | 'ghost';
+type Variant = 'primary' | 'secondary' | 'danger' | 'ghost' | 'outline';
 
 const VARIANT_CLASSES: Record<Variant, string> = {
   primary:
@@ -10,6 +10,7 @@ const VARIANT_CLASSES: Record<Variant, string> = {
   danger:
     'bg-[#d93025] text-white hover:bg-[#b3261e] shadow-[0_4px_14px_0_rgba(217,48,37,0.2)]',
   ghost: 'bg-transparent text-[#5f6368] hover:bg-[#f8f9fa] hover:text-[#202124]',
+  outline: 'bg-transparent text-[#202124] border border-[#dadce0] hover:bg-[#f8f9fa]',
 };
 
 export function Button({

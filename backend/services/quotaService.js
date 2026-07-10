@@ -87,18 +87,21 @@ const consumeQuota = async (req) => {
       usage = resetUsage || await ApiUsage.findOne({ identity });
     }
     
-    // Check tokens
-    if (usage.usedTokens >= config.guestTokenLimit) {
-      return { 
-        allowed: false, 
-        remaining: 0, 
-        resetAt: new Date(usage.windowStart.getTime() + WINDOW_MS) 
+    // Check tokens. Guard against pre-existing ApiUsage docs from before
+    // usedTokens existed on the schema — undefined would make the >= check
+    // always false (silently unlimited) and the subtraction below NaN.
+    const usedTokens = usage.usedTokens || 0;
+    if (usedTokens >= config.guestTokenLimit) {
+      return {
+        allowed: false,
+        remaining: 0,
+        resetAt: new Date(usage.windowStart.getTime() + WINDOW_MS)
       };
     }
-    
-    return { 
-      allowed: true, 
-      remaining: config.guestTokenLimit - usage.usedTokens,
+
+    return {
+      allowed: true,
+      remaining: config.guestTokenLimit - usedTokens,
       resetAt: new Date(usage.windowStart.getTime() + WINDOW_MS)
     };
   }
@@ -129,7 +132,7 @@ const getQuotaStatus = async (req) => {
     }
     return {
       limit: config.guestTokenLimit,
-      remaining: Math.max(0, config.guestTokenLimit - usage.usedTokens),
+      remaining: Math.max(0, config.guestTokenLimit - (usage.usedTokens || 0)),
       resetAt: new Date(usage.windowStart.getTime() + WINDOW_MS),
     };
   }

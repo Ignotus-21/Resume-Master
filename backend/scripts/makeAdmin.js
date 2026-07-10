@@ -5,7 +5,7 @@ const User = require('../models/User');
 const email = process.argv[2];
 
 if (!email) {
-  console.error("Please provide an email: node makeAdmin.js <email>");
+  console.error("Please provide an email: node scripts/makeAdmin.js <email> (run from backend/)");
   process.exit(1);
 }
 

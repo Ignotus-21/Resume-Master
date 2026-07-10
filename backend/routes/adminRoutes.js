@@ -18,8 +18,10 @@ router.get('/stats', adminAuth, async (req, res) => {
     const liveRegisteredUsers = await ActiveSession.countDocuments({ isGuest: false, lastActiveAt: { $gte: fiveMinutesAgo } });
     // ActiveSession rows expire (TTL) an hour after last activity, so they
     // can't answer "lifetime" questions — count distinct guest identities in
-    // ApiUsage instead, which never expires.
-    const totalAnonymousVisitors = (await ApiUsage.distinct('identity')).length;
+    // ApiUsage instead, which never expires. Guest identities are always
+    // `ip:<addr>` (see identify.js); filter on that prefix so any
+    // non-guest identity that ever ends up in this collection isn't counted.
+    const totalAnonymousVisitors = (await ApiUsage.distinct('identity', { identity: /^ip:/ })).length;
 
     const tokenAggregation = await TokenUsage.aggregate([
       {
@@ -69,9 +71,10 @@ router.get('/token-breakdown', adminAuth, async (req, res) => {
     const liveGuestIdentities = liveSessions.map(s => s.identity);
     const liveGuestsUsage = await ApiUsage.find({ identity: { $in: liveGuestIdentities } });
     
-    // Cumulative Inactive Anonymous Users
+    // Cumulative Inactive Anonymous Users. Restrict to guest (`ip:`-prefixed)
+    // identities so any non-guest identity in this collection isn't mixed in.
     const inactiveGuestUsage = await ApiUsage.aggregate([
-      { $match: { identity: { $nin: liveGuestIdentities } } },
+      { $match: { identity: { $regex: /^ip:/, $nin: liveGuestIdentities } } },
       { $group: { _id: null, totalUsed: { $sum: "$usedTokens" }, count: { $sum: 1 } } }
     ]);
     

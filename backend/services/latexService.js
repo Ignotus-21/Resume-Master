@@ -19,7 +19,7 @@ const compileLatex = async (latexCode) => {
     return { success: false, error: 'LaTeX code is required' };
   }
 
-  // Auto-sanitize problematic packages for BasicTeX compatibility
+  // Auto-sanitize packages Tectonic doesn't bundle/support
   latexCode = latexCode
     .replace(/\\usepackage\{fullpage\}/g, '\\usepackage[margin=0.5in]{geometry}')
     .replace(/\\usepackage\[.*?\]\{fullpage\}/g, '\\usepackage[margin=0.5in]{geometry}');

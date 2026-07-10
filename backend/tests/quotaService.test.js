@@ -4,7 +4,7 @@ jest.mock('../models/User');
 const ApiUsage = require('../models/ApiUsage');
 const AppConfig = require('../models/AppConfig');
 const User = require('../models/User');
-const { consumeQuota, RESERVE_ESTIMATE } = require('../services/quotaService');
+const { consumeQuota, refundReservation, RESERVE_ESTIMATE } = require('../services/quotaService');
 
 const GUEST_LIMIT = 5000;
 const DEFAULT_LIMIT = 15000;
@@ -117,5 +117,36 @@ describe('quotaService.consumeQuota (logged-in user)', () => {
     expect(result.isByok).toBeUndefined();
     expect(result.allowed).toBe(true);
     expect(result.remaining).toBe(DEFAULT_LIMIT - 1000 - RESERVE_ESTIMATE);
+  });
+});
+
+describe('quotaService.refundReservation', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('decrements the reserved estimate for a logged-in user', async () => {
+    User.findByIdAndUpdate.mockResolvedValue({});
+    await refundReservation({ user: { id: 'u1' } });
+    expect(User.findByIdAndUpdate).toHaveBeenCalledWith('u1', { $inc: { usedTokens: -RESERVE_ESTIMATE } });
+  });
+
+  it('decrements the reserved estimate for a guest by identity', async () => {
+    ApiUsage.findOneAndUpdate.mockResolvedValue({});
+    await refundReservation({ quotaIdentity: 'ip:1.2.3.4' });
+    expect(ApiUsage.findOneAndUpdate).toHaveBeenCalledWith(
+      { identity: 'ip:1.2.3.4' },
+      { $inc: { usedTokens: -RESERVE_ESTIMATE } }
+    );
+  });
+
+  it('is a no-op for BYOK requests, which never reserved anything', async () => {
+    await refundReservation({ user: { id: 'u1' }, geminiApiKey: 'k' });
+    expect(User.findByIdAndUpdate).not.toHaveBeenCalled();
+  });
+
+  it('swallows its own errors rather than throwing (best-effort)', async () => {
+    User.findByIdAndUpdate.mockRejectedValue(new Error('db down'));
+    await expect(refundReservation({ user: { id: 'u1' } })).resolves.toBeUndefined();
   });
 });

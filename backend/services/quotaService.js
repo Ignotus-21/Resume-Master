@@ -104,10 +104,7 @@ const consumeQuota = async (req) => {
     }
     
     // Atomically reserve the estimate as part of the same operation that
-    // decides admission (see RESERVE_ESTIMATE above). $lte guards against
-    // pre-existing docs missing usedTokens (undefined <= N is false, so
-    // those correctly fail closed instead of the old `undefined >= limit`
-    // check which was always false — silently unlimited).
+    // decides admission (see RESERVE_ESTIMATE above).
     const reserved = await ApiUsage.findOneAndUpdate(
       { identity, usedTokens: { $lte: config.guestTokenLimit - RESERVE_ESTIMATE } },
       { $inc: { usedTokens: RESERVE_ESTIMATE } },
@@ -126,6 +123,26 @@ const consumeQuota = async (req) => {
       remaining: config.guestTokenLimit - reserved.usedTokens,
       resetAt: new Date(reserved.windowStart.getTime() + WINDOW_MS)
     };
+  }
+};
+
+// Refunds a reservation that was never trued up by trackUsage — the Gemini
+// call threw before trackUsage ran, or trackUsage itself bailed out early
+// (missing response/usageMetadata). Without this, a run of transient
+// failures would permanently burn RESERVE_ESTIMATE tokens each time and
+// could eventually lock a user out even though nothing real was consumed.
+const refundReservation = async (req) => {
+  if (req.geminiApiKey) return; // BYOK never reserved anything
+  try {
+    if (req.user) {
+      await User.findByIdAndUpdate(req.user.id, { $inc: { usedTokens: -RESERVE_ESTIMATE } });
+    } else {
+      const identity = req.quotaIdentity || req.identity;
+      if (!identity) return;
+      await ApiUsage.findOneAndUpdate({ identity }, { $inc: { usedTokens: -RESERVE_ESTIMATE } });
+    }
+  } catch (error) {
+    console.error('Failed to refund quota reservation:', error);
   }
 };
 
@@ -160,4 +177,4 @@ const getQuotaStatus = async (req) => {
   }
 };
 
-module.exports = { consumeQuota, getQuotaStatus, WINDOW_MS, getConfig, RESERVE_ESTIMATE };
+module.exports = { consumeQuota, getQuotaStatus, WINDOW_MS, getConfig, RESERVE_ESTIMATE, refundReservation };

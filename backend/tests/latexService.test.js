@@ -70,4 +70,12 @@ describe('compileLatex', () => {
     await compileLatex('\\documentclass{article}\\begin{document}\\includegraphics{photo.png}\\end{document}');
     expect(execFile).toHaveBeenCalledTimes(1);
   });
+
+  it('still allows \\inputencoding and \\includeonly (legitimate commands sharing a prefix with blocked ones)', async () => {
+    // Regression test: an earlier version of DANGEROUS_LATEX_PATTERN matched
+    // any command starting with "input"/"include", which wrongly rejected
+    // legitimate commands like \inputencoding (inputenc package).
+    await compileLatex('\\documentclass{article}\\usepackage[utf8]{inputenc}\\inputencoding{utf8}\\begin{document}\\includeonly{a}hi\\end{document}');
+    expect(execFile).toHaveBeenCalledTimes(1);
+  });
 });

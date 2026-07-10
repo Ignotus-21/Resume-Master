@@ -4,6 +4,7 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { enforceGeminiQuota } = require('../utils/geminiGate');
 const { generateLinkedInContent } = require('../services/geminiService');
 const { trackUsage } = require('../utils/trackUsage');
+const { refundReservation } = require('../services/quotaService');
 
 const CHAT_MODEL_NAME = process.env.GEMINI_MODEL || "gemini-2.5-flash";
 
@@ -55,12 +56,15 @@ const sendMessage = async (req, res) => {
     return res.status(400).json({ message: `message exceeds maximum length of ${MAX_MESSAGE_LENGTH} characters` });
   }
 
+  let reserved = false;
+  let tracked = false;
   try {
     const session = await ChatSession.findOne({ _id: sessionId, owner: req.identity });
     if (!session) return res.status(404).json({ message: 'Session not found' });
 
     const quotaRejection = await enforceGeminiQuota(req);
     if (quotaRejection) return res.status(quotaRejection.status).json(quotaRejection.body);
+    reserved = true;
 
     // Add user message
     session.history.push({ role: 'user', parts: [{ text: message }] });
@@ -83,6 +87,7 @@ const sendMessage = async (req, res) => {
 
     const result = await chat.sendMessage(message);
     await trackUsage(req, 'chatbot', result);
+    tracked = true;
 
     const response = await result.response;
     const text = response.text();
@@ -95,6 +100,10 @@ const sendMessage = async (req, res) => {
 
   } catch (error) {
     console.error('AI error:', error);
+    // Only refund if quota was actually reserved for this request — a
+    // failure before enforceGeminiQuota ran (e.g. the session lookup) never
+    // charged anything, so refunding here would double-credit the user.
+    if (reserved && !tracked) await refundReservation(req).catch(() => {});
     res.status(500).json({ message: 'Something went wrong' });
   }
 };

@@ -17,11 +17,12 @@ const MAX_PDF_SIZE = 20 * 1024 * 1024; // 20MB safety cap on the compiled output
 // the compiler itself. Deliberately excludes \includegraphics, which is
 // used legitimately in resumes and can't be abused the same way (it must
 // decode as a valid image, not arbitrary bytes rendered as text).
-// No trailing \b: \openin is always followed by a stream number with no
-// separator (\openin0=...), so a word-boundary check there would never
-// match. include(?!graphics) is the one exclusion that actually needs to be
-// precise, since \includegraphics is legitimate and common in resumes.
-const DANGEROUS_LATEX_PATTERN = /\\(input|include(?!graphics)|openin|read|lstinputlisting|verbatiminput|InputIfFileExists|IfFileExists)/;
+// (?![a-zA-Z]) rather than \b: \openin/\read are always followed directly by
+// a stream number with no separator (\openin0=...), which \b would reject
+// (no boundary between two word chars). The negative lookahead still rejects
+// letter-extended names sharing a prefix — \includegraphics, \includeonly,
+// \inputencoding — which are legitimate and unrelated to file inclusion.
+const DANGEROUS_LATEX_PATTERN = /\\(input|include|openin|read|lstinputlisting|verbatiminput|InputIfFileExists|IfFileExists)(?![a-zA-Z])/;
 
 // Ensure temp directory exists
 if (!fs.existsSync(TEMP_DIR)) {

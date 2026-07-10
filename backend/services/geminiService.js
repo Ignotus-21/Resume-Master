@@ -1,4 +1,5 @@
 const { trackUsage } = require('../utils/trackUsage');
+const { refundReservation } = require('./quotaService');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 const MODEL_NAME = process.env.GEMINI_MODEL || "gemini-2.5-flash";
@@ -77,9 +78,10 @@ const parseResumeData = async (input, apiKey, req = null) => {
       parts = [{ text: `${systemInstruction}\n\nText to parse:\n${input}` }];
   }
 
+  let tracked = false;
   try {
     const result = await model.generateContent(parts);
-    if (req) await trackUsage(req, 'resume-parser', result);
+    if (req) { await trackUsage(req, 'resume-parser', result); tracked = true; }
     const response = await result.response;
     const text = response.text();
     // Clean up if markdown code blocks are present
@@ -87,6 +89,7 @@ const parseResumeData = async (input, apiKey, req = null) => {
     return JSON.parse(jsonStr);
   } catch (error) {
     console.error("Gemini Parse Error:", error);
+    if (req && !tracked) await refundReservation(req).catch(() => {});
     throw new Error("Failed to parse resume data");
   }
 };
@@ -111,15 +114,17 @@ const tailorResume = async (masterData, jobDescription, apiKey, req = null) => {
     Return ONLY the tailored JSON.
   `;
   
+  let tracked = false;
   try {
     const result = await model.generateContent(prompt);
-    if (req) await trackUsage(req, 'resume-tailor', result);
+    if (req) { await trackUsage(req, 'resume-tailor', result); tracked = true; }
     const response = await result.response;
     const text = response.text();
     const jsonStr = text.replace(/```json/g, '').replace(/```/g, '');
     return JSON.parse(jsonStr);
   } catch (error) {
     console.error("Gemini Tailor Error:", error);
+    if (req && !tracked) await refundReservation(req).catch(() => {});
     throw new Error("Failed to tailor resume");
   }
 };
@@ -143,13 +148,15 @@ const generateLatex = async (resumeData, apiKey, req = null) => {
     Return ONLY the LaTeX code. Start with \\documentclass.
   `;
   
+  let tracked = false;
   try {
     const result = await model.generateContent(prompt);
-    if (req) await trackUsage(req, 'latex-generator', result);
+    if (req) { await trackUsage(req, 'latex-generator', result); tracked = true; }
     const response = await result.response;
     return response.text().replace(/```latex/g, '').replace(/```/g, '');
   } catch (error) {
     console.error("Gemini LaTeX Error:", error);
+    if (req && !tracked) await refundReservation(req).catch(() => {});
     throw new Error("Failed to generate LaTeX");
   }
 };
@@ -177,15 +184,17 @@ const getRecommendations = async (masterData, jobDescription, apiKey, req = null
     Return ONLY valid JSON. Do not include markdown formatting.
   `;
   
+  let tracked = false;
   try {
     const result = await model.generateContent(prompt);
-    if (req) await trackUsage(req, 'other', result);
+    if (req) { await trackUsage(req, 'other', result); tracked = true; }
     const response = await result.response;
     const text = response.text();
     const jsonStr = text.replace(/```json/g, '').replace(/```/g, '');
     return JSON.parse(jsonStr);
   } catch (error) {
     console.error("Gemini Recommendation Error:", error);
+    if (req && !tracked) await refundReservation(req).catch(() => {});
     throw new Error("Failed to get recommendations");
   }
 };
@@ -212,13 +221,15 @@ const generateCoverLetter = async (masterData, jobDescription, options, apiKey, 
     Job Description: ${jobDescription}
   `;
 
+  let tracked = false;
   try {
     const result = await model.generateContent(prompt);
-    if (req) await trackUsage(req, 'cover-letter', result);
+    if (req) { await trackUsage(req, 'cover-letter', result); tracked = true; }
     const response = await result.response;
     return response.text().replace(/```/g, '').trim();
   } catch (error) {
     console.error("Gemini Cover Letter Error:", error);
+    if (req && !tracked) await refundReservation(req).catch(() => {});
     throw new Error("Failed to generate cover letter");
   }
 };
@@ -239,15 +250,17 @@ const generateInterviewQuestions = async (jobDescription, masterData, apiKey, re
     Candidate Background (optional): ${JSON.stringify(masterData || {})}
   `;
 
+  let tracked = false;
   try {
     const result = await model.generateContent(prompt);
-    if (req) await trackUsage(req, 'interview-prep', result);
+    if (req) { await trackUsage(req, 'interview-prep', result); tracked = true; }
     const response = await result.response;
     const text = response.text().replace(/```json/g, '').replace(/```/g, '');
     const parsed = JSON.parse(text);
     return Array.isArray(parsed.questions) ? parsed.questions : [];
   } catch (error) {
     console.error("Gemini Interview Questions Error:", error);
+    if (req && !tracked) await refundReservation(req).catch(() => {});
     throw new Error("Failed to generate interview questions");
   }
 };
@@ -269,14 +282,16 @@ const evaluateInterviewAnswer = async (question, answer, jobDescription, apiKey,
     No markdown.
   `;
 
+  let tracked = false;
   try {
     const result = await model.generateContent(prompt);
-    if (req) await trackUsage(req, 'interview-prep', result);
+    if (req) { await trackUsage(req, 'interview-prep', result); tracked = true; }
     const response = await result.response;
     const text = response.text().replace(/```json/g, '').replace(/```/g, '');
     return JSON.parse(text);
   } catch (error) {
     console.error("Gemini Interview Eval Error:", error);
+    if (req && !tracked) await refundReservation(req).catch(() => {});
     throw new Error("Failed to evaluate answer");
   }
 };
@@ -298,14 +313,16 @@ const generateLinkedInContent = async (masterData, apiKey, req = null) => {
     Candidate Profile: ${JSON.stringify(masterData)}
   `;
 
+  let tracked = false;
   try {
     const result = await model.generateContent(prompt);
-    if (req) await trackUsage(req, 'linkedin-optimizer', result);
+    if (req) { await trackUsage(req, 'linkedin-optimizer', result); tracked = true; }
     const response = await result.response;
     const text = response.text().replace(/```json/g, '').replace(/```/g, '');
     return JSON.parse(text);
   } catch (error) {
     console.error("Gemini LinkedIn Error:", error);
+    if (req && !tracked) await refundReservation(req).catch(() => {});
     throw new Error("Failed to generate LinkedIn content");
   }
 };

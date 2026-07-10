@@ -1,6 +1,7 @@
 const TokenUsage = require('../models/TokenUsage');
 const User = require('../models/User');
 const ApiUsage = require('../models/ApiUsage');
+const { RESERVE_ESTIMATE } = require('../services/quotaService');
 
 const trackUsage = async (req, service, responseResult) => {
   try {
@@ -30,12 +31,18 @@ const trackUsage = async (req, service, responseResult) => {
     // limit for usage that never touched it).
     if (req.geminiApiKey) return;
 
+    // consumeQuota already reserved RESERVE_ESTIMATE atomically at admission
+    // time (to close the check-then-act race — see quotaService.js), so true
+    // up to the real cost here instead of adding the full amount again. This
+    // can go negative (refunding an over-estimate), which is correct.
+    const adjustment = totalTokens - RESERVE_ESTIMATE;
+
     if (req.user) {
-      await User.findByIdAndUpdate(req.user.id, { $inc: { usedTokens: totalTokens } });
+      await User.findByIdAndUpdate(req.user.id, { $inc: { usedTokens: adjustment } });
     } else {
       await ApiUsage.findOneAndUpdate(
         { identity },
-        { $inc: { usedTokens: totalTokens }, $setOnInsert: { identity, count: 0, windowStart: new Date() } },
+        { $inc: { usedTokens: adjustment }, $setOnInsert: { identity, count: 0, windowStart: new Date() } },
         { upsert: true }
       );
     }

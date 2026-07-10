@@ -9,6 +9,20 @@ const TEMP_DIR = path.join(__dirname, '..', 'temp_latex');
 const MAX_LATEX_LENGTH = 200000; // ~200KB of LaTeX source is already generous
 const MAX_PDF_SIZE = 20 * 1024 * 1024; // 20MB safety cap on the compiled output
 
+// Tectonic (like any LaTeX engine) doesn't sandbox filesystem reads — these
+// primitives can pull an arbitrary local file's content into the compiled
+// PDF (\input{/etc/passwd}-style). This endpoint takes raw user-supplied
+// LaTeX with no auth requirement (guests can use it too, by design), so
+// block the file-inclusion commands outright rather than trying to sandbox
+// the compiler itself. Deliberately excludes \includegraphics, which is
+// used legitimately in resumes and can't be abused the same way (it must
+// decode as a valid image, not arbitrary bytes rendered as text).
+// No trailing \b: \openin is always followed by a stream number with no
+// separator (\openin0=...), so a word-boundary check there would never
+// match. include(?!graphics) is the one exclusion that actually needs to be
+// precise, since \includegraphics is legitimate and common in resumes.
+const DANGEROUS_LATEX_PATTERN = /\\(input|include(?!graphics)|openin|read|lstinputlisting|verbatiminput|InputIfFileExists|IfFileExists)/;
+
 // Ensure temp directory exists
 if (!fs.existsSync(TEMP_DIR)) {
   fs.mkdirSync(TEMP_DIR, { recursive: true });
@@ -26,6 +40,10 @@ const compileLatex = async (latexCode) => {
 
   if (latexCode.length > MAX_LATEX_LENGTH) {
     return { success: false, error: 'LaTeX source exceeds maximum allowed size' };
+  }
+
+  if (DANGEROUS_LATEX_PATTERN.test(latexCode)) {
+    return { success: false, error: 'LaTeX source contains disallowed file-inclusion commands (\\input, \\include, \\openin, etc.)' };
   }
 
   // Collision-resistant per-job directory so concurrent compiles never share a

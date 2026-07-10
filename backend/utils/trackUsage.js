@@ -11,13 +11,13 @@ const trackUsage = async (req, service, responseResult) => {
     const totalTokens = inputTokens + outputTokens;
 
     const identity = req.user ? req.user.id : req.quotaIdentity;
-    
-    await TokenUsage.create({
-      identity,
-      service,
-      inputTokens,
-      outputTokens
-    });
+
+    // Best-effort: this per-request breakdown record is only for the admin
+    // service-breakdown view. If it fails to insert, the running quota
+    // counters below must still update — they're what actually enforces
+    // the limit.
+    TokenUsage.create({ identity, service, inputTokens, outputTokens })
+      .catch((err) => console.error('Failed to record TokenUsage:', err));
 
     // Tokens spent on a user's own Gemini key don't draw from the shared-key
     // quota, so don't count them against usedTokens (otherwise removing a

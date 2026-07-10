@@ -29,23 +29,33 @@ Recommended free/cheap setup:
    - `GEMINI_MODEL` (optional, defaults to `gemini-2.5-flash`)
    - `CORS_ORIGIN` = your Vercel URL, e.g. `https://your-app.vercel.app`
    - `APP_URL` = same Vercel URL (used in email links)
-   - `NODE_ENV=production`, `TRUST_PROXY_HOPS=1`
-   - `COOKIE_SAMESITE_NONE=true`  ← **required** because the frontend and backend
-     are on different domains; without it the auth cookie is dropped by the browser.
+   - `NODE_ENV=production`
+   - `TRUST_PROXY_HOPS=2` with the recommended same-origin proxy (client →
+     Vercel → backend host = 2 proxy hops), or `1` if the browser calls the
+     backend directly.
    - Optional: `RESEND_API_KEY`, `EMAIL_FROM`, `TURNSTILE_SECRET_KEY`, `GOOGLE_CLIENT_ID`
 3. Deploy. Note the public backend URL, e.g. `https://your-backend.up.railway.app`.
 
 ## 3. Frontend → Vercel
 1. Import the repo, set the **root directory** to `frontend/`.
 2. Environment variables:
-   - `NEXT_PUBLIC_API_URL` = your Railway backend URL
+   - `BACKEND_URL` = your backend URL — `next.config.ts` proxies `/api/*` there,
+     so the browser only ever talks to the Vercel origin.
+   - `NEXT_PUBLIC_API_URL` = leave **unset/empty** (same-origin via the proxy).
    - Optional: `NEXT_PUBLIC_GOOGLE_CLIENT_ID`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`
 3. Deploy.
 
 ## 4. Wire the two together
-- Backend `CORS_ORIGIN` must exactly equal the Vercel origin (scheme + host, no trailing slash).
-- Both must be HTTPS (Vercel and Railway give you HTTPS automatically) so the
-  `SameSite=None; Secure` cookie works.
+- With the proxy (recommended) the auth cookie stays `SameSite=Lax` and no
+  cross-site cookie setup is needed. **Verify login works through the proxy**:
+  open the Vercel URL, sign up/log in, and confirm the `token` cookie is set on
+  the Vercel domain and `/api/auth/me` returns your user.
+- Only if you skip the proxy and set `NEXT_PUBLIC_API_URL` to the backend URL
+  directly: set `COOKIE_SAMESITE_NONE=true` on the backend (cross-domain
+  cookies need `SameSite=None; Secure`, both sides HTTPS) and make backend
+  `CORS_ORIGIN` exactly equal the Vercel origin (scheme + host, no trailing
+  slash). This path is more fragile (CSRF surface, third-party-cookie
+  restrictions) — prefer the proxy.
 - Update Google OAuth authorized origins and Turnstile allowed domains to include
   the Vercel domain.
 

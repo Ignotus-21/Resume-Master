@@ -3,6 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
+const { rateLimitStore } = require('./config/rateLimitStore');
 const { sanitizeBody } = require('./middleware/sanitize');
 const identify = require('./middleware/identify');
 const loadGeminiKey = require('./middleware/loadGeminiKey');
@@ -33,7 +34,22 @@ const createApp = () => {
     },
     credentials: true,
   }));
-  app.use(helmet());
+  // Explicit security headers (this is a JSON/PDF API — nothing here renders
+  // HTML, so the CSP can lock everything down; the Next.js frontend has its
+  // own document policy).
+  app.use(helmet({
+    contentSecurityPolicy: {
+      useDefaults: false,
+      directives: {
+        defaultSrc: ["'none'"],
+        frameAncestors: ["'none'"],
+        baseUri: ["'none'"],
+        formAction: ["'none'"],
+      },
+    },
+    referrerPolicy: { policy: 'no-referrer' },
+    strictTransportSecurity: { maxAge: 31536000, includeSubDomains: true },
+  }));
   app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
   app.use(express.json({ limit: '2mb' }));
   app.use(cookieParser());
@@ -41,12 +57,17 @@ const createApp = () => {
   app.use(identify);
   app.use(loadGeminiKey);
 
+  // Rate limits use Redis when REDIS_URL is set (survives restarts, shared
+  // across instances) and fall back to in-memory otherwise; passOnStoreError
+  // keeps the API up if Redis goes down.
   // General rate limit across the API.
   app.use('/api', rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 300,
     standardHeaders: true,
     legacyHeaders: false,
+    store: rateLimitStore('general'),
+    passOnStoreError: true,
   }));
 
   // Stricter limit on the Gemini-backed / compute-heavy routes (cost & DoS control).
@@ -55,6 +76,8 @@ const createApp = () => {
     max: 60,
     standardHeaders: true,
     legacyHeaders: false,
+    store: rateLimitStore('ai'),
+    passOnStoreError: true,
   });
   app.use('/api/ai', aiLimiter);
   app.use('/api/resumes/generate', aiLimiter);
@@ -71,6 +94,8 @@ const createApp = () => {
     max: 20,
     standardHeaders: true,
     legacyHeaders: false,
+    store: rateLimitStore('auth'),
+    passOnStoreError: true,
   });
   app.use('/api/auth/signup', authLimiter);
   app.use('/api/auth/login', authLimiter);

@@ -33,7 +33,9 @@ const googleClient = process.env.GOOGLE_CLIENT_ID ? new OAuth2Client(process.env
 
 const issueToken = (res, user) => {
   const token = jwt.sign(
-    { sub: user._id.toString(), email: user.email, name: user.name },
+    // v = tokenVersion at mint time; identify() rejects the token once the
+    // user's version moves past it (password reset / "log out everywhere").
+    { sub: user._id.toString(), email: user.email, name: user.name, v: user.tokenVersion || 0 },
     process.env.JWT_SECRET,
     { expiresIn: '7d' }
   );
@@ -202,6 +204,8 @@ const resetPassword = async (req, res) => {
     user.passwordResetExpires = undefined;
     // A successful reset proves control of the inbox, so mark the email verified.
     user.emailVerified = true;
+    // Invalidate every session issued before the reset (stolen/old JWTs).
+    user.tokenVersion = (user.tokenVersion || 0) + 1;
     await user.save();
     res.json({ message: 'Password updated. You can now log in.' });
   } catch (error) {
@@ -294,6 +298,19 @@ const logout = (req, res) => {
   res.json({ message: 'Logged out' });
 };
 
+// "Log out everywhere": bumping tokenVersion invalidates every JWT minted
+// before now, on all devices — then clears this device's cookie too.
+const logoutAll = async (req, res) => {
+  try {
+    await User.findByIdAndUpdate(req.user.id, { $inc: { tokenVersion: 1 } });
+    res.clearCookie('token', { sameSite: crossSite ? 'none' : 'lax', secure: crossSite || isProd });
+    res.json({ message: 'Logged out on all devices' });
+  } catch (error) {
+    console.error('Auth error:', error);
+    res.status(500).json({ message: 'Something went wrong' });
+  }
+};
+
 const me = async (req, res) => {
   if (!req.user) return res.json({ user: null, guest: true });
 
@@ -377,6 +394,6 @@ const myUsage = async (req, res) => {
 };
 
 module.exports = {
-  signup, login, googleLogin, logout, me, quota, setGeminiKey, removeGeminiKey,
+  signup, login, googleLogin, logout, logoutAll, me, quota, setGeminiKey, removeGeminiKey,
   verifyEmail, resendVerification, requestPasswordReset, resetPassword, myUsage,
 };

@@ -170,7 +170,7 @@ export default function AdminDashboard() {
               <Server className="text-[#9333ea] h-5 w-5" />
             </div>
             <p className="text-3xl font-extrabold text-[#202124]">{stats.users.totalAnonymous}</p>
-            <p className="text-xs text-[#5f6368] mt-2">Lifetime unique IPs</p>
+            <p className="text-xs text-[#5f6368] mt-2">Unique guest IPs, all time</p>
           </Card>
         </div>
 

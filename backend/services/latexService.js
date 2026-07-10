@@ -63,8 +63,13 @@ const compileLatex = async (latexCode) => {
       ], {
         timeout: 30000, // Increased timeout because downloading packages takes time
         cwd: workDir,
+        // Tectonic needs HOME to find its cache/config dir (set up in the
+        // Dockerfile for the non-root `node` user) — passing only PATH here
+        // replaced the whole environment and dropped it, breaking package
+        // caching/downloads.
         env: {
           PATH: process.env.PATH,
+          HOME: process.env.HOME,
         },
       });
     } catch (error) {

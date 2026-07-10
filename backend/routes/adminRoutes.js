@@ -16,7 +16,10 @@ router.get('/stats', adminAuth, async (req, res) => {
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
     const liveAnonymousUsers = await ActiveSession.countDocuments({ isGuest: true, lastActiveAt: { $gte: fiveMinutesAgo } });
     const liveRegisteredUsers = await ActiveSession.countDocuments({ isGuest: false, lastActiveAt: { $gte: fiveMinutesAgo } });
-    const totalAnonymousVisitors = await ActiveSession.countDocuments({ isGuest: true });
+    // ActiveSession rows expire (TTL) an hour after last activity, so they
+    // can't answer "lifetime" questions — count distinct guest identities in
+    // ApiUsage instead, which never expires.
+    const totalAnonymousVisitors = (await ApiUsage.distinct('identity')).length;
 
     const tokenAggregation = await TokenUsage.aggregate([
       {

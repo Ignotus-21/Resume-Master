@@ -4,10 +4,15 @@ const ApiUsage = require('../models/ApiUsage');
 
 const trackUsage = async (req, service, responseResult) => {
   try {
-    if (!responseResult || !responseResult.response || !responseResult.response.usageMetadata) return;
+    if (!responseResult || !responseResult.response) return;
+    // response is a promise in this SDK (every caller does `await result.response`
+    // before using it) — reading .usageMetadata off it directly always returned
+    // undefined, silently no-op'ing every call to this function.
+    const response = await responseResult.response;
+    if (!response || !response.usageMetadata) return;
 
-    const inputTokens = responseResult.response.usageMetadata.promptTokenCount || 0;
-    const outputTokens = responseResult.response.usageMetadata.candidatesTokenCount || 0;
+    const inputTokens = response.usageMetadata.promptTokenCount || 0;
+    const outputTokens = response.usageMetadata.candidatesTokenCount || 0;
     const totalTokens = inputTokens + outputTokens;
 
     const identity = req.user ? req.user.id : req.quotaIdentity;

@@ -60,7 +60,7 @@ export default function QuotaModal() {
               ref={closeButtonRef}
               onClick={() => setIsOpen(false)}
               aria-label="Close"
-              className="absolute top-4 right-4 z-10 p-2 rounded-full bg-white/5 hover:bg-white/10 text-[#5f6368] hover:text-[#202124] transition"
+              className="absolute top-4 right-4 z-10 p-2 rounded-full bg-[#f1f3f4] hover:bg-[#e8eaed] text-[#5f6368] hover:text-[#202124] transition"
             >
               <X className="h-5 w-5" />
             </button>

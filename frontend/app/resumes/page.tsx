@@ -405,7 +405,7 @@ function ResumesPageContent() {
                         </button>
                         <button 
                         onClick={handleGetFeedback}
-                        className={`px-3 py-1 rounded-md text-sm font-medium transition ${activeView === 'feedback' ? 'bg-[#1a73e8] text-[#202124]' : 'text-[#5f6368] hover:text-[#202124]'}`}
+                        className={`px-3 py-1 rounded-md text-sm font-medium transition ${activeView === 'feedback' ? 'bg-[#1a73e8] text-white' : 'text-[#5f6368] hover:text-[#202124]'}`}
                         >
                         Feedback
                         </button>

@@ -1,26 +1,22 @@
 const TokenUsage = require('../models/TokenUsage');
 const User = require('../models/User');
 const ApiUsage = require('../models/ApiUsage');
-const { RESERVE_ESTIMATE, refundReservation } = require('../services/quotaService');
+const { RESERVE_ESTIMATE } = require('../services/quotaService');
 
 const trackUsage = async (req, service, responseResult) => {
   try {
-    // consumeQuota already reserved RESERVE_ESTIMATE atomically at admission
-    // time (see quotaService.js). Every path below that doesn't reach the
-    // real true-up must refund it, or a run of malformed/failed responses
-    // would permanently burn tokens without ever recording real usage.
-    if (!responseResult || !responseResult.response) {
-      await refundReservation(req);
-      return;
-    }
+    // By the time trackUsage runs, model.generateContent() already
+    // succeeded and the caller is about to deliver real content — refunding
+    // the reservation here (rather than just leaving it as the charge)
+    // would make that response effectively free. Only the caller's own
+    // catch block (guarded by its `tracked` flag) should ever refund, since
+    // that's the one place that can prove no content was produced at all.
+    if (!responseResult || !responseResult.response) return;
     // response is a promise in this SDK (every caller does `await result.response`
     // before using it) — reading .usageMetadata off it directly always returned
     // undefined, silently no-op'ing every call to this function.
     const response = await responseResult.response;
-    if (!response || !response.usageMetadata) {
-      await refundReservation(req);
-      return;
-    }
+    if (!response || !response.usageMetadata) return;
 
     const inputTokens = response.usageMetadata.promptTokenCount || 0;
     const outputTokens = response.usageMetadata.candidatesTokenCount || 0;
@@ -55,11 +51,12 @@ const trackUsage = async (req, service, responseResult) => {
       );
     }
   } catch (error) {
+    // Reaching here means usageMetadata was already parsed — real usage
+    // almost certainly occurred and the caller is delivering real content.
+    // A failure this late is most likely a transient DB write error, not
+    // proof the request never happened, so leave the reservation in place
+    // as the (imprecise but safe) charge rather than refunding it.
     console.error("Failed to track token usage:", error);
-    // The true-up above may never have applied (e.g. the DB write itself
-    // failed) — fall back to refunding the reservation so this request nets
-    // to zero rather than leaving a permanent stray charge.
-    await refundReservation(req).catch(() => {});
   }
 };
 

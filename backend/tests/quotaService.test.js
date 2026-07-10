@@ -54,7 +54,7 @@ describe('quotaService.consumeQuota (guest, IP-based)', () => {
   });
 
   it('re-fetches usage if a concurrent request already reset the expired window', async () => {
-    const windowStart = new Date(Date.now() - 7 * 60 * 60 * 1000); // expired (default 6h window)
+    const windowStart = new Date(Date.now() - 7 * 60 * 60 * 1000); // expired (default 4h window)
     ApiUsage.findOneAndUpdate
       .mockResolvedValueOnce({ identity: 'ip:1.2.3.4', usedTokens: 100, windowStart }) // upsert-if-missing
       .mockResolvedValueOnce(null) // reset attempt loses the race; another request already reset it

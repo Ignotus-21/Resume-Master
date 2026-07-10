@@ -133,6 +133,12 @@ const consumeQuota = async (req) => {
 // could eventually lock a user out even though nothing real was consumed.
 const refundReservation = async (req) => {
   if (req.geminiApiKey) return; // BYOK never reserved anything
+  // Refund only while the reservation is outstanding (set by geminiGate,
+  // cleared by trackUsage's true-up). Without this, a failure in a request's
+  // SECOND Gemini call would refund a reservation the first call already
+  // consumed, crediting tokens that were really spent.
+  if (req.quotaReserved !== true) return;
+  req.quotaReserved = false;
   try {
     if (req.user) {
       await User.findByIdAndUpdate(req.user.id, { $inc: { usedTokens: -RESERVE_ESTIMATE } });

@@ -1,8 +1,10 @@
-const dotenv = require('dotenv');
+// Load .env before anything else: some modules (middleware/identify.js,
+// controllers/authController.js) read env vars at require time, so requiring
+// them first would bake in pre-.env values.
+require('dotenv').config();
+
 const connectDB = require('./config/db');
 const createApp = require('./app');
-
-dotenv.config();
 
 console.log('Starting Backend Server...');
 

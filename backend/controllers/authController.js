@@ -139,8 +139,11 @@ const verifyEmail = async (req, res) => {
     if (!user) return res.status(400).json({ message: 'This verification link is invalid or has expired' });
 
     user.emailVerified = true;
-    user.emailVerifyTokenHash = undefined;
-    user.emailVerifyExpires = undefined;
+    // Deliberately keep the token valid until it expires: email scanners
+    // prefetching the link, double clicks, and React StrictMode's double
+    // effect all re-POST the same token, and a single-use token would make
+    // the second call report failure after a successful verification.
+    // Re-verifying is idempotent, so reuse grants nothing extra.
     await user.save();
     res.json({ message: 'Email verified', user: publicUser(user) });
   } catch (error) {

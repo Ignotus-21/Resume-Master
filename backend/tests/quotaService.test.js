@@ -127,13 +127,13 @@ describe('quotaService.refundReservation', () => {
 
   it('decrements the reserved estimate for a logged-in user', async () => {
     User.findByIdAndUpdate.mockResolvedValue({});
-    await refundReservation({ user: { id: 'u1' } });
+    await refundReservation({ user: { id: 'u1' }, quotaReserved: true });
     expect(User.findByIdAndUpdate).toHaveBeenCalledWith('u1', { $inc: { usedTokens: -RESERVE_ESTIMATE } });
   });
 
   it('decrements the reserved estimate for a guest by identity', async () => {
     ApiUsage.findOneAndUpdate.mockResolvedValue({});
-    await refundReservation({ quotaIdentity: 'ip:1.2.3.4' });
+    await refundReservation({ quotaIdentity: 'ip:1.2.3.4', quotaReserved: true });
     expect(ApiUsage.findOneAndUpdate).toHaveBeenCalledWith(
       { identity: 'ip:1.2.3.4' },
       { $inc: { usedTokens: -RESERVE_ESTIMATE } }
@@ -141,12 +141,48 @@ describe('quotaService.refundReservation', () => {
   });
 
   it('is a no-op for BYOK requests, which never reserved anything', async () => {
-    await refundReservation({ user: { id: 'u1' }, geminiApiKey: 'k' });
+    await refundReservation({ user: { id: 'u1' }, geminiApiKey: 'k', quotaReserved: true });
+    expect(User.findByIdAndUpdate).not.toHaveBeenCalled();
+  });
+
+  it('is a no-op when the reservation was already consumed by trackUsage', async () => {
+    // e.g. the request's SECOND Gemini call failed after the first call's
+    // true-up already spent the reservation — nothing is outstanding.
+    await refundReservation({ user: { id: 'u1' } });
     expect(User.findByIdAndUpdate).not.toHaveBeenCalled();
   });
 
   it('swallows its own errors rather than throwing (best-effort)', async () => {
     User.findByIdAndUpdate.mockRejectedValue(new Error('db down'));
-    await expect(refundReservation({ user: { id: 'u1' } })).resolves.toBeUndefined();
+    await expect(refundReservation({ user: { id: 'u1' }, quotaReserved: true })).resolves.toBeUndefined();
+  });
+});
+
+describe('trackUsage reservation true-up across multiple calls in one request', () => {
+  const { trackUsage } = require('../utils/trackUsage');
+  jest.mock('../models/TokenUsage');
+  const TokenUsage = require('../models/TokenUsage');
+
+  const geminiResult = (input, output) => ({
+    response: Promise.resolve({ usageMetadata: { promptTokenCount: input, candidatesTokenCount: output } }),
+  });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    TokenUsage.create.mockResolvedValue({});
+    User.findByIdAndUpdate.mockResolvedValue({});
+  });
+
+  it('trues up against the reservation once, then charges later calls in full', async () => {
+    const req = { user: { id: 'u1' }, quotaReserved: true };
+
+    // First call (e.g. tailor): actual 800 → adjustment 800 - RESERVE.
+    await trackUsage(req, 'resume-tailor', geminiResult(500, 300));
+    expect(User.findByIdAndUpdate).toHaveBeenLastCalledWith('u1', { $inc: { usedTokens: 800 - RESERVE_ESTIMATE } });
+    expect(req.quotaReserved).toBe(false);
+
+    // Second call (e.g. LaTeX): full cost, no reservation left to subtract.
+    await trackUsage(req, 'latex-generator', geminiResult(400, 200));
+    expect(User.findByIdAndUpdate).toHaveBeenLastCalledWith('u1', { $inc: { usedTokens: 600 } });
   });
 });

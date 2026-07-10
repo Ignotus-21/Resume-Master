@@ -21,7 +21,15 @@ const enforceGeminiQuota = async (req) => {
   // quotaIdentity is the account id for logged-in users and an IP-derived key
   // for guests, so guests can't reset the quota by rotating the guestId cookie.
   const { allowed, resetAt } = await consumeQuota(req);
-  if (allowed) return null;
+  if (allowed) {
+    // Exactly one reservation exists per admitted request, but a request may
+    // make several Gemini calls (e.g. tailor + LaTeX). This flag lets
+    // trackUsage true-up against the reservation once — later calls charge
+    // their full cost — and lets refundReservation refund only while the
+    // reservation is still outstanding.
+    req.quotaReserved = true;
+    return null;
+  }
 
   // Logged-in users on the shared key have a lifetime cap with no reset window,
   // so resetAt is null there — only guests (IP-windowed) get one back.

@@ -103,14 +103,14 @@ router.get('/token-breakdown', adminAuth, async (req, res) => {
         id: u._id,
         email: u.email,
         name: u.name,
-        usedTokens: u.usedTokens,
-        extraTokens: u.extraTokens,
+        usedTokens: u.usedTokens || 0,
+        extraTokens: u.extraTokens || 0,
         totalLimit: config.defaultTokenLimit + (u.extraTokens || 0),
         services: u._id ? (usageMap[u._id.toString()] || {}) : {}
       })),
       liveGuests: liveGuestsUsage.map(g => ({
         identity: g.identity,
-        usedTokens: g.usedTokens,
+        usedTokens: g.usedTokens || 0,
         services: g.identity ? (usageMap[g.identity.toString()] || {}) : {}
       })),
       cumulativeInactiveGuests: inactiveGuestUsage[0] || { totalUsed: 0, count: 0 },

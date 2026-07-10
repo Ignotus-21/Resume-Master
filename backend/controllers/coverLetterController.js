@@ -41,7 +41,7 @@ const generate = async (req, res) => {
     const quotaRejection = await enforceGeminiQuota(req);
     if (quotaRejection) return res.status(quotaRejection.status).json(quotaRejection.body);
 
-    const body = await generateCoverLetter(profile, jobDescription, { tone, length }, req.geminiApiKey);
+    const body = await generateCoverLetter(profile, jobDescription, { tone, length }, req.geminiApiKey, req);
 
     const uniqueCode = Math.random().toString(36).substring(2, 6).toUpperCase();
     const versionName = `${companyName}_${jobTitle}_${uniqueCode}`.replace(/[^a-zA-Z0-9_]/g, '_');

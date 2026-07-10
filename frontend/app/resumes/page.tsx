@@ -587,7 +587,7 @@ function ResumesPageContent() {
                           </div>
                       ) : (
                           <div className="text-center py-20 text-[#5f6368]">
-                              Click "Feedback" to analyze your resume against the job description.
+                              Click &quot;Feedback&quot; to analyze your resume against the job description.
                           </div>
                       )}
                   </div>

@@ -63,7 +63,7 @@ export default function Home() {
           
           <p className="text-lg md:text-xl text-[#5f6368] leading-relaxed mb-10 max-w-2xl mx-auto font-light">
             Keep one master profile, track every application, and let AI tailor an ATS-optimized 
-            LaTeX resume for each job in seconds — with real feedback on what's missing.
+            LaTeX resume for each job in seconds — with real feedback on what&apos;s missing.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -156,7 +156,7 @@ export default function Home() {
           <h3 className="text-xl font-bold text-[#202124] mb-3 relative z-10">Unlimited with your own key</h3>
           <p className="text-[#5f6368] text-sm leading-relaxed relative z-10">
             Sign up and add your own Gemini API key in Settings to remove the limit entirely —
-            it's encrypted at rest and only ever used for your requests.
+            it&apos;s encrypted at rest and only ever used for your requests.
           </p>
         </Card>
       </motion.div>

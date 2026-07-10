@@ -8,6 +8,7 @@ export interface AuthUser {
   name?: string;
   hasOwnKey: boolean;
   emailVerified: boolean;
+  isAdmin?: boolean;
 }
 
 interface AuthContextValue {

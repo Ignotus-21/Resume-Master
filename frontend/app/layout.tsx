@@ -5,11 +5,12 @@ import Navbar from "@/components/Navbar";
 import { VerifyEmailBanner } from "@/components/VerifyEmailBanner";
 import { ToastProvider } from "@/components/ui/Toast";
 import { AuthProvider } from "@/lib/auth-context";
+import QuotaModal from "@/components/QuotaModal";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Super Master Resume",
+  title: "Resume Master",
   description: "AI Powered Resume Builder and Job Tracker",
 };
 
@@ -20,7 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className={`${inter.className} antialiased selection:bg-blue-100`}>
         <ToastProvider>
           <AuthProvider>
             <Navbar />
@@ -28,6 +29,7 @@ export default function RootLayout({
             <main className="container mx-auto p-4">
               {children}
             </main>
+            <QuotaModal />
           </AuthProvider>
         </ToastProvider>
       </body>

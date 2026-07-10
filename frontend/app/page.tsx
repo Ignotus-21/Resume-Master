@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { motion, Variants } from 'framer-motion';
 import {
   UserRound, LayoutDashboard, FileText, ArrowRight, LucideIcon,
   UploadCloud, Wand2, Download, KeyRound, ShieldCheck, Rocket,
@@ -8,151 +9,159 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+
+const containerVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 }
+  }
+};
+
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } }
+};
 
 export default function Home() {
   const { user, loading } = useAuth();
   const router = useRouter();
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center overflow-x-hidden">
       {/* Hero */}
-      <div className="text-center max-w-2xl mx-auto pt-16 pb-12">
-        <span className="inline-block text-xs font-semibold uppercase tracking-widest text-blue-400 bg-blue-500/10 border border-blue-500/20 rounded-full px-3 py-1 mb-6">
-          Powered by Gemini AI
-        </span>
-        <h1 className="text-4xl sm:text-5xl font-bold text-white leading-tight mb-6">
-          Build resumes that{' '}
-          <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-            get you hired
-          </span>
-        </h1>
-        <p className="text-lg text-slate-400 leading-relaxed mb-8">
-          Keep one master profile, track every application, and let AI tailor an ATS-optimized
-          LaTeX resume for each job in seconds — with real feedback on what's missing.
-        </p>
-
-        <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          {!loading && user ? (
-            <Button className="px-8 py-3 text-base" onClick={() => router.push('/dashboard')}>
-              Go to Dashboard <ArrowRight className="h-4 w-4" />
-            </Button>
-          ) : (
-            <>
-              <Button variant="secondary" className="px-8 py-3 text-base w-full sm:w-auto" onClick={() => router.push('/dashboard')}>
-                Continue for Free
-              </Button>
-              <Button className="px-8 py-3 text-base w-full sm:w-auto" onClick={() => router.push('/signup')}>
-                Sign Up <ArrowRight className="h-4 w-4" />
-              </Button>
-            </>
-          )}
+      <div className="relative w-full overflow-hidden flex justify-center pt-24 pb-20 px-4">
+        {/* Animated Background Blobs */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl h-full z-0 opacity-50 pointer-events-none">
+          <div className="absolute top-0 -left-10 w-96 h-96 bg-[#1a73e8] rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
+          <div className="absolute top-0 -right-10 w-96 h-96 bg-[#34a853] rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
+          <div className="absolute -bottom-20 left-20 w-96 h-96 bg-[#ea4335] rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000"></div>
         </div>
-        {!loading && !user && (
-          <p className="text-sm text-slate-500 mt-4">
-            No account needed to try it out. <Link href="/login" className="text-blue-400 hover:underline">Already have one? Log in</Link>
+
+        <motion.div 
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="relative z-10 text-center max-w-3xl mx-auto"
+        >
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2, duration: 0.5 }}
+            className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#1a73e8] bg-blue-50 border border-blue-100 rounded-full px-5 py-2 mb-8"
+          >
+            <SparklesIcon className="w-4 h-4" /> Powered by Gemini AI
+          </motion.div>
+          
+          <h1 className="text-5xl md:text-7xl font-extrabold text-[#202124] leading-tight mb-8 tracking-tight">
+            Master your career with <br className="hidden md:block"/>
+            <span className="bg-gradient-to-r from-[#1a73e8] via-[#ea4335] to-[#f9ab00] bg-clip-text text-transparent animate-gradient-x">
+              the next-gen platform.
+            </span>
+          </h1>
+          
+          <p className="text-lg md:text-xl text-[#5f6368] leading-relaxed mb-10 max-w-2xl mx-auto font-light">
+            Keep one master profile, track every application, and let AI tailor an ATS-optimized 
+            LaTeX resume for each job in seconds — with real feedback on what's missing.
           </p>
-        )}
+
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            {!loading && user ? (
+              <Button className="px-8 py-4 text-lg rounded-full shadow-[0_4px_14px_0_rgba(0,0,0,0.1)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.15)] transition-all group" onClick={() => router.push('/dashboard')}>
+                Go to Dashboard <ArrowRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
+              </Button>
+            ) : (
+              <>
+                <Button variant="secondary" className="px-8 py-4 text-lg rounded-full w-full sm:w-auto bg-white" onClick={() => router.push('/dashboard')}>
+                  Continue for Free
+                </Button>
+                <Button className="px-8 py-4 text-lg rounded-full shadow-[0_4px_14px_0_rgba(0,0,0,0.1)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.15)] transition-all w-full sm:w-auto group" onClick={() => router.push('/signup')}>
+                  Sign Up <ArrowRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </>
+            )}
+          </div>
+          {!loading && !user && (
+            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }} className="text-sm text-[#5f6368] mt-6">
+              No account needed to try it out. <Link href="/login" className="text-[#1a73e8] hover:text-[#174ea6] hover:underline transition">Already have one? Log in</Link>
+            </motion.p>
+          )}
+        </motion.div>
       </div>
 
       {/* Feature cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-5xl mb-20">
-        <FeatureCard
-          icon={UserRound}
-          title="Master Profile"
-          desc="Keep your experience, skills, and projects in one reusable place."
-          link="/profile"
-          accent="from-blue-500 to-blue-600"
-        />
-        <FeatureCard
-          icon={LayoutDashboard}
-          title="Job Tracker"
-          desc="Track applications, filter by status, and see your funnel."
-          link="/dashboard"
-          accent="from-emerald-500 to-emerald-600"
-        />
-        <FeatureCard
-          icon={FileText}
-          title="Resume Creator"
-          desc="Generate tailored, ATS-safe resumes for any job in seconds."
-          link="/resumes"
-          accent="from-purple-500 to-purple-600"
-        />
-        <FeatureCard
-          icon={Mail}
-          title="Cover Letters"
-          desc="Personalized cover letters with tone and length controls."
-          link="/cover-letters"
-          accent="from-pink-500 to-pink-600"
-        />
-        <FeatureCard
-          icon={Gauge}
-          title="ATS Checker"
-          desc="Score your profile against a job and see what's missing."
-          link="/ats-checker"
-          accent="from-cyan-500 to-cyan-600"
-        />
-        <FeatureCard
-          icon={MessagesSquare}
-          title="Mock Interview"
-          desc="Practice role-specific questions with instant AI feedback."
-          link="/interview"
-          accent="from-amber-500 to-amber-600"
-        />
-        <FeatureCard
-          icon={Contact}
-          title="LinkedIn Optimizer"
-          desc="Turn your profile into a keyword-rich LinkedIn headline & About."
-          link="/linkedin"
-          accent="from-sky-500 to-sky-600"
-        />
-        <FeatureCard
-          icon={UploadCloud}
-          title="Import from LinkedIn"
-          desc="Upload your LinkedIn PDF export and we'll fill your profile."
-          link="/profile"
-          accent="from-indigo-500 to-indigo-600"
-        />
-        <FeatureCard
-          icon={Wand2}
-          title="AI Chat Assistant"
-          desc="Chat with Gemini to refine your content and get advice."
-          link="/chat"
-          accent="from-orange-500 to-orange-600"
-        />
-      </div>
+      <motion.div 
+        variants={containerVariants}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: "-100px" }}
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-6xl mb-32 px-4"
+      >
+        <FeatureCard icon={UserRound} title="Master Profile" desc="Keep your experience, skills, and projects in one reusable place." link="/profile" accent="from-blue-500 to-cyan-400" />
+        <FeatureCard icon={LayoutDashboard} title="Job Tracker" desc="Track applications, filter by status, and see your funnel." link="/dashboard" accent="from-emerald-500 to-teal-400" />
+        <FeatureCard icon={FileText} title="Resume Creator" desc="Generate tailored, ATS-safe resumes for any job in seconds." link="/resumes" accent="from-purple-500 to-pink-400" />
+        <FeatureCard icon={Mail} title="Cover Letters" desc="Personalized cover letters with tone and length controls." link="/cover-letters" accent="from-pink-500 to-rose-400" />
+        <FeatureCard icon={Gauge} title="ATS Checker" desc="Score your profile against a job and see what's missing." link="/ats-checker" accent="from-cyan-500 to-blue-400" />
+        <FeatureCard icon={MessagesSquare} title="Mock Interview" desc="Practice role-specific questions with instant AI feedback." link="/interview" accent="from-amber-500 to-orange-400" />
+        <FeatureCard icon={Contact} title="LinkedIn Optimizer" desc="Turn your profile into a keyword-rich LinkedIn headline & About." link="/linkedin" accent="from-indigo-500 to-purple-400" />
+        <FeatureCard icon={UploadCloud} title="Import from LinkedIn" desc="Upload your LinkedIn PDF export and we'll fill your profile." link="/profile" accent="from-sky-500 to-blue-400" />
+        <FeatureCard icon={Wand2} title="AI Chat Assistant" desc="Chat with Gemini to refine your content and get advice." link="/chat" accent="from-orange-500 to-red-400" />
+      </motion.div>
 
       {/* How it works */}
-      <div className="w-full max-w-4xl mb-20">
-        <h2 className="text-2xl font-bold text-white text-center mb-2">How it works</h2>
-        <p className="text-slate-400 text-center mb-10">Three steps from resume to application-ready.</p>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <motion.div 
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-100px" }}
+        transition={{ duration: 0.6 }}
+        className="w-full max-w-5xl mb-32 px-4"
+      >
+        <div className="text-center mb-16">
+          <h2 className="text-3xl md:text-4xl font-bold text-[#202124] mb-4">How it works</h2>
+          <p className="text-[#5f6368] text-lg">Three steps from resume to application-ready.</p>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+          <div className="hidden md:block absolute top-1/2 left-0 w-full h-px bg-gradient-to-r from-transparent via-[#dadce0] to-transparent -translate-y-1/2 z-0" />
           <Step icon={UploadCloud} step="1" title="Import your resume" desc="Upload a PDF or paste your existing resume — Gemini extracts your experience, skills, and projects into one master profile." />
           <Step icon={Wand2} step="2" title="Tailor it to the job" desc="Paste a job description and generate a rewritten, keyword-matched LaTeX resume in seconds, with an ATS match score and gap analysis." />
           <Step icon={Download} step="3" title="Export and apply" desc="Download as PDF or DOCX, track the application's status, and iterate with the AI chat assistant as you go." />
         </div>
-      </div>
+      </motion.div>
 
       {/* Pricing / quota explainer */}
-      <div className="w-full max-w-4xl mb-20 grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="p-6 rounded-2xl bg-slate-800/60 border border-slate-700">
-          <Rocket className="h-8 w-8 text-blue-400 mb-3" />
-          <h3 className="text-lg font-bold text-slate-100 mb-1.5">Free to try</h3>
-          <p className="text-slate-400 text-sm leading-relaxed">
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95 }}
+        whileInView={{ opacity: 1, scale: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.5 }}
+        className="w-full max-w-4xl mb-24 grid grid-cols-1 md:grid-cols-2 gap-6 px-4"
+      >
+        <Card className="p-8">
+          <div className="h-12 w-12 rounded-2xl bg-blue-50 flex items-center justify-center mb-6 border border-blue-100">
+            <Rocket className="h-6 w-6 text-[#1a73e8]" />
+          </div>
+          <h3 className="text-xl font-bold text-[#202124] mb-3">Free to try</h3>
+          <p className="text-[#5f6368] text-sm leading-relaxed">
             Every account (and guest session) gets a shared pool of free AI requests, refreshed
             every few hours — no card required.
           </p>
-        </div>
-        <div className="p-6 rounded-2xl bg-slate-800/60 border border-slate-700">
-          <KeyRound className="h-8 w-8 text-purple-400 mb-3" />
-          <h3 className="text-lg font-bold text-slate-100 mb-1.5">Unlimited with your own key</h3>
-          <p className="text-slate-400 text-sm leading-relaxed">
+        </Card>
+        <Card className="p-8 relative overflow-hidden group">
+          <div className="absolute inset-0 bg-gradient-to-br from-[#f8f9fa] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          <div className="h-12 w-12 rounded-2xl bg-blue-50 flex items-center justify-center mb-6 border border-blue-100 relative z-10">
+            <KeyRound className="h-6 w-6 text-[#1a73e8]" />
+          </div>
+          <h3 className="text-xl font-bold text-[#202124] mb-3 relative z-10">Unlimited with your own key</h3>
+          <p className="text-[#5f6368] text-sm leading-relaxed relative z-10">
             Sign up and add your own Gemini API key in Settings to remove the limit entirely —
             it's encrypted at rest and only ever used for your requests.
           </p>
-        </div>
-      </div>
+        </Card>
+      </motion.div>
 
-      <div className="flex items-center gap-2 text-slate-500 text-sm mb-16">
+      <div className="flex items-center gap-2 text-[#5f6368] text-sm mb-16 pb-10 border-b border-[#dadce0] w-full justify-center">
         <ShieldCheck className="h-4 w-4" />
         Guest sessions are private and never shared across devices.
       </div>
@@ -160,40 +169,39 @@ export default function Home() {
   );
 }
 
-const FeatureCard = ({
-  icon: Icon,
-  title,
-  desc,
-  link,
-  accent,
-}: {
-  icon: LucideIcon;
-  title: string;
-  desc: string;
-  link: string;
-  accent: string;
-}) => (
-  <Link href={link} className="group block h-full">
-    <div className="p-6 rounded-2xl bg-slate-800/60 border border-slate-700 h-full transition hover:border-slate-600 hover:shadow-xl hover:shadow-black/20 hover:-translate-y-0.5">
-      <div className={`h-11 w-11 rounded-xl bg-gradient-to-br ${accent} flex items-center justify-center mb-4 shadow-lg`}>
-        <Icon className="h-5 w-5 text-white" />
-      </div>
-      <h2 className="text-lg font-bold text-slate-100 mb-1.5 flex items-center gap-1.5">
-        {title}
-        <ArrowRight className="h-4 w-4 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition text-blue-400" />
-      </h2>
-      <p className="text-slate-400 text-sm leading-relaxed">{desc}</p>
-    </div>
-  </Link>
+const FeatureCard = ({ icon: Icon, title, desc, link, accent }: { icon: LucideIcon; title: string; desc: string; link: string; accent: string; }) => (
+  <motion.div variants={itemVariants} className="h-full">
+    <Link href={link} className="block h-full outline-none">
+      <Card hoverable className="p-6 h-full flex flex-col group cursor-pointer">
+        <div className={`h-12 w-12 rounded-xl bg-gradient-to-br ${accent} flex items-center justify-center mb-6 shadow-lg transform group-hover:scale-110 transition-transform duration-300`}>
+          <Icon className="h-6 w-6 text-white" />
+        </div>
+        <h2 className="text-xl font-bold text-[#202124] mb-2 flex items-center gap-2">
+          {title}
+          <ArrowRight className="h-4 w-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 text-[#1a73e8]" />
+        </h2>
+        <p className="text-[#5f6368] text-sm leading-relaxed font-light">{desc}</p>
+      </Card>
+    </Link>
+  </motion.div>
 );
 
 const Step = ({ icon: Icon, step, title, desc }: { icon: LucideIcon; step: string; title: string; desc: string }) => (
-  <div className="p-6 rounded-2xl bg-slate-800/40 border border-slate-800 relative">
-    <span className="absolute -top-3 -left-3 h-7 w-7 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center shadow-lg">
+  <Card className="p-8 relative z-10">
+    <div className="absolute -top-4 -left-4 h-10 w-10 rounded-full bg-[#202124] text-white font-bold flex items-center justify-center shadow-lg border-4 border-white">
       {step}
-    </span>
-    <Icon className="h-7 w-7 text-blue-400 mb-3" />
-    <h3 className="font-bold text-slate-100 mb-1.5">{title}</h3>
-    <p className="text-slate-400 text-sm leading-relaxed">{desc}</p>
-  </div>
+    </div>
+    <div className="h-12 w-12 rounded-xl bg-blue-50 flex items-center justify-center mb-6 mt-2 border border-blue-100">
+      <Icon className="h-6 w-6 text-[#1a73e8]" />
+    </div>
+    <h3 className="text-xl font-bold text-[#202124] mb-3">{title}</h3>
+    <p className="text-[#5f6368] text-sm leading-relaxed font-light">{desc}</p>
+  </Card>
+);
+
+const SparklesIcon = (props: any) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
+    <path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/>
+  </svg>
 );

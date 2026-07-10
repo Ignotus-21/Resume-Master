@@ -125,7 +125,7 @@ export default function ProfilePage() {
   };
 
   if (loading) return <PageSpinner label="Loading Master Profile..." />;
-  if (!profile) return <div className="p-8 text-center text-red-400">Error loading profile. Ensure backend is running.</div>;
+  if (!profile) return <div className="p-8 text-center text-[#d93025]">Error loading profile. Ensure backend is running.</div>;
 
   const tabs = ['personal', 'experience', 'education', 'projects', 'skills', 'additional', 'import'];
 
@@ -143,13 +143,13 @@ export default function ProfilePage() {
 
       <div className="flex justify-between items-center mb-8">
         <div>
-           <h1 className="text-3xl font-bold text-slate-100">Master Profile</h1>
-           <p className="text-slate-400">Manage your central repository of career data.</p>
+           <h1 className="text-3xl font-bold text-[#202124]">Master Profile</h1>
+           <p className="text-[#5f6368]">Manage your central repository of career data.</p>
         </div>
         <div className="flex items-center gap-4">
             <span className={`text-sm font-medium transition-colors duration-300 ${
-                saveStatus === 'saving' ? 'text-blue-400' : 
-                saveStatus === 'saved' ? 'text-green-400' : 'text-red-400'
+                saveStatus === 'saving' ? 'text-[#1a73e8]' : 
+                saveStatus === 'saved' ? 'text-[#1e8e3e]' : 'text-[#d93025]'
             }`}>
                 {saveStatus === 'saving' ? 'Saving...' : 
                  saveStatus === 'saved' ? 'All changes saved' : 'Error saving'}
@@ -158,15 +158,15 @@ export default function ProfilePage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex space-x-2 border-b border-slate-700 mb-8 overflow-x-auto pb-2">
+      <div className="flex space-x-2 border-b border-[#dadce0] mb-8 overflow-x-auto pb-2">
         {tabs.map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
             className={`px-4 py-2 rounded-t-lg transition capitalize font-medium ${
               activeTab === tab 
-                ? 'bg-slate-800 text-blue-400 border-b-2 border-blue-500' 
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                ? 'bg-[#f8f9fa] text-[#1a73e8] border-b-2 border-blue-500' 
+                : 'text-[#5f6368] hover:text-[#202124] hover:bg-[#f8f9fa]'
             }`}
           >
             {tab}
@@ -174,7 +174,7 @@ export default function ProfilePage() {
         ))}
       </div>
 
-      <div className="bg-slate-800 p-6 rounded-xl shadow-xl border border-slate-700 min-h-[500px]">
+      <div className="bg-[#f8f9fa] p-6 rounded-xl shadow-xl border border-[#dadce0] min-h-[500px]">
         {/* ... (Existing Tab Content Logic Same as Before) ... */}
         {activeTab === 'personal' && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -192,10 +192,10 @@ export default function ProfilePage() {
         {activeTab === 'experience' && (
           <div className="space-y-8">
             {profile.experience?.map((exp: any, index: number) => (
-              <div key={index} className="border border-slate-700 p-6 rounded-xl bg-slate-900/50 relative group">
+              <div key={index} className="border border-[#dadce0] p-6 rounded-xl bg-[#f8f9fa]/50 relative group">
                 <button 
                   onClick={() => removeItem(profile, setProfile, 'experience', index)}
-                  className="absolute top-4 right-4 text-red-400 hover:text-red-300 text-sm"
+                  className="absolute top-4 right-4 text-[#d93025] hover:text-red-300 text-sm"
                 >
                   Remove
                 </button>
@@ -210,7 +210,7 @@ export default function ProfilePage() {
             ))}
             <button 
               onClick={() => setProfile({...profile, experience: [...(profile.experience || []), {}]})}
-              className="w-full py-3 border-2 border-dashed border-slate-600 rounded-xl text-slate-400 hover:border-blue-500 hover:text-blue-400 transition"
+              className="w-full py-3 border-2 border-dashed border-[#dadce0] rounded-xl text-[#5f6368] hover:border-blue-500 hover:text-[#1a73e8] transition"
             >
               + Add Experience
             </button>
@@ -221,10 +221,10 @@ export default function ProfilePage() {
         {activeTab === 'education' && (
           <div className="space-y-8">
             {profile.education?.map((edu: any, index: number) => (
-              <div key={index} className="border border-slate-700 p-6 rounded-xl bg-slate-900/50 relative">
+              <div key={index} className="border border-[#dadce0] p-6 rounded-xl bg-[#f8f9fa]/50 relative">
                 <button 
                   onClick={() => removeItem(profile, setProfile, 'education', index)}
-                  className="absolute top-4 right-4 text-red-400 hover:text-red-300 text-sm"
+                  className="absolute top-4 right-4 text-[#d93025] hover:text-red-300 text-sm"
                 >
                   Remove
                 </button>
@@ -241,7 +241,7 @@ export default function ProfilePage() {
             ))}
             <button 
               onClick={() => setProfile({...profile, education: [...(profile.education || []), {}]})}
-              className="w-full py-3 border-2 border-dashed border-slate-600 rounded-xl text-slate-400 hover:border-blue-500 hover:text-blue-400 transition"
+              className="w-full py-3 border-2 border-dashed border-[#dadce0] rounded-xl text-[#5f6368] hover:border-blue-500 hover:text-[#1a73e8] transition"
             >
               + Add Education
             </button>
@@ -252,10 +252,10 @@ export default function ProfilePage() {
         {activeTab === 'projects' && (
           <div className="space-y-8">
             {profile.projects?.map((proj: any, index: number) => (
-              <div key={index} className="border border-slate-700 p-6 rounded-xl bg-slate-900/50 relative">
+              <div key={index} className="border border-[#dadce0] p-6 rounded-xl bg-[#f8f9fa]/50 relative">
                 <button 
                   onClick={() => removeItem(profile, setProfile, 'projects', index)}
-                  className="absolute top-4 right-4 text-red-400 hover:text-red-300 text-sm"
+                  className="absolute top-4 right-4 text-[#d93025] hover:text-red-300 text-sm"
                 >
                   Remove
                 </button>
@@ -271,7 +271,7 @@ export default function ProfilePage() {
             ))}
             <button 
               onClick={() => setProfile({...profile, projects: [...(profile.projects || []), {}]})}
-              className="w-full py-3 border-2 border-dashed border-slate-600 rounded-xl text-slate-400 hover:border-blue-500 hover:text-blue-400 transition"
+              className="w-full py-3 border-2 border-dashed border-[#dadce0] rounded-xl text-[#5f6368] hover:border-blue-500 hover:text-[#1a73e8] transition"
             >
               + Add Project
             </button>
@@ -281,8 +281,8 @@ export default function ProfilePage() {
         {/* Skills */}
         {activeTab === 'skills' && (
           <div className="space-y-6">
-            <div className="border border-slate-700 p-6 rounded-xl bg-slate-900/50">
-              <h3 className="font-semibold mb-4 text-lg text-slate-200">Technical Skills</h3>
+            <div className="border border-[#dadce0] p-6 rounded-xl bg-[#f8f9fa]/50">
+              <h3 className="font-semibold mb-4 text-lg text-[#202124]">Technical Skills</h3>
               <div className="space-y-4">
                 <Input 
                   label="Languages (comma separated)" 
@@ -313,11 +313,11 @@ export default function ProfilePage() {
         {activeTab === 'additional' && (
           <div className="space-y-8">
             {/* Certificates */}
-            <div className="border border-slate-700 p-6 rounded-xl bg-slate-900/50 relative">
-                <h3 className="font-semibold mb-4 text-lg text-slate-200">Certificates</h3>
+            <div className="border border-[#dadce0] p-6 rounded-xl bg-[#f8f9fa]/50 relative">
+                <h3 className="font-semibold mb-4 text-lg text-[#202124]">Certificates</h3>
                 {profile.certificates?.map((cert: any, i: number) => (
-                    <div key={i} className="mb-4 pb-4 border-b border-slate-800 last:border-0 relative">
-                        <button onClick={() => removeItem(profile, setProfile, 'certificates', i)} className="absolute right-0 top-0 text-red-400 text-xs">Remove</button>
+                    <div key={i} className="mb-4 pb-4 border-b border-[#dadce0] last:border-0 relative">
+                        <button onClick={() => removeItem(profile, setProfile, 'certificates', i)} className="absolute right-0 top-0 text-[#d93025] text-xs">Remove</button>
                         <Input label="Name" value={cert.name} onChange={(v: string) => updateArrayItem(profile, setProfile, 'certificates', i, 'name', v)} />
                         <Input label="Issuer" value={cert.issuer} onChange={(v: string) => updateArrayItem(profile, setProfile, 'certificates', i, 'issuer', v)} />
                         <div className="grid grid-cols-2 gap-4">
@@ -326,26 +326,26 @@ export default function ProfilePage() {
                         </div>
                     </div>
                 ))}
-                <button onClick={() => setProfile({...profile, certificates: [...(profile.certificates || []), {}]})} className="text-blue-400 text-sm hover:underline">+ Add Certificate</button>
+                <button onClick={() => setProfile({...profile, certificates: [...(profile.certificates || []), {}]})} className="text-[#1a73e8] text-sm hover:underline">+ Add Certificate</button>
             </div>
 
             {/* Achievements */}
-            <div className="border border-slate-700 p-6 rounded-xl bg-slate-900/50 relative">
-                <h3 className="font-semibold mb-4 text-lg text-slate-200">Achievements</h3>
+            <div className="border border-[#dadce0] p-6 rounded-xl bg-[#f8f9fa]/50 relative">
+                <h3 className="font-semibold mb-4 text-lg text-[#202124]">Achievements</h3>
                 {profile.achievements?.map((ach: any, i: number) => (
-                    <div key={i} className="mb-4 pb-4 border-b border-slate-800 last:border-0 relative">
-                        <button onClick={() => removeItem(profile, setProfile, 'achievements', i)} className="absolute right-0 top-0 text-red-400 text-xs">Remove</button>
+                    <div key={i} className="mb-4 pb-4 border-b border-[#dadce0] last:border-0 relative">
+                        <button onClick={() => removeItem(profile, setProfile, 'achievements', i)} className="absolute right-0 top-0 text-[#d93025] text-xs">Remove</button>
                         <Input label="Title" value={ach.title} onChange={(v: string) => updateArrayItem(profile, setProfile, 'achievements', i, 'title', v)} />
                         <Input label="Date" value={ach.date} onChange={(v: string) => updateArrayItem(profile, setProfile, 'achievements', i, 'date', v)} />
                         <TextArea label="Description" value={ach.description} onChange={(v: string) => updateArrayItem(profile, setProfile, 'achievements', i, 'description', v)} />
                     </div>
                 ))}
-                <button onClick={() => setProfile({...profile, achievements: [...(profile.achievements || []), {}]})} className="text-blue-400 text-sm hover:underline">+ Add Achievement</button>
+                <button onClick={() => setProfile({...profile, achievements: [...(profile.achievements || []), {}]})} className="text-[#1a73e8] text-sm hover:underline">+ Add Achievement</button>
             </div>
 
             {/* Hobbies */}
-            <div className="border border-slate-700 p-6 rounded-xl bg-slate-900/50 relative">
-                <h3 className="font-semibold mb-4 text-lg text-slate-200">Hobbies & Interests</h3>
+            <div className="border border-[#dadce0] p-6 rounded-xl bg-[#f8f9fa]/50 relative">
+                <h3 className="font-semibold mb-4 text-lg text-[#202124]">Hobbies & Interests</h3>
                 <TextArea 
                     label="List your hobbies (comma or newline separated)" 
                     value={typeof profile.hobbies === 'string' ? profile.hobbies : profile.hobbies?.join('\n')} 
@@ -354,26 +354,26 @@ export default function ProfilePage() {
             </div>
 
             {/* Patents */}
-            <div className="border border-slate-700 p-6 rounded-xl bg-slate-900/50 relative">
-                <h3 className="font-semibold mb-4 text-lg text-slate-200">Patents</h3>
+            <div className="border border-[#dadce0] p-6 rounded-xl bg-[#f8f9fa]/50 relative">
+                <h3 className="font-semibold mb-4 text-lg text-[#202124]">Patents</h3>
                 {profile.patents?.map((pat: any, i: number) => (
-                    <div key={i} className="mb-4 pb-4 border-b border-slate-800 last:border-0 relative">
-                        <button onClick={() => removeItem(profile, setProfile, 'patents', i)} className="absolute right-0 top-0 text-red-400 text-xs">Remove</button>
+                    <div key={i} className="mb-4 pb-4 border-b border-[#dadce0] last:border-0 relative">
+                        <button onClick={() => removeItem(profile, setProfile, 'patents', i)} className="absolute right-0 top-0 text-[#d93025] text-xs">Remove</button>
                         <Input label="Title" value={pat.title} onChange={(v: string) => updateArrayItem(profile, setProfile, 'patents', i, 'title', v)} />
                         <Input label="Patent Number" value={pat.number} onChange={(v: string) => updateArrayItem(profile, setProfile, 'patents', i, 'number', v)} />
                         <Input label="Date" value={pat.date} onChange={(v: string) => updateArrayItem(profile, setProfile, 'patents', i, 'date', v)} />
                         <TextArea label="Description" value={pat.description} onChange={(v: string) => updateArrayItem(profile, setProfile, 'patents', i, 'description', v)} />
                     </div>
                 ))}
-                <button onClick={() => setProfile({...profile, patents: [...(profile.patents || []), {}]})} className="text-blue-400 text-sm hover:underline">+ Add Patent</button>
+                <button onClick={() => setProfile({...profile, patents: [...(profile.patents || []), {}]})} className="text-[#1a73e8] text-sm hover:underline">+ Add Patent</button>
             </div>
 
             {/* Volunteering */}
-            <div className="border border-slate-700 p-6 rounded-xl bg-slate-900/50 relative">
-                <h3 className="font-semibold mb-4 text-lg text-slate-200">Volunteering</h3>
+            <div className="border border-[#dadce0] p-6 rounded-xl bg-[#f8f9fa]/50 relative">
+                <h3 className="font-semibold mb-4 text-lg text-[#202124]">Volunteering</h3>
                 {profile.volunteering?.map((vol: any, i: number) => (
-                    <div key={i} className="mb-4 pb-4 border-b border-slate-800 last:border-0 relative">
-                        <button onClick={() => removeItem(profile, setProfile, 'volunteering', i)} className="absolute right-0 top-0 text-red-400 text-xs">Remove</button>
+                    <div key={i} className="mb-4 pb-4 border-b border-[#dadce0] last:border-0 relative">
+                        <button onClick={() => removeItem(profile, setProfile, 'volunteering', i)} className="absolute right-0 top-0 text-[#d93025] text-xs">Remove</button>
                         <Input label="Organization" value={vol.organization} onChange={(v: string) => updateArrayItem(profile, setProfile, 'volunteering', i, 'organization', v)} />
                         <Input label="Role" value={vol.role} onChange={(v: string) => updateArrayItem(profile, setProfile, 'volunteering', i, 'role', v)} />
                         <div className="grid grid-cols-2 gap-4">
@@ -383,34 +383,34 @@ export default function ProfilePage() {
                         <TextArea label="Description" value={vol.description} onChange={(v: string) => updateArrayItem(profile, setProfile, 'volunteering', i, 'description', v)} />
                     </div>
                 ))}
-                <button onClick={() => setProfile({...profile, volunteering: [...(profile.volunteering || []), {}]})} className="text-blue-400 text-sm hover:underline">+ Add Volunteering</button>
+                <button onClick={() => setProfile({...profile, volunteering: [...(profile.volunteering || []), {}]})} className="text-[#1a73e8] text-sm hover:underline">+ Add Volunteering</button>
             </div>
 
             {/* Custom Sections */}
             <div>
-                <h3 className="font-semibold mb-4 text-xl text-purple-400">Custom Sections</h3>
+                <h3 className="font-semibold mb-4 text-xl text-[#1a73e8]">Custom Sections</h3>
                 {profile.customSections?.map((section: any, i: number) => (
-                    <div key={i} className="border border-slate-700 p-6 rounded-xl bg-slate-900/50 relative mb-6">
-                        <button onClick={() => removeItem(profile, setProfile, 'customSections', i)} className="absolute right-4 top-4 text-red-400 text-sm">Remove Section</button>
+                    <div key={i} className="border border-[#dadce0] p-6 rounded-xl bg-[#f8f9fa]/50 relative mb-6">
+                        <button onClick={() => removeItem(profile, setProfile, 'customSections', i)} className="absolute right-4 top-4 text-[#d93025] text-sm">Remove Section</button>
                         <div className="mb-4">
-                            <label className="block text-sm font-medium text-slate-400 mb-1">Section Title (e.g. Speaking, Awards)</label>
+                            <label className="block text-sm font-medium text-[#5f6368] mb-1">Section Title (e.g. Speaking, Awards)</label>
                             <input 
                                 value={section.title} 
                                 onChange={(e) => updateArrayItem(profile, setProfile, 'customSections', i, 'title', e.target.value)}
-                                className="w-full border border-slate-700 rounded-lg px-4 py-2 bg-slate-800 text-white font-bold"
+                                className="w-full border border-[#dadce0] rounded-lg px-4 py-2 bg-[#f8f9fa] text-[#202124] font-bold"
                             />
                         </div>
                         
-                        <div className="space-y-4 pl-4 border-l-2 border-slate-800">
+                        <div className="space-y-4 pl-4 border-l-2 border-[#dadce0]">
                             {section.items?.map((item: any, j: number) => (
-                                <div key={j} className="bg-slate-800/50 p-4 rounded border border-slate-700 relative">
+                                <div key={j} className="bg-[#f8f9fa]/50 p-4 rounded border border-[#dadce0] relative">
                                     <button 
                                       onClick={() => {
                                           const newItems = [...section.items];
                                           newItems.splice(j, 1);
                                           updateArrayItem(profile, setProfile, 'customSections', i, 'items', newItems);
                                       }}
-                                      className="absolute right-2 top-2 text-red-400 text-xs"
+                                      className="absolute right-2 top-2 text-[#d93025] text-xs"
                                     >
                                       Delete Item
                                     </button>
@@ -448,7 +448,7 @@ export default function ProfilePage() {
                                     const newItems = [...(section.items || []), {}];
                                     updateArrayItem(profile, setProfile, 'customSections', i, 'items', newItems);
                                 }}
-                                className="text-green-400 text-sm font-medium hover:underline"
+                                className="text-[#1e8e3e] text-sm font-medium hover:underline"
                             >
                                 + Add Item to {section.title || 'Section'}
                             </button>
@@ -457,7 +457,7 @@ export default function ProfilePage() {
                 ))}
                 <button 
                     onClick={() => setProfile({...profile, customSections: [...(profile.customSections || []), { items: [] }]})}
-                    className="w-full py-3 border-2 border-dashed border-purple-500/50 rounded-xl text-purple-300 hover:bg-purple-900/20 transition font-bold"
+                    className="w-full py-3 border-2 border-dashed border-[#dadce0] rounded-xl text-[#5f6368] hover:border-[#1a73e8] hover:text-[#1a73e8] hover:bg-[#f8f9fa] transition font-bold"
                 >
                     + Add New Custom Section
                 </button>
@@ -468,15 +468,15 @@ export default function ProfilePage() {
         {/* Import Tab */}
         {activeTab === 'import' && (
           <div className="space-y-8">
-            <div className="bg-slate-900/50 border border-slate-700 p-6 rounded-xl">
-               <h3 className="text-lg font-semibold text-slate-200 mb-2">Option 1: Upload PDF Resume</h3>
-               <p className="text-slate-400 text-sm mb-4">Upload your resume to extract data. You will be able to review and merge the extracted info.</p>
+            <div className="bg-[#f8f9fa]/50 border border-[#dadce0] p-6 rounded-xl">
+               <h3 className="text-lg font-semibold text-[#202124] mb-2">Option 1: Upload PDF Resume</h3>
+               <p className="text-[#5f6368] text-sm mb-4">Upload your resume to extract data. You will be able to review and merge the extracted info.</p>
                <input 
                  type="file" 
                  accept=".pdf"
                  onChange={handleFileUpload}
                  disabled={ingesting}
-                 className="block w-full text-sm text-slate-400
+                 className="block w-full text-sm text-[#5f6368]
                    file:mr-4 file:py-2.5 file:px-6
                    file:rounded-lg file:border-0
                    file:text-sm file:font-semibold
@@ -485,15 +485,15 @@ export default function ProfilePage() {
                    file:cursor-pointer cursor-pointer
                  "
                />
-               {ingesting && <p className="text-blue-400 text-sm mt-2 animate-pulse">Processing file... Please wait...</p>}
+               {ingesting && <p className="text-[#1a73e8] text-sm mt-2 animate-pulse">Processing file... Please wait...</p>}
             </div>
 
-            <div className="bg-slate-900/50 border border-slate-700 p-6 rounded-xl">
-               <h3 className="text-lg font-semibold text-slate-200 mb-2">Option 2: Import from LinkedIn</h3>
-               <p className="text-slate-400 text-sm mb-3">Export your LinkedIn profile as a PDF, then upload it here — we&apos;ll extract your experience, education, and skills automatically.</p>
-               <ol className="text-slate-400 text-sm list-decimal list-inside space-y-1 mb-4">
+            <div className="bg-[#f8f9fa]/50 border border-[#dadce0] p-6 rounded-xl">
+               <h3 className="text-lg font-semibold text-[#202124] mb-2">Option 2: Import from LinkedIn</h3>
+               <p className="text-[#5f6368] text-sm mb-3">Export your LinkedIn profile as a PDF, then upload it here — we&apos;ll extract your experience, education, and skills automatically.</p>
+               <ol className="text-[#5f6368] text-sm list-decimal list-inside space-y-1 mb-4">
                  <li>Open your LinkedIn profile</li>
-                 <li>Click <span className="text-slate-300 font-medium">More</span> → <span className="text-slate-300 font-medium">Save to PDF</span></li>
+                 <li>Click <span className="text-[#202124] font-medium">More</span> → <span className="text-[#202124] font-medium">Save to PDF</span></li>
                  <li>Upload the downloaded PDF below</li>
                </ol>
                <input
@@ -501,7 +501,7 @@ export default function ProfilePage() {
                  accept=".pdf"
                  onChange={handleFileUpload}
                  disabled={ingesting}
-                 className="block w-full text-sm text-slate-400
+                 className="block w-full text-sm text-[#5f6368]
                    file:mr-4 file:py-2.5 file:px-6
                    file:rounded-lg file:border-0
                    file:text-sm file:font-semibold
@@ -512,12 +512,12 @@ export default function ProfilePage() {
                />
             </div>
 
-            <div className="border-t border-slate-700 my-4"></div>
+            <div className="border-t border-[#dadce0] my-4"></div>
 
             <div>
-              <h3 className="text-lg font-semibold text-slate-200 mb-2">Option 3: Paste Text</h3>
+              <h3 className="text-lg font-semibold text-[#202124] mb-2">Option 3: Paste Text</h3>
               <textarea 
-                className="w-full h-64 border border-slate-700 rounded-xl p-4 bg-slate-900 text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full h-64 border border-[#dadce0] rounded-xl p-4 bg-[#f8f9fa] text-[#202124] focus:ring-2 focus:ring-blue-500 outline-none"
                 value={rawText}
                 onChange={(e) => setRawText(e.target.value)}
                 placeholder="Paste resume content here..."
@@ -561,35 +561,35 @@ const ImportReviewModal = ({ currentProfile, importData, onCancel, onConfirm }: 
 
   return (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-8">
-      <div className="bg-slate-800 w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-xl shadow-2xl border border-slate-600">
-        <div className="p-6 border-b border-slate-700 flex justify-between items-center">
-          <h2 className="text-2xl font-bold text-white">Review Import</h2>
-          <button onClick={onCancel} className="text-slate-400 hover:text-white">✕</button>
+      <div className="bg-[#f8f9fa] w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-xl shadow-2xl border border-[#dadce0]">
+        <div className="p-6 border-b border-[#dadce0] flex justify-between items-center">
+          <h2 className="text-2xl font-bold text-[#202124]">Review Import</h2>
+          <button onClick={onCancel} className="text-[#5f6368] hover:text-[#202124]">✕</button>
         </div>
         
         <div className="p-6 space-y-8">
           {/* User Info */}
           <div>
-            <h3 className="text-lg font-bold text-blue-400 mb-2">Personal Info</h3>
+            <h3 className="text-lg font-bold text-[#1a73e8] mb-2">Personal Info</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-slate-900 p-4 rounded border border-slate-700">
-                <div className="font-bold text-xs text-slate-500 uppercase mb-2">Current</div>
-                <div className="text-sm text-slate-300 space-y-1">
+              <div className="bg-[#f8f9fa] p-4 rounded border border-[#dadce0]">
+                <div className="font-bold text-xs text-[#5f6368] uppercase mb-2">Current</div>
+                <div className="text-sm text-[#202124] space-y-1">
                     {Object.entries(currentProfile.user || {}).map(([k, v]: any) => (
-                        v && <div key={k}><span className="text-slate-500">{k}:</span> {typeof v === 'object' ? JSON.stringify(v) : v}</div>
+                        v && <div key={k}><span className="text-[#5f6368]">{k}:</span> {typeof v === 'object' ? JSON.stringify(v) : v}</div>
                     ))}
                 </div>
               </div>
-              <div className="bg-slate-900 p-4 rounded border border-blue-900">
-                <div className="font-bold text-xs text-blue-500 uppercase mb-2">New (from PDF)</div>
-                <div className="text-sm text-blue-200 space-y-1 mb-3">
+              <div className="bg-[#f8f9fa] p-4 rounded border border-[#1a73e8]">
+                <div className="font-bold text-xs text-[#1a73e8] uppercase mb-2">New (from PDF)</div>
+                <div className="text-sm text-[#202124] space-y-1 mb-3">
                     {Object.entries(importData.user || {}).map(([k, v]: any) => (
-                        v && <div key={k}><span className="text-blue-500">{k}:</span> {typeof v === 'object' ? JSON.stringify(v) : v}</div>
+                        v && <div key={k}><span className="text-[#1a73e8]">{k}:</span> {typeof v === 'object' ? JSON.stringify(v) : v}</div>
                     ))}
                 </div>
                 <button
                   onClick={overwriteInfo}
-                  className="w-full bg-blue-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-500 transition"
+                  className="w-full bg-[#1a73e8] text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-500 transition"
                 >
                   {infoUpdated ? 'Info Updated ✓' : 'Use New Info'}
                 </button>
@@ -600,9 +600,9 @@ const ImportReviewModal = ({ currentProfile, importData, onCancel, onConfirm }: 
           {/* Arrays (Dynamic Sections) */}
           {Object.keys(importData).filter(key => Array.isArray(importData[key])).map((key) => (
             <div key={key}>
-              <h3 className="text-lg font-bold text-blue-400 mb-2 capitalize">{key}</h3>
-              <div className="bg-slate-900 p-4 rounded border border-slate-700">
-                 <p className="text-sm text-slate-400 mb-3">
+              <h3 className="text-lg font-bold text-[#1a73e8] mb-2 capitalize">{key}</h3>
+              <div className="bg-[#f8f9fa] p-4 rounded border border-[#dadce0]">
+                 <p className="text-sm text-[#5f6368] mb-3">
                    Found <strong>{importData[key]?.length || 0}</strong> items. 
                  </p>
                  {importData[key]?.length > 0 && (
@@ -614,18 +614,18 @@ const ImportReviewModal = ({ currentProfile, importData, onCancel, onConfirm }: 
                        const subLabel = item.role || item.degree || item.issuer || item.subtitle || item.number || '';
                        
                        return (
-                         <div key={i} className="flex justify-between items-center p-3 bg-slate-800 rounded border border-slate-600">
-                           <div className="text-sm text-slate-200">
+                         <div key={i} className="flex justify-between items-center p-3 bg-[#f8f9fa] rounded border border-[#dadce0]">
+                           <div className="text-sm text-[#202124]">
                              <div className="font-bold">{mainLabel}</div>
-                             {subLabel && <div className="text-slate-400">{subLabel}</div>}
+                             {subLabel && <div className="text-[#5f6368]">{subLabel}</div>}
                            </div>
                            <button 
                              onClick={() => addItem(key, item, i)}
                              disabled={isAdded}
                              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition ${
-                               isAdded 
-                                 ? 'bg-green-900/50 text-green-400 border border-green-800 cursor-default' 
-                                 : 'bg-blue-600 text-white hover:bg-blue-500'
+                               isAdded
+                                 ? 'bg-[#e6f4ea] text-[#1e8e3e] border border-[#1e8e3e]/30 cursor-default'
+                                 : 'bg-[#1a73e8] text-white hover:bg-blue-500'
                              }`}
                            >
                              {isAdded ? 'Added' : 'Add'}
@@ -640,11 +640,11 @@ const ImportReviewModal = ({ currentProfile, importData, onCancel, onConfirm }: 
           ))}
         </div>
 
-        <div className="p-6 border-t border-slate-700 flex justify-end gap-4">
-          <button onClick={onCancel} className="px-6 py-2 text-slate-300 hover:text-white">Cancel</button>
-          <button 
-            onClick={() => onConfirm(merged)} 
-            className="px-8 py-2 bg-green-600 text-white rounded-lg font-bold hover:bg-green-500 shadow-lg transition"
+        <div className="p-6 border-t border-[#dadce0] flex justify-end gap-4">
+          <button onClick={onCancel} className="px-6 py-2 text-[#5f6368] hover:text-[#202124]">Cancel</button>
+          <button
+            onClick={() => onConfirm(merged)}
+            className="px-8 py-2 bg-[#1e8e3e] text-white rounded-lg font-bold hover:bg-[#188038] shadow-lg transition"
           >
             Confirm & Save Changes
           </button>
@@ -657,23 +657,23 @@ const ImportReviewModal = ({ currentProfile, importData, onCancel, onConfirm }: 
 // Helpers (Unchanged)
 const Input = ({ label, value, onChange }: any) => (
   <div>
-    <label className="block text-sm font-medium text-slate-400 mb-2">{label}</label>
+    <label className="block text-sm font-medium text-[#5f6368] mb-2">{label}</label>
     <input 
       type="text" 
       value={value || ''} 
       onChange={(e) => onChange(e.target.value)} 
-      className="w-full border border-slate-700 rounded-lg px-4 py-2 bg-slate-900 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition placeholder-slate-600"
+      className="w-full border border-[#dadce0] rounded-lg px-4 py-2 bg-[#f8f9fa] text-[#202124] focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition placeholder-slate-600"
     />
   </div>
 );
 
 const TextArea = ({ label, value, onChange }: any) => (
   <div>
-    <label className="block text-sm font-medium text-slate-400 mb-2">{label}</label>
+    <label className="block text-sm font-medium text-[#5f6368] mb-2">{label}</label>
     <textarea 
       value={value || ''} 
       onChange={(e) => onChange(e.target.value)} 
-      className="w-full border border-slate-700 rounded-lg px-4 py-2 h-32 bg-slate-900 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition placeholder-slate-600"
+      className="w-full border border-[#dadce0] rounded-lg px-4 py-2 h-32 bg-[#f8f9fa] text-[#202124] focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition placeholder-slate-600"
     />
   </div>
 );

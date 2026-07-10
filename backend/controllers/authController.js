@@ -12,6 +12,7 @@ const { getQuotaStatus } = require('../services/quotaService');
 const { generateToken, hashToken } = require('../utils/tokens');
 const { sendVerificationEmail, sendPasswordResetEmail } = require('../services/emailService');
 const { verifyTurnstile } = require('../services/turnstileService');
+const TokenUsage = require('../models/TokenUsage');
 
 const isProd = process.env.NODE_ENV === 'production';
 const TOKEN_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days
@@ -83,6 +84,7 @@ const publicUser = (user) => ({
   name: user.name,
   hasOwnKey: Boolean(user.geminiApiKeyEncrypted),
   emailVerified: Boolean(user.emailVerified),
+  isAdmin: Boolean(user.isAdmin),
 });
 
 const signup = async (req, res) => {
@@ -310,7 +312,7 @@ const quota = async (req, res) => {
     if (req.geminiApiKey) {
       return res.json({ usingOwnKey: true, limit: null, remaining: null, resetAt: null });
     }
-    const status = await getQuotaStatus(req.quotaIdentity || req.identity);
+    const status = await getQuotaStatus(req);
     res.json({ usingOwnKey: false, ...status });
   } catch (error) {
     console.error('Quota lookup error:', error);
@@ -343,7 +345,38 @@ const removeGeminiKey = async (req, res) => {
   }
 };
 
+const myUsage = async (req, res) => {
+  try {
+    const identity = req.user ? req.user.id : req.quotaIdentity;
+    const tokenAggregation = await TokenUsage.aggregate([
+      { $match: { identity } },
+      {
+        $group: {
+          _id: "$service",
+          totalInputTokens: { $sum: "$inputTokens" },
+          totalOutputTokens: { $sum: "$outputTokens" },
+          totalRequests: { $sum: 1 }
+        }
+      }
+    ]);
+    
+    const tokenBreakdown = {};
+    tokenAggregation.forEach(t => {
+      tokenBreakdown[t._id] = {
+        input: t.totalInputTokens,
+        output: t.totalOutputTokens,
+        requests: t.totalRequests
+      };
+    });
+    
+    res.json({ tokens: tokenBreakdown });
+  } catch (error) {
+    console.error('My usage error:', error);
+    res.status(500).json({ message: 'Failed to fetch usage' });
+  }
+};
+
 module.exports = {
   signup, login, googleLogin, logout, me, quota, setGeminiKey, removeGeminiKey,
-  verifyEmail, resendVerification, requestPasswordReset, resetPassword,
+  verifyEmail, resendVerification, requestPasswordReset, resetPassword, myUsage,
 };

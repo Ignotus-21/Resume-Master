@@ -7,9 +7,9 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 
 function scoreColor(score: number) {
-  if (score >= 75) return 'text-emerald-400';
-  if (score >= 50) return 'text-yellow-400';
-  return 'text-red-400';
+  if (score >= 75) return 'text-[#1e8e3e]';
+  if (score >= 50) return 'text-[#f9ab00]';
+  return 'text-[#d93025]';
 }
 
 function avgScore(turns: any[]) {
@@ -95,36 +95,36 @@ export default function InterviewPage() {
   return (
     <div className="p-4 md:p-8 max-w-3xl mx-auto min-h-screen">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-100 flex items-center gap-2">
-          <MessagesSquare className="h-7 w-7 text-blue-400" /> Mock Interview
+        <h1 className="text-3xl font-bold text-[#202124] flex items-center gap-2">
+          <MessagesSquare className="h-7 w-7 text-[#1a73e8]" /> Mock Interview
         </h1>
-        <p className="text-slate-400">Practice role-specific questions and get instant AI feedback.</p>
+        <p className="text-[#5f6368]">Practice role-specific questions and get instant AI feedback.</p>
       </div>
 
       {reviewing ? (
         <div>
-          <button onClick={() => setReviewing(null)} className="text-sm text-slate-400 hover:text-white flex items-center gap-1 mb-4">
+          <button onClick={() => setReviewing(null)} className="text-sm text-[#5f6368] hover:text-[#202124] flex items-center gap-1 mb-4">
             <ChevronLeft className="h-4 w-4" /> Back
           </button>
           <Card className="p-6">
             <div className="flex justify-between items-center mb-1">
-              <h2 className="text-lg font-bold text-slate-100">{reviewing.job ? `${reviewing.job.role} @ ${reviewing.job.company}` : reviewing.role}</h2>
+              <h2 className="text-lg font-bold text-[#202124]">{reviewing.job ? `${reviewing.job.role} @ ${reviewing.job.company}` : reviewing.role}</h2>
               {avgScore(reviewing.turns) !== null && (
                 <span className={`text-lg font-bold ${scoreColor(avgScore(reviewing.turns)!)}`}>{avgScore(reviewing.turns)}/100 avg</span>
               )}
             </div>
-            <p className="text-xs text-slate-500 mb-6">{new Date(reviewing.createdAt).toLocaleString()}</p>
+            <p className="text-xs text-[#5f6368] mb-6">{new Date(reviewing.createdAt).toLocaleString()}</p>
             {(!reviewing.turns || reviewing.turns.length === 0) ? (
-              <p className="text-slate-500 text-sm">No answers were recorded in this session.</p>
+              <p className="text-[#5f6368] text-sm">No answers were recorded in this session.</p>
             ) : (
               <div className="space-y-5">
                 {reviewing.turns.map((t: any, i: number) => (
-                  <div key={i} className="border-b border-slate-800 last:border-0 pb-5 last:pb-0">
-                    <p className="font-semibold text-slate-200 mb-1">{t.question}</p>
-                    <p className="text-slate-400 text-sm mb-3 whitespace-pre-wrap">{t.answer}</p>
-                    <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-3">
+                  <div key={i} className="border-b border-[#dadce0] last:border-0 pb-5 last:pb-0">
+                    <p className="font-semibold text-[#202124] mb-1">{t.question}</p>
+                    <p className="text-[#5f6368] text-sm mb-3 whitespace-pre-wrap">{t.answer}</p>
+                    <div className="rounded-lg border border-[#dadce0] bg-[#f8f9fa]/60 p-3">
                       {typeof t.score === 'number' && <div className={`text-sm font-bold mb-1 ${scoreColor(t.score)}`}>{t.score}/100</div>}
-                      <p className="text-slate-300 text-sm">{t.feedback}</p>
+                      <p className="text-[#202124] text-sm">{t.feedback}</p>
                     </div>
                   </div>
                 ))}
@@ -135,11 +135,11 @@ export default function InterviewPage() {
       ) : !session ? (
         <>
         <Card className="p-6">
-          <label className="block text-sm font-medium text-slate-400 mb-2">Interview for</label>
+          <label className="block text-sm font-medium text-[#5f6368] mb-2">Interview for</label>
           <select
             value={selectedJobId}
             onChange={(e) => setSelectedJobId(e.target.value)}
-            className="w-full border border-slate-700 bg-slate-900 rounded-lg px-4 py-2 h-11 text-white outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+            className="w-full border border-[#dadce0] bg-[#f8f9fa] rounded-lg px-4 py-2 h-11 text-[#202124] outline-none focus:ring-2 focus:ring-blue-500 mb-4"
           >
             <option value="">-- Choose a job --</option>
             {jobs.map((j) => <option key={j._id} value={j._id}>{j.role} at {j.company}</option>)}
@@ -151,7 +151,7 @@ export default function InterviewPage() {
 
         {pastSessions.length > 0 && (
           <div className="mt-8">
-            <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+            <h2 className="text-sm font-semibold text-[#5f6368] uppercase tracking-wider mb-3 flex items-center gap-2">
               <History className="h-4 w-4" /> Past interviews
             </h2>
             <div className="space-y-3">
@@ -161,11 +161,11 @@ export default function InterviewPage() {
                   <button
                     key={s._id}
                     onClick={() => openReview(s._id)}
-                    className="w-full text-left p-4 border border-slate-700 bg-slate-800/50 rounded-xl hover:bg-slate-800 hover:border-slate-600 transition flex justify-between items-center gap-4"
+                    className="w-full text-left p-4 border border-[#dadce0] bg-[#f8f9fa]/50 rounded-xl hover:bg-[#f8f9fa] hover:border-[#dadce0] transition flex justify-between items-center gap-4"
                   >
                     <div className="min-w-0">
-                      <div className="font-semibold text-slate-200 truncate">{s.job ? `${s.job.role} @ ${s.job.company}` : s.role || 'Interview'}</div>
-                      <div className="text-xs text-slate-500">{new Date(s.createdAt).toLocaleDateString()} · {s.turns?.length || 0} answered</div>
+                      <div className="font-semibold text-[#202124] truncate">{s.job ? `${s.job.role} @ ${s.job.company}` : s.role || 'Interview'}</div>
+                      <div className="text-xs text-[#5f6368]">{new Date(s.createdAt).toLocaleDateString()} · {s.turns?.length || 0} answered</div>
                     </div>
                     {avg !== null && <span className={`text-sm font-bold shrink-0 ${scoreColor(avg)}`}>{avg}/100</span>}
                   </button>
@@ -177,38 +177,38 @@ export default function InterviewPage() {
         </>
       ) : finished ? (
         <Card className="p-8 text-center">
-          <h2 className="text-xl font-bold text-white mb-2">Interview complete 🎉</h2>
-          <p className="text-slate-400 mb-6">You answered all {session.questions.length} questions. Review your feedback anytime, or run another round.</p>
+          <h2 className="text-xl font-bold text-[#202124] mb-2">Interview complete 🎉</h2>
+          <p className="text-[#5f6368] mb-6">You answered all {session.questions.length} questions. Review your feedback anytime, or run another round.</p>
           <Button onClick={reset}><RotateCcw className="h-4 w-4" /> New Interview</Button>
         </Card>
       ) : (
         <Card className="p-6">
           <div className="flex justify-between items-center mb-4">
-            <span className="text-sm text-slate-500">Question {current + 1} of {session.questions.length}</span>
-            <button onClick={reset} className="text-sm text-slate-500 hover:text-slate-300 flex items-center gap-1"><RotateCcw className="h-3 w-3" /> Restart</button>
+            <span className="text-sm text-[#5f6368]">Question {current + 1} of {session.questions.length}</span>
+            <button onClick={reset} className="text-sm text-[#5f6368] hover:text-[#202124] flex items-center gap-1"><RotateCcw className="h-3 w-3" /> Restart</button>
           </div>
-          <div className="h-1.5 bg-slate-800 rounded-full mb-6 overflow-hidden">
+          <div className="h-1.5 bg-[#f8f9fa] rounded-full mb-6 overflow-hidden">
             <div className="h-full bg-blue-500 transition-all" style={{ width: `${(current / session.questions.length) * 100}%` }} />
           </div>
 
-          <p className="text-lg font-semibold text-slate-100 mb-4">{session.questions[current]}</p>
+          <p className="text-lg font-semibold text-[#202124] mb-4">{session.questions[current]}</p>
 
           <textarea
             value={answer}
             onChange={(e) => setAnswer(e.target.value)}
             disabled={!!lastFeedback}
             placeholder="Type your answer..."
-            className="w-full h-40 border border-slate-700 bg-slate-900 rounded-lg p-4 text-white outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60"
+            className="w-full h-40 border border-[#dadce0] bg-[#f8f9fa] rounded-lg p-4 text-[#202124] outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60"
           />
 
           {lastFeedback ? (
             <div className="mt-4 space-y-4">
-              <div className="rounded-xl border border-slate-700 bg-slate-900/60 p-4">
+              <div className="rounded-xl border border-[#dadce0] bg-[#f8f9fa]/60 p-4">
                 <div className="flex items-center gap-3 mb-2">
                   <span className={`text-2xl font-bold ${scoreColor(lastFeedback.score)}`}>{lastFeedback.score}/100</span>
-                  <span className="text-sm text-slate-400">Answer score</span>
+                  <span className="text-sm text-[#5f6368]">Answer score</span>
                 </div>
-                <p className="text-slate-300 text-sm leading-relaxed">{lastFeedback.feedback}</p>
+                <p className="text-[#202124] text-sm leading-relaxed">{lastFeedback.feedback}</p>
               </div>
               <Button onClick={nextQuestion}>
                 {isLast ? 'Finish' : 'Next Question'} <ChevronRight className="h-4 w-4" />

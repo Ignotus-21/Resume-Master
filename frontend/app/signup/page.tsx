@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { UserPlus, Sparkles } from 'lucide-react';
+import { UserPlus, Sparkles, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/components/ui/Toast';
 import { Card } from '@/components/ui/Card';
@@ -19,6 +19,7 @@ export default function SignupPage() {
   const [password, setPassword] = useState('');
   const [captchaToken, setCaptchaToken] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,48 +53,59 @@ export default function SignupPage() {
     <div className="flex flex-col items-center justify-center min-h-[75vh] px-4">
       <Card className="w-full max-w-sm p-8">
         <div className="flex items-center gap-2 justify-center mb-6">
-          <Sparkles className="h-6 w-6 text-blue-400" />
-          <h1 className="text-2xl font-bold text-white">Create Account</h1>
+          <Sparkles className="h-6 w-6 text-[#1a73e8]" />
+          <h1 className="text-2xl font-bold text-[#202124]">Create Account</h1>
         </div>
 
         <GoogleSignInButton onCredential={handleGoogle} />
 
         <div className="flex items-center gap-3 my-6">
-          <div className="h-px bg-slate-700 flex-1" />
-          <span className="text-xs text-slate-500 uppercase">or</span>
-          <div className="h-px bg-slate-700 flex-1" />
+          <div className="h-px bg-[#dadce0] flex-1" />
+          <span className="text-xs text-[#5f6368] uppercase font-medium">or</span>
+          <div className="h-px bg-[#dadce0] flex-1" />
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-400 mb-1.5">Name</label>
+            <label className="block text-sm font-medium text-[#5f6368] mb-1.5">Name</label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full border border-slate-700 bg-slate-900 rounded-lg px-4 py-2.5 text-white outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-[#dadce0] bg-[#f8f9fa] rounded-lg px-4 py-2.5 text-[#202124] outline-none focus:ring-2 focus:ring-[#1a73e8]"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-400 mb-1.5">Email</label>
+            <label className="block text-sm font-medium text-[#5f6368] mb-1.5">Email</label>
             <input
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full border border-slate-700 bg-slate-900 rounded-lg px-4 py-2.5 text-white outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-[#dadce0] bg-[#f8f9fa] rounded-lg px-4 py-2.5 text-[#202124] outline-none focus:ring-2 focus:ring-[#1a73e8]"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-400 mb-1.5">Password</label>
-            <input
-              type="password"
-              required
-              minLength={8}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full border border-slate-700 bg-slate-900 rounded-lg px-4 py-2.5 text-white outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <p className="text-xs text-slate-500 mt-1">At least 8 characters</p>
+            <label className="block text-sm font-medium text-[#5f6368] mb-1.5">Password</label>
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                required
+                minLength={8}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full border border-[#dadce0] bg-[#f8f9fa] rounded-lg px-4 py-2.5 text-[#202124] outline-none focus:ring-2 focus:ring-[#1a73e8] pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                aria-pressed={showPassword}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#5f6368] hover:text-[#202124]"
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+            <p className="text-xs text-[#5f6368] mt-1">At least 8 characters</p>
           </div>
           <Turnstile onToken={setCaptchaToken} />
           <Button type="submit" loading={submitting} className="w-full">
@@ -102,11 +114,11 @@ export default function SignupPage() {
           </Button>
         </form>
 
-        <p className="text-center text-sm text-slate-400 mt-6">
-          Already have an account? <Link href="/login" className="text-blue-400 hover:underline">Log in</Link>
+        <p className="text-center text-sm text-[#5f6368] mt-6">
+          Already have an account? <Link href="/login" className="text-[#1a73e8] hover:underline font-medium">Log in</Link>
         </p>
-        <p className="text-center text-sm text-slate-500 mt-2">
-          <Link href="/dashboard" className="hover:text-slate-300 hover:underline">Continue as guest instead</Link>
+        <p className="text-center text-sm text-[#5f6368] mt-2">
+          <Link href="/dashboard" className="hover:text-[#202124] hover:underline">Continue as guest instead</Link>
         </p>
       </Card>
     </div>

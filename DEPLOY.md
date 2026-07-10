@@ -1,7 +1,7 @@
 # Deploying Resume Master
 
 The app is three pieces: a **Next.js frontend**, an **Express backend** (which needs
-`pdflatex` for PDF compilation), and **MongoDB**. Because the backend needs a system
+`tectonic` for PDF compilation), and **MongoDB**. Because the backend needs a system
 binary and a persistent process, it can't run on Vercel's serverless functions — so
 the frontend goes on Vercel and the backend on a container host.
 
@@ -10,7 +10,7 @@ Recommended free/cheap setup:
 | Piece | Host | Notes |
 |------|------|-------|
 | Frontend (Next.js) | **Vercel** (Hobby, free) | Same as a portfolio deploy |
-| Backend (Express + pdflatex) | **Railway** (or Render) via `backend/Dockerfile` | Needs texlive; no idle-sleep on Railway |
+| Backend (Express + tectonic) | **Railway** (or Render) via `backend/Dockerfile` | Fetches LaTeX packages on the fly; no idle-sleep on Railway |
 | Database | **MongoDB Atlas** (M0, free) | 512 MB |
 | Email | **Resend** (free) | Verification + password-reset emails |
 | CAPTCHA | **Cloudflare Turnstile** (free) | Signup bot protection |
@@ -21,11 +21,12 @@ Recommended free/cheap setup:
 
 ## 2. Backend → Railway (Docker)
 1. New project → Deploy from GitHub repo → set the **root directory** to `backend/`.
-   Railway will build using `backend/Dockerfile` (installs texlive + pdflatex).
+   Railway will build using `backend/Dockerfile` (installs the `tectonic` binary).
 2. Set environment variables (see `backend/.env.example`):
    - `MONGO_URI` (from Atlas)
    - `JWT_SECRET`, `ENCRYPTION_KEY` (generate with the commands in `.env.example`)
    - `GEMINI_API_KEY`
+   - `GEMINI_MODEL` (optional, defaults to `gemini-2.5-flash`)
    - `CORS_ORIGIN` = your Vercel URL, e.g. `https://your-app.vercel.app`
    - `APP_URL` = same Vercel URL (used in email links)
    - `NODE_ENV=production`, `TRUST_PROXY_HOPS=1`

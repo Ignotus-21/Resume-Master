@@ -6,6 +6,9 @@ const userSchema = new mongoose.Schema({
   googleId: { type: String, unique: true, sparse: true },
   name: { type: String },
   geminiApiKeyEncrypted: { type: String },
+  isAdmin: { type: Boolean, default: false },
+  usedTokens: { type: Number, default: 0 },
+  extraTokens: { type: Number, default: 0 },
 
   // Email verification (email/password accounts). Google accounts are verified
   // by Google, so they're created with emailVerified = true.

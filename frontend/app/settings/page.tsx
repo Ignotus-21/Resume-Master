@@ -68,9 +68,9 @@ export default function SettingsPage() {
     return (
       <div className="max-w-lg mx-auto mt-16 text-center">
         <Card className="p-8">
-          <ShieldCheck className="h-10 w-10 text-blue-400 mx-auto mb-4" />
-          <h1 className="text-xl font-bold text-white mb-2">Sign in to manage settings</h1>
-          <p className="text-slate-400 text-sm mb-6">
+          <ShieldCheck className="h-10 w-10 text-[#1a73e8] mx-auto mb-4" />
+          <h1 className="text-xl font-bold text-[#202124] mb-2">Sign in to manage settings</h1>
+          <p className="text-[#5f6368] text-sm mb-6">
             Bringing your own Gemini API key (for unlimited AI requests) requires an account so we can store it securely.
           </p>
           <Button className="w-full" onClick={() => router.push('/signup')}>Create an account</Button>
@@ -81,15 +81,15 @@ export default function SettingsPage() {
 
   return (
     <div className="max-w-2xl mx-auto p-4 md:p-8 space-y-6">
-      <h1 className="text-3xl font-bold text-slate-100">Settings</h1>
+      <h1 className="text-3xl font-bold text-[#202124]">Settings</h1>
 
       <Card className="p-6">
         <div className="flex items-center gap-3 mb-4">
-          <UserIcon className="h-5 w-5 text-blue-400" />
-          <h2 className="text-lg font-bold text-slate-100">Account</h2>
+          <UserIcon className="h-5 w-5 text-[#1a73e8]" />
+          <h2 className="text-lg font-bold text-[#202124]">Account</h2>
         </div>
-        <p className="text-slate-300 text-sm">{user.name || 'No name set'}</p>
-        <p className="text-slate-500 text-sm mb-4">{user.email}</p>
+        <p className="text-[#202124] text-sm">{user.name || 'No name set'}</p>
+        <p className="text-[#5f6368] text-sm mb-4">{user.email}</p>
         <Button variant="secondary" onClick={logout}>
           <LogOut className="h-4 w-4" />
           Log Out
@@ -98,16 +98,16 @@ export default function SettingsPage() {
 
       <Card className="p-6">
         <div className="flex items-center gap-3 mb-4">
-          <KeyRound className="h-5 w-5 text-blue-400" />
-          <h2 className="text-lg font-bold text-slate-100">Gemini API Key</h2>
+          <KeyRound className="h-5 w-5 text-[#1a73e8]" />
+          <h2 className="text-lg font-bold text-[#202124]">Gemini API Key</h2>
         </div>
 
         {quota && (
-          <div className="mb-4 text-sm rounded-lg border border-slate-700 bg-slate-900/60 p-3">
+          <div className="mb-4 text-sm rounded-lg border border-[#dadce0] bg-[#f8f9fa]/60 p-3">
             {quota.usingOwnKey ? (
-              <span className="text-emerald-400 font-medium">Using your own key — unlimited AI requests.</span>
+              <span className="text-[#1e8e3e] font-medium">Using your own key — unlimited AI requests.</span>
             ) : (
-              <span className="text-slate-300">
+              <span className="text-[#202124]">
                 {quota.remaining}/{quota.limit} free requests remaining this window
                 {quota.resetAt && (
                   <> · resets {new Date(quota.resetAt).toLocaleTimeString()}</>
@@ -117,7 +117,7 @@ export default function SettingsPage() {
           </div>
         )}
 
-        <p className="text-slate-400 text-sm mb-4">
+        <p className="text-[#5f6368] text-sm mb-4">
           The app ships with a shared Gemini key limited to a small free quota. Add your own key (billed to your Google account) for unlimited AI requests.
         </p>
 
@@ -135,7 +135,7 @@ export default function SettingsPage() {
               placeholder="Paste your Gemini API key"
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
-              className="flex-1 border border-slate-700 bg-slate-900 rounded-lg px-4 py-2.5 text-white outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 border border-[#dadce0] bg-[#f8f9fa] rounded-lg px-4 py-2.5 text-[#202124] outline-none focus:ring-2 focus:ring-blue-500"
             />
             <Button type="submit" loading={saving}>Save Key</Button>
           </form>

@@ -30,7 +30,7 @@ const start = async (req, res) => {
     if (quotaRejection) return res.status(quotaRejection.status).json(quotaRejection.body);
 
     const profile = await MasterProfile.findOne({ owner: req.identity });
-    const questions = await generateInterviewQuestions(jobDescription, profile, req.geminiApiKey);
+    const questions = await generateInterviewQuestions(jobDescription, profile, req.geminiApiKey, req);
 
     const session = await InterviewSession.create({
       owner: req.identity,
@@ -68,7 +68,7 @@ const answer = async (req, res) => {
     if (quotaRejection) return res.status(quotaRejection.status).json(quotaRejection.body);
 
     const jobDescription = session.job?.jdText || session.role;
-    const evaluation = await evaluateInterviewAnswer(question, answerText, jobDescription, req.geminiApiKey);
+    const evaluation = await evaluateInterviewAnswer(question, answerText, jobDescription, req.geminiApiKey, req);
 
     session.turns.push({
       question,

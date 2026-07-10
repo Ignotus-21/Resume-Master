@@ -4,6 +4,7 @@ jest.mock('../models/CoverLetter');
 jest.mock('../models/MasterProfile');
 jest.mock('../models/Job');
 jest.mock('../models/ApiUsage');
+jest.mock('../models/AppConfig');
 jest.mock('../services/geminiService', () => ({
   generateCoverLetter: jest.fn().mockResolvedValue('Dear Hiring Manager, ...'),
   parseResumeData: jest.fn(),
@@ -18,6 +19,7 @@ jest.mock('../services/geminiService', () => ({
 const CoverLetter = require('../models/CoverLetter');
 const MasterProfile = require('../models/MasterProfile');
 const ApiUsage = require('../models/ApiUsage');
+const AppConfig = require('../models/AppConfig');
 
 process.env.CORS_ORIGIN = 'http://localhost:3000';
 const createApp = require('../app');
@@ -29,7 +31,8 @@ describe('cover letters are owner-scoped', () => {
     app = createApp();
     // Allow the shared-key quota gate (atomic flow).
     ApiUsage.updateOne.mockResolvedValue({});
-    ApiUsage.findOneAndUpdate.mockResolvedValue({ count: 1, windowStart: new Date() });
+    ApiUsage.findOneAndUpdate.mockResolvedValue({ count: 1, windowStart: new Date(), usedTokens: 0 });
+    AppConfig.findOneAndUpdate.mockResolvedValue({ defaultTokenLimit: 15000, guestTokenLimit: 5000 });
   });
 
   it('scopes the list query to the caller identity', async () => {

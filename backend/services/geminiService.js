@@ -1,6 +1,7 @@
+const { trackUsage } = require('../utils/trackUsage');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-const MODEL_NAME = "gemini-2.5-pro";
+const MODEL_NAME = process.env.GEMINI_MODEL || "gemini-2.5-flash";
 
 let defaultClient = null;
 const getModel = (apiKey) => {
@@ -13,7 +14,7 @@ const getModel = (apiKey) => {
   return defaultClient.getGenerativeModel({ model: MODEL_NAME });
 };
 
-const parseResumeData = async (input, apiKey) => {
+const parseResumeData = async (input, apiKey, req = null) => {
   const model = getModel(apiKey);
   const isBuffer = Buffer.isBuffer(input);
   
@@ -78,6 +79,7 @@ const parseResumeData = async (input, apiKey) => {
 
   try {
     const result = await model.generateContent(parts);
+    if (req) await trackUsage(req, 'resume-parser', result);
     const response = await result.response;
     const text = response.text();
     // Clean up if markdown code blocks are present
@@ -89,7 +91,7 @@ const parseResumeData = async (input, apiKey) => {
   }
 };
 
-const tailorResume = async (masterData, jobDescription, apiKey) => {
+const tailorResume = async (masterData, jobDescription, apiKey, req = null) => {
   const model = getModel(apiKey);
   const prompt = `
     You are an ATS Resume Optimizer.
@@ -111,6 +113,7 @@ const tailorResume = async (masterData, jobDescription, apiKey) => {
   
   try {
     const result = await model.generateContent(prompt);
+    if (req) await trackUsage(req, 'resume-tailor', result);
     const response = await result.response;
     const text = response.text();
     const jsonStr = text.replace(/```json/g, '').replace(/```/g, '');
@@ -121,19 +124,19 @@ const tailorResume = async (masterData, jobDescription, apiKey) => {
   }
 };
 
-const generateLatex = async (resumeData, apiKey) => {
+const generateLatex = async (resumeData, apiKey, req = null) => {
   const model = getModel(apiKey);
   const prompt = `
     You are a LaTeX Resume Architect.
     Convert the following JSON resume data into a professional, clean LaTeX resume code.
     
     Design Requirements:
-    1. Use a modern, clean, and professional layout (e.g., modified 'article' class or a clean resume class).
-    2. **MULTI-PAGE SUPPORT IS ESSENTIAL**: Do NOT try to squeeze everything onto one page. If the content is long, let it flow naturally to a second page.
+    1. Use a modern, clean, and professional layout (e.g., modified 'article' class).
+    2. **MULTI-PAGE SUPPORT**: Do NOT try to squeeze everything onto one page.
     3. Use readable font sizes (10pt-12pt) and standard margins (0.5in - 0.75in).
-    4. Ensure ALL sections from the JSON (Education, Experience, Projects, Skills, etc.) are included. Do not drop content.
-    5. Ensure all special characters are escaped properly for LaTeX.
-    6. **SKILLS HANDLING**: The 'skills' field is likely an object with categories (e.g., { languages: [...], frameworks: [...] }). You MUST iterate through each category key and list the items (e.g., "**Languages:** JavaScript, Python"). Do NOT output an empty Skills section.
+    4. Ensure ALL sections from the JSON are included. Do not drop content.
+    5. Ensure all special characters are escaped properly.
+    6. **CRITICAL: DO NOT use the 'fullpage' package. Use '\\usepackage[margin=0.5in]{geometry}' instead, as 'fullpage' is not installed on this system.**
     
     Resume Data: ${JSON.stringify(resumeData)}
     
@@ -142,6 +145,7 @@ const generateLatex = async (resumeData, apiKey) => {
   
   try {
     const result = await model.generateContent(prompt);
+    if (req) await trackUsage(req, 'latex-generator', result);
     const response = await result.response;
     return response.text().replace(/```latex/g, '').replace(/```/g, '');
   } catch (error) {
@@ -150,7 +154,7 @@ const generateLatex = async (resumeData, apiKey) => {
   }
 };
 
-const getRecommendations = async (masterData, jobDescription, apiKey) => {
+const getRecommendations = async (masterData, jobDescription, apiKey, req = null) => {
   const model = getModel(apiKey);
   const prompt = `
     You are an expert Career Coach and ATS Analyst.
@@ -175,6 +179,7 @@ const getRecommendations = async (masterData, jobDescription, apiKey) => {
   
   try {
     const result = await model.generateContent(prompt);
+    if (req) await trackUsage(req, 'other', result);
     const response = await result.response;
     const text = response.text();
     const jsonStr = text.replace(/```json/g, '').replace(/```/g, '');
@@ -185,7 +190,7 @@ const getRecommendations = async (masterData, jobDescription, apiKey) => {
   }
 };
 
-const generateCoverLetter = async (masterData, jobDescription, options, apiKey) => {
+const generateCoverLetter = async (masterData, jobDescription, options, apiKey, req = null) => {
   const model = getModel(apiKey);
   const tone = options?.tone || 'Professional';
   const length = options?.length || 'Medium';
@@ -209,6 +214,7 @@ const generateCoverLetter = async (masterData, jobDescription, options, apiKey) 
 
   try {
     const result = await model.generateContent(prompt);
+    if (req) await trackUsage(req, 'cover-letter', result);
     const response = await result.response;
     return response.text().replace(/```/g, '').trim();
   } catch (error) {
@@ -217,7 +223,7 @@ const generateCoverLetter = async (masterData, jobDescription, options, apiKey) 
   }
 };
 
-const generateInterviewQuestions = async (jobDescription, masterData, apiKey) => {
+const generateInterviewQuestions = async (jobDescription, masterData, apiKey, req = null) => {
   const model = getModel(apiKey);
   const prompt = `
     You are an experienced technical and behavioral interviewer.
@@ -235,6 +241,7 @@ const generateInterviewQuestions = async (jobDescription, masterData, apiKey) =>
 
   try {
     const result = await model.generateContent(prompt);
+    if (req) await trackUsage(req, 'interview-prep', result);
     const response = await result.response;
     const text = response.text().replace(/```json/g, '').replace(/```/g, '');
     const parsed = JSON.parse(text);
@@ -245,7 +252,7 @@ const generateInterviewQuestions = async (jobDescription, masterData, apiKey) =>
   }
 };
 
-const evaluateInterviewAnswer = async (question, answer, jobDescription, apiKey) => {
+const evaluateInterviewAnswer = async (question, answer, jobDescription, apiKey, req = null) => {
   const model = getModel(apiKey);
   const prompt = `
     You are an interview coach. Evaluate the candidate's answer to an interview question.
@@ -264,6 +271,7 @@ const evaluateInterviewAnswer = async (question, answer, jobDescription, apiKey)
 
   try {
     const result = await model.generateContent(prompt);
+    if (req) await trackUsage(req, 'interview-prep', result);
     const response = await result.response;
     const text = response.text().replace(/```json/g, '').replace(/```/g, '');
     return JSON.parse(text);
@@ -273,7 +281,7 @@ const evaluateInterviewAnswer = async (question, answer, jobDescription, apiKey)
   }
 };
 
-const generateLinkedInContent = async (masterData, apiKey) => {
+const generateLinkedInContent = async (masterData, apiKey, req = null) => {
   const model = getModel(apiKey);
   const prompt = `
     You are a LinkedIn personal-branding expert.
@@ -292,6 +300,7 @@ const generateLinkedInContent = async (masterData, apiKey) => {
 
   try {
     const result = await model.generateContent(prompt);
+    if (req) await trackUsage(req, 'linkedin-optimizer', result);
     const response = await result.response;
     const text = response.text().replace(/```json/g, '').replace(/```/g, '');
     return JSON.parse(text);

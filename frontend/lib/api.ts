@@ -2,9 +2,11 @@ export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000
 
 export class ApiError extends Error {
   status: number;
-  constructor(message: string, status: number) {
+  body?: any;
+  constructor(message: string, status: number, body?: any) {
     super(message);
     this.status = status;
+    this.body = body;
   }
 }
 
@@ -36,7 +38,15 @@ export async function apiFetch(path: string, options?: RequestInit) {
     const message = (body && typeof body === 'object' && 'message' in body)
       ? (body as { message: string }).message
       : `Request failed with status ${res.status}`;
-    throw new ApiError(message, res.status);
+      
+    // Dispatch global event for quota exhaustion UX
+    if (res.status === 429 && body && typeof body === 'object' && body.code === 'QUOTA_EXCEEDED') {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('quota-exceeded', { detail: { resetAt: body.resetAt } }));
+      }
+    }
+
+    throw new ApiError(message, res.status, body);
   }
   return body;
 }

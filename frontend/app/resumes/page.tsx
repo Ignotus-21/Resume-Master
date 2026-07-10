@@ -5,7 +5,9 @@ import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } fro
 import { saveAs } from 'file-saver';
 import { apiFetch, apiJson } from '@/lib/api';
 import { useToast } from '@/components/ui/Toast';
-import { FileText, Sparkles } from 'lucide-react';
+import { FileText, Sparkles, Loader2, ChevronRight, ChevronLeft } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Card } from '@/components/ui/Card';
 
 interface ResumeData {
   user?: {
@@ -84,7 +86,7 @@ interface ResumeData {
 
 export default function ResumesPage() {
   return (
-    <Suspense fallback={<div className="p-8 text-center text-slate-400">Loading…</div>}>
+    <Suspense fallback={<div className="p-8 text-center text-[#5f6368]">Loading…</div>}>
       <ResumesPageContent />
     </Suspense>
   );
@@ -252,11 +254,11 @@ function ResumesPageContent() {
   return (
     <div className="p-4 max-w-full mx-auto min-h-screen">
       <div className="flex justify-between items-center mb-6 no-print">
-        <h1 className="text-3xl font-bold text-slate-100">Resume Creator</h1>
+        <h1 className="text-3xl font-bold text-[#202124]">Resume Creator</h1>
         {selectedJobId && (
             <button 
                 onClick={() => setSelectedJobId('')}
-                className="text-sm text-slate-400 hover:text-white"
+                className="text-sm text-[#5f6368] hover:text-[#202124]"
             >
                 Clear Filter (Show All)
             </button>
@@ -264,15 +266,18 @@ function ResumesPageContent() {
       </div>
 
       {/* Generator Section */}
-      <div className="bg-slate-800 p-6 rounded-xl shadow-lg border border-slate-700 mb-8 no-print">
-        <h2 className="text-xl font-bold mb-6 text-slate-100">Create New Resume</h2>
-        <div className="flex gap-4 items-end">
-          <div className="flex-1">
-            <label className="block text-sm font-medium mb-2 text-slate-400">Select Job Application</label>
+      <Card className="p-8 mb-8 no-print relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-50 via-transparent to-blue-50 pointer-events-none" />
+        <h2 className="text-2xl font-bold mb-6 text-[#202124] relative z-10 flex items-center gap-2">
+          <Sparkles className="h-6 w-6 text-[#1a73e8]" /> Create New Resume
+        </h2>
+        <div className="flex flex-col md:flex-row gap-4 items-end relative z-10">
+          <div className="flex-1 w-full">
+            <label className="block text-sm font-medium mb-2 text-[#5f6368]">Select Job Application</label>
             <select 
               value={selectedJobId}
               onChange={(e) => setSelectedJobId(e.target.value)}
-              className="w-full border border-slate-600 bg-slate-900 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-purple-500 h-11 text-white"
+              className="w-full border border-[#dadce0] bg-[#f8f9fa] rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-purple-500 text-[#202124] transition-all appearance-none cursor-pointer"
             >
               <option value="">-- Choose a Job (Filter List) --</option>
               {jobs.map(job => (
@@ -283,64 +288,72 @@ function ResumesPageContent() {
           <button
             onClick={handleGenerate}
             disabled={generating || !selectedJobId}
-            className="flex items-center gap-2 bg-purple-600 text-white px-8 py-2 rounded-xl hover:bg-purple-500 disabled:opacity-50 h-11 font-semibold transition shadow-lg shadow-purple-900/50"
+            className="flex items-center justify-center gap-2 bg-gradient-to-r from-[#1a73e8] to-[#174ea6] text-white px-8 py-3 rounded-xl hover:opacity-90 disabled:opacity-50 font-semibold transition-all shadow-lg shadow-blue-200/50 w-full md:w-auto h-12"
           >
-            <Sparkles className="h-4 w-4" />
+            {generating ? <Loader2 className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
             {generating ? 'AI Generating...' : 'Generate Resume'}
           </button>
         </div>
-      </div>
+      </Card>
 
       <div className={`grid grid-cols-1 ${isSidebarOpen ? 'md:grid-cols-4' : 'md:grid-cols-1'} gap-4 transition-all duration-300`}>
         {/* List */}
-        {isSidebarOpen && (
-        <div className="col-span-1 border-r border-slate-700 pr-6 no-print">
-          <h2 className="font-bold mb-4 text-slate-300">
-            {selectedJobId ? 'Resumes for Job' : 'All Resumes'} ({resumes.length})
-          </h2>
-          <div className="space-y-4 h-[calc(100vh-140px)] overflow-y-auto pr-2 custom-scrollbar">
-            {resumes.map(resume => (
-              <div 
-                key={resume._id} 
-                onClick={() => setViewResume(resume)}
-                className={`p-4 border rounded-xl cursor-pointer transition relative group ${viewResume?._id === resume._id ? 'border-purple-500 bg-purple-900/20 ring-1 ring-purple-500/50' : 'hover:bg-slate-800 border-slate-700 bg-slate-800/50'}`}
-              >
-                <div className="font-bold text-slate-200 mb-1 pr-6 truncate">{resume.versionName}</div>
-                {resume.job && (
-                    <div className="text-xs text-blue-300 mb-2 truncate">
-                        Linked: {resume.job.role} @ {resume.job.company}
-                    </div>
-                )}
-                <div className="text-sm text-slate-500 flex justify-between">
-                    <span>{new Date(resume.createdAt).toLocaleDateString()}</span>
-                    {resume.atsScore && <span className="text-green-400 font-medium">ATS: {resume.atsScore}</span>}
-                </div>
-                
-                <button 
-                    onClick={(e) => { e.stopPropagation(); handleDelete(resume._id); }}
-                    className="absolute top-2 right-2 text-slate-600 hover:text-red-500 p-1 opacity-0 group-hover:opacity-100 transition"
-                    title="Delete Resume"
+        <AnimatePresence>
+          {isSidebarOpen && (
+          <motion.div 
+            initial={{ opacity: 0, width: 0 }}
+            animate={{ opacity: 1, width: 'auto' }}
+            exit={{ opacity: 0, width: 0 }}
+            className="col-span-1 border-r border-[#dadce0] pr-6 no-print overflow-hidden"
+          >
+            <h2 className="font-bold mb-4 text-[#202124]">
+              {selectedJobId ? 'Resumes for Job' : 'All Resumes'} ({resumes.length})
+            </h2>
+            <div className="space-y-4 h-[calc(100vh-140px)] overflow-y-auto pr-2 custom-scrollbar">
+              {resumes.map(resume => (
+                <motion.div 
+                  layout
+                  key={resume._id} 
+                  onClick={() => setViewResume(resume)}
+                  className={`p-4 border rounded-xl cursor-pointer transition-all relative group ${viewResume?._id === resume._id ? 'border-purple-300 bg-purple-50 ring-1 ring-purple-200 shadow-lg shadow-purple-100' : 'hover:bg-blue-50 border-[#dadce0] bg-white hover:border-[#dadce0]'}`}
                 >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                </button>
-              </div>
-            ))}
-            {resumes.length === 0 && <div className="text-slate-500 italic">No resumes found. Generate one above.</div>}
-          </div>
-        </div>
-        )}
+                  <div className="font-bold text-[#202124] mb-1 pr-6 truncate">{resume.versionName}</div>
+                  {resume.job && (
+                      <div className="text-xs text-purple-700 mb-2 truncate">
+                          Linked: {resume.job.role} @ {resume.job.company}
+                      </div>
+                  )}
+                  <div className="text-sm text-[#5f6368] flex justify-between">
+                      <span>{new Date(resume.createdAt).toLocaleDateString()}</span>
+                      {resume.atsScore && <span className="text-[#1e8e3e] font-medium">ATS: {resume.atsScore}</span>}
+                  </div>
+                  
+                  <button 
+                      onClick={(e) => { e.stopPropagation(); handleDelete(resume._id); }}
+                      className="absolute top-2 right-2 text-[#5f6368] hover:text-red-500 p-1 opacity-0 group-hover:opacity-100 transition"
+                      title="Delete Resume"
+                  >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                  </button>
+                </motion.div>
+              ))}
+              {resumes.length === 0 && <div className="text-[#5f6368] italic">No resumes found. Generate one above.</div>}
+            </div>
+          </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Viewer */}
         <div className={isSidebarOpen ? "col-span-3" : "col-span-1"}>
           {viewResume ? (
             <div>
-              <div className="flex justify-between items-center mb-4 bg-slate-800 p-4 rounded-xl border border-slate-700 no-print">
+              <div className="flex justify-between items-center mb-4 bg-[#f8f9fa] p-4 rounded-xl border border-[#dadce0] no-print">
                  <div className="flex items-center gap-4 flex-1 min-w-0">
                     <button 
                         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                        className="p-2 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white transition"
+                        className="p-2 hover:bg-white rounded-lg text-[#5f6368] hover:text-[#202124] transition"
                         title={isSidebarOpen ? "Collapse Sidebar" : "Expand Sidebar"}
                     >
                         {isSidebarOpen ? (
@@ -357,17 +370,17 @@ function ResumesPageContent() {
                         <input 
                             value={editTitle}
                             onChange={(e) => setEditTitle(e.target.value)}
-                            className="bg-slate-900 border border-slate-600 text-white px-2 py-1 rounded w-full max-w-sm"
+                            className="bg-[#f8f9fa] border border-[#dadce0] text-[#202124] px-2 py-1 rounded w-full max-w-sm"
                             autoFocus
                             onBlur={() => { handleUpdate(); setIsEditingTitle(false); }}
                             onKeyDown={(e) => { if (e.key === 'Enter') { handleUpdate(); setIsEditingTitle(false); } }}
                         />
                     ) : (
                         <div className="flex items-center gap-2 min-w-0">
-                            <h2 className="text-xl font-bold text-slate-100 truncate" title={viewResume.versionName}>
+                            <h2 className="text-xl font-bold text-[#202124] truncate" title={viewResume.versionName}>
                                 {viewResume.versionName}
                             </h2>
-                            <button onClick={() => setIsEditingTitle(true)} className="text-slate-500 hover:text-blue-400 flex-shrink-0">
+                            <button onClick={() => setIsEditingTitle(true)} className="text-[#5f6368] hover:text-[#1a73e8] flex-shrink-0">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                                 </svg>
@@ -377,37 +390,37 @@ function ResumesPageContent() {
                  </div>
 
                  <div className="flex gap-2 flex-shrink-0">
-                    <div className="flex bg-slate-900 rounded-lg p-1">
+                    <div className="flex bg-[#f8f9fa] rounded-lg p-1">
                         <button 
                         onClick={() => setActiveView('preview')}
-                        className={`px-3 py-1 rounded-md text-sm font-medium transition ${activeView === 'preview' ? 'bg-purple-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                        className={`px-3 py-1 rounded-md text-sm font-medium transition ${activeView === 'preview' ? 'bg-[#1a73e8] text-white' : 'text-[#5f6368] hover:text-[#202124]'}`}
                         >
                         Preview
                         </button>
                         <button 
                         onClick={() => setActiveView('code')}
-                        className={`px-3 py-1 rounded-md text-sm font-medium transition ${activeView === 'code' ? 'bg-purple-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                        className={`px-3 py-1 rounded-md text-sm font-medium transition ${activeView === 'code' ? 'bg-[#1a73e8] text-white' : 'text-[#5f6368] hover:text-[#202124]'}`}
                         >
                         Code
                         </button>
                         <button 
                         onClick={handleGetFeedback}
-                        className={`px-3 py-1 rounded-md text-sm font-medium transition ${activeView === 'feedback' ? 'bg-purple-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                        className={`px-3 py-1 rounded-md text-sm font-medium transition ${activeView === 'feedback' ? 'bg-[#1a73e8] text-white' : 'text-[#5f6368] hover:text-[#202124]'}`}
                         >
                         Feedback
                         </button>
                     </div>
                     {activeView === 'preview' && (
-                        <div className="flex bg-slate-900 rounded-lg p-1">
+                        <div className="flex bg-[#f8f9fa] rounded-lg p-1">
                             <button 
                                 onClick={() => setDownloadFormat('pdf')}
-                                className={`px-3 py-1 rounded-md text-sm font-medium transition ${downloadFormat === 'pdf' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                                className={`px-3 py-1 rounded-md text-sm font-medium transition ${downloadFormat === 'pdf' ? 'bg-[#1a73e8] text-white' : 'text-[#5f6368] hover:text-[#202124]'}`}
                             >
                                 PDF
                             </button>
                             <button 
                                 onClick={() => setDownloadFormat('docx')}
-                                className={`px-3 py-1 rounded-md text-sm font-medium transition ${downloadFormat === 'docx' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                                className={`px-3 py-1 rounded-md text-sm font-medium transition ${downloadFormat === 'docx' ? 'bg-[#1a73e8] text-white' : 'text-[#5f6368] hover:text-[#202124]'}`}
                             >
                                 DOCX
                             </button>
@@ -443,7 +456,7 @@ function ResumesPageContent() {
                                         }
                                     }
                                 }}
-                                className="bg-slate-700 text-white px-3 py-1 rounded-md text-sm font-medium hover:bg-slate-600 flex items-center gap-1 ml-2"
+                                className="bg-white text-[#202124] px-3 py-1 rounded-md text-sm font-medium hover:bg-white flex items-center gap-1 ml-2"
                             >
                                 <span className="text-lg">⬇</span>
                             </button>
@@ -462,12 +475,12 @@ function ResumesPageContent() {
               </div>
 
               {activeView === 'preview' && (
-                  <div className="w-full h-[calc(100vh-140px)] border border-slate-700 bg-slate-800 rounded-xl overflow-hidden relative">
+                  <div className="w-full h-[calc(100vh-140px)] border border-[#dadce0] bg-[#f8f9fa] rounded-xl overflow-hidden relative">
                         {isCompiling && (
                              <div className="absolute top-0 left-0 right-0 h-1 bg-purple-500 animate-pulse z-10"></div>
                         )}
                         {compileError ? (
-                            <div className="p-4 bg-red-900/20 text-red-200 h-full overflow-auto font-mono text-xs whitespace-pre-wrap">
+                            <div className="p-4 bg-[#fce8e6] text-[#d93025] h-full overflow-auto font-mono text-xs whitespace-pre-wrap">
                                 <div className="font-bold mb-2">Compilation Error:</div>
                                 {compileError}
                             </div>
@@ -478,7 +491,7 @@ function ResumesPageContent() {
                                 title="Resume PDF Preview"
                             />
                         ) : (
-                            <div className="flex items-center justify-center h-full text-slate-500">
+                            <div className="flex items-center justify-center h-full text-[#5f6368]">
                                 {isCompiling ? 'Compiling Preview...' : 'Generating Preview...'}
                             </div>
                         )}
@@ -489,23 +502,23 @@ function ResumesPageContent() {
                   <div className="grid grid-cols-2 gap-4 h-[calc(100vh-140px)]">
                     <div className="flex flex-col h-full">
                         <div className="flex justify-between items-center mb-2">
-                             <p className="text-sm text-slate-500">LaTeX Code</p>
-                             {isCompiling && <span className="text-xs text-purple-400 animate-pulse">Compiling...</span>}
+                             <p className="text-sm text-[#5f6368]">LaTeX Code</p>
+                             {isCompiling && <span className="text-xs text-[#1a73e8] animate-pulse">Compiling...</span>}
                         </div>
                         <textarea 
                             value={editCode}
                             onChange={(e) => setEditCode(e.target.value)}
-                            className="w-full flex-1 font-mono text-xs border border-slate-700 p-4 rounded-xl bg-slate-900 text-slate-300 outline-none focus:ring-2 focus:ring-purple-500 resize-none"
+                            className="w-full flex-1 font-mono text-xs border border-[#dadce0] p-4 rounded-xl bg-[#f8f9fa] text-[#202124] outline-none focus:ring-2 focus:ring-purple-500 resize-none"
                             spellCheck={false}
                         />
                     </div>
-                    <div className="flex flex-col h-full bg-slate-800 rounded-xl border border-slate-700 overflow-hidden relative">
+                    <div className="flex flex-col h-full bg-[#f8f9fa] rounded-xl border border-[#dadce0] overflow-hidden relative">
                         {isCompiling && (
                              <div className="absolute top-0 left-0 right-0 h-1 bg-purple-500 animate-pulse z-10"></div>
                         )}
                         
                         {compileError ? (
-                            <div className="p-4 bg-red-900/20 text-red-200 h-full overflow-auto font-mono text-xs whitespace-pre-wrap">
+                            <div className="p-4 bg-[#fce8e6] text-[#d93025] h-full overflow-auto font-mono text-xs whitespace-pre-wrap">
                                 <div className="font-bold mb-2">Compilation Error:</div>
                                 {compileError}
                             </div>
@@ -516,7 +529,7 @@ function ResumesPageContent() {
                                 title="Resume PDF Preview"
                             />
                         ) : (
-                            <div className="flex items-center justify-center h-full text-slate-500">
+                            <div className="flex items-center justify-center h-full text-[#5f6368]">
                                 {isCompiling ? 'Compiling Preview...' : 'Generating Preview...'}
                             </div>
                         )}
@@ -525,47 +538,47 @@ function ResumesPageContent() {
               )}
 
               {activeView === 'feedback' && (
-                  <div className="w-full min-h-[600px] border border-slate-700 p-6 rounded-xl bg-slate-800 text-slate-200">
+                  <div className="w-full min-h-[600px] border border-[#dadce0] p-6 rounded-xl bg-[#f8f9fa] text-[#202124]">
                       {analyzing ? (
-                          <div className="text-center py-20 animate-pulse text-purple-400">AI Analysis in progress...</div>
+                          <div className="text-center py-20 animate-pulse text-[#1a73e8]">AI Analysis in progress...</div>
                       ) : recommendations ? (
                           <div className="space-y-6">
-                              <div className="flex items-center gap-4 border-b border-slate-700 pb-4">
-                                  <div className="text-4xl font-bold text-green-400">{recommendations.matchScore}%</div>
+                              <div className="flex items-center gap-4 border-b border-[#dadce0] pb-4">
+                                  <div className="text-4xl font-bold text-[#1e8e3e]">{recommendations.matchScore}%</div>
                                   <div>
-                                      <div className="text-lg font-bold text-white">Match Score</div>
-                                      <div className="text-sm text-slate-400">Based on Job Description</div>
+                                      <div className="text-lg font-bold text-[#202124]">Match Score</div>
+                                      <div className="text-sm text-[#5f6368]">Based on Job Description</div>
                                   </div>
                               </div>
                               
                               <div>
-                                  <h3 className="text-lg font-bold text-red-400 mb-2">Missing Skills</h3>
+                                  <h3 className="text-lg font-bold text-[#d93025] mb-2">Missing Skills</h3>
                                   <div className="flex flex-wrap gap-2">
                                       {recommendations.missingSkills?.map((s: string, i: number) => (
-                                          <span key={i} className="bg-red-900/30 text-red-200 px-3 py-1 rounded-full text-sm border border-red-800">{s}</span>
+                                          <span key={i} className="bg-[#fce8e6] text-[#d93025] px-3 py-1 rounded-full text-sm border border-[#d93025]">{s}</span>
                                       ))}
                                   </div>
                               </div>
 
                               <div>
-                                  <h3 className="text-lg font-bold text-yellow-400 mb-2">Missing Keywords</h3>
+                                  <h3 className="text-lg font-bold text-[#f9ab00] mb-2">Missing Keywords</h3>
                                   <div className="flex flex-wrap gap-2">
                                       {recommendations.missingKeywords?.map((k: string, i: number) => (
-                                          <span key={i} className="bg-yellow-900/30 text-yellow-200 px-3 py-1 rounded-full text-sm border border-yellow-800">{k}</span>
+                                          <span key={i} className="bg-yellow-50 text-yellow-700 px-3 py-1 rounded-full text-sm border border-yellow-200">{k}</span>
                                       ))}
                                   </div>
                               </div>
 
                               <div>
-                                  <h3 className="text-lg font-bold text-blue-400 mb-2">Gap Analysis</h3>
-                                  <p className="text-slate-300 leading-relaxed bg-slate-900 p-4 rounded-lg border border-slate-700">
+                                  <h3 className="text-lg font-bold text-[#1a73e8] mb-2">Gap Analysis</h3>
+                                  <p className="text-[#202124] leading-relaxed bg-[#f8f9fa] p-4 rounded-lg border border-[#dadce0]">
                                       {recommendations.gapAnalysis}
                                   </p>
                               </div>
 
                               <div>
-                                  <h3 className="text-lg font-bold text-green-400 mb-2">Recommended Improvements</h3>
-                                  <ul className="list-disc list-outside ml-5 text-slate-300 space-y-2">
+                                  <h3 className="text-lg font-bold text-[#1e8e3e] mb-2">Recommended Improvements</h3>
+                                  <ul className="list-disc list-outside ml-5 text-[#202124] space-y-2">
                                       {recommendations.improvements?.map((imp: string, i: number) => (
                                           <li key={i}>{imp}</li>
                                       ))}
@@ -573,7 +586,7 @@ function ResumesPageContent() {
                               </div>
                           </div>
                       ) : (
-                          <div className="text-center py-20 text-slate-500">
+                          <div className="text-center py-20 text-[#5f6368]">
                               Click "Feedback" to analyze your resume against the job description.
                           </div>
                       )}
@@ -581,8 +594,8 @@ function ResumesPageContent() {
               )}
             </div>
           ) : (
-             <div className="flex flex-col items-center justify-center h-64 text-slate-600 bg-slate-800/30 rounded-xl border border-dashed border-slate-700">
-               <FileText className="h-10 w-10 mb-2 text-slate-700" />
+             <div className="flex flex-col items-center justify-center h-64 text-[#5f6368] bg-[#f8f9fa] rounded-xl border border-dashed border-[#dadce0]">
+               <FileText className="h-10 w-10 mb-2 text-[#5f6368]" />
                <p>Select a resume from history to view or edit</p>
              </div>
           )}
@@ -762,14 +775,14 @@ const generateDocx = async (data: ResumeData) => {
 
 // Simple HTML Resume Renderer (Unchanged)
 const ResumePreview = ({ data }: { data: any }) => {
-    if (!data || !data.user) return <div className="text-center text-gray-400 mt-20">No preview data available</div>;
+    if (!data || !data.user) return <div className="text-center text-[#5f6368] mt-20">No preview data available</div>;
 
     return (
         <div className="max-w-3xl mx-auto font-sans leading-relaxed">
             {/* Header */}
             <div className="text-center border-b pb-4 mb-4">
                 <h1 className="text-3xl font-bold uppercase tracking-wider mb-2">{data.user.name}</h1>
-                <div className="text-sm text-gray-600 flex justify-center gap-4 flex-wrap">
+                <div className="text-sm text-[#5f6368] flex justify-center gap-4 flex-wrap">
                     {data.user.email && <span>{data.user.email}</span>}
                     {data.user.phone && <span>{data.user.phone}</span>}
                     {data.user.location && <span>{data.user.location}</span>}
@@ -786,7 +799,7 @@ const ResumePreview = ({ data }: { data: any }) => {
                         <div key={i} className="mb-4 break-inside-avoid">
                             <div className="flex justify-between items-baseline mb-1">
                                 <h3 className="font-bold text-lg">{exp.role}</h3>
-                                <span className="text-sm text-gray-600">{exp.startDate} – {exp.endDate || 'Present'}</span>
+                                <span className="text-sm text-[#5f6368]">{exp.startDate} – {exp.endDate || 'Present'}</span>
                             </div>
                             <div className="flex justify-between items-baseline mb-2">
                                 <span className="text-md font-semibold text-gray-700 italic">{exp.company}</span>
@@ -863,7 +876,7 @@ const ResumePreview = ({ data }: { data: any }) => {
                         <div key={i} className="mb-2 break-inside-avoid">
                             <div className="flex justify-between text-sm">
                                 <span className="font-bold">{cert.name}</span>
-                                <span className="text-gray-600">{cert.date}</span>
+                                <span className="text-[#5f6368]">{cert.date}</span>
                             </div>
                             <div className="text-sm text-gray-700 italic">{cert.issuer}</div>
                         </div>
@@ -879,7 +892,7 @@ const ResumePreview = ({ data }: { data: any }) => {
                         <div key={i} className="mb-3 break-inside-avoid">
                             <div className="flex justify-between text-sm font-bold">
                                 <span>{ach.title}</span>
-                                <span className="text-gray-600 font-normal">{ach.date}</span>
+                                <span className="text-[#5f6368] font-normal">{ach.date}</span>
                             </div>
                             <p className="text-sm text-gray-700">{ach.description}</p>
                         </div>
@@ -895,7 +908,7 @@ const ResumePreview = ({ data }: { data: any }) => {
                         <div key={i} className="mb-3 break-inside-avoid">
                             <div className="flex justify-between text-sm font-bold">
                                 <span>{pat.title}</span>
-                                <span className="text-gray-600 font-normal">{pat.date}</span>
+                                <span className="text-[#5f6368] font-normal">{pat.date}</span>
                             </div>
                             <div className="text-xs text-gray-500 mb-1">{pat.number}</div>
                             <p className="text-sm text-gray-700">{pat.description}</p>
@@ -912,7 +925,7 @@ const ResumePreview = ({ data }: { data: any }) => {
                         <div key={i} className="mb-3 break-inside-avoid">
                             <div className="flex justify-between text-sm font-bold">
                                 <span>{vol.organization}</span>
-                                <span className="text-gray-600 font-normal">{vol.startDate} - {vol.endDate}</span>
+                                <span className="text-[#5f6368] font-normal">{vol.startDate} - {vol.endDate}</span>
                             </div>
                             <div className="text-sm text-gray-700 italic mb-1">{vol.role}</div>
                             <p className="text-sm text-gray-700">{vol.description}</p>

@@ -3,9 +3,11 @@ const request = require('supertest');
 jest.mock('../models/ApiUsage');
 jest.mock('../models/MasterProfile');
 jest.mock('../models/Resume');
+jest.mock('../models/AppConfig');
 
 const ApiUsage = require('../models/ApiUsage');
 const MasterProfile = require('../models/MasterProfile');
+const AppConfig = require('../models/AppConfig');
 
 process.env.CORS_ORIGIN = 'http://localhost:3000';
 const createApp = require('../app');
@@ -13,6 +15,7 @@ const createApp = require('../app');
 describe('guest AI quota is keyed on IP, not the rotatable guestId cookie', () => {
   it('uses the same quota key across two different guestId cookies from the same IP', async () => {
     const app = createApp();
+    AppConfig.findOneAndUpdate.mockResolvedValue({ defaultTokenLimit: 15000, guestTokenLimit: 5000 });
     ApiUsage.findOne.mockResolvedValue(null);
     ApiUsage.create.mockResolvedValue({ identity: 'ip', count: 1, windowStart: new Date() });
 

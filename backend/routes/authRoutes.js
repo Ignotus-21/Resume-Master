@@ -14,6 +14,7 @@ const {
   resendVerification,
   requestPasswordReset,
   resetPassword,
+  myUsage,
 } = require('../controllers/authController');
 
 router.post('/signup', signup);
@@ -22,6 +23,7 @@ router.post('/google', googleLogin);
 router.post('/logout', logout);
 router.get('/me', me);
 router.get('/quota', quota);
+router.get('/my-usage', requireAuth, myUsage);
 router.put('/gemini-key', requireAuth, setGeminiKey);
 router.delete('/gemini-key', requireAuth, removeGeminiKey);
 

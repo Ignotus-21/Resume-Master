@@ -3,8 +3,9 @@ const MasterProfile = require('../models/MasterProfile');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { enforceGeminiQuota } = require('../utils/geminiGate');
 const { generateLinkedInContent } = require('../services/geminiService');
+const { trackUsage } = require('../utils/trackUsage');
 
-const CHAT_MODEL_NAME = "gemini-2.5-flash";
+const CHAT_MODEL_NAME = process.env.GEMINI_MODEL || "gemini-2.5-flash";
 
 let defaultClient = null;
 const getChatModel = (apiKey) => {
@@ -81,6 +82,8 @@ const sendMessage = async (req, res) => {
     });
 
     const result = await chat.sendMessage(message);
+    await trackUsage(req, 'chatbot', result);
+
     const response = await result.response;
     const text = response.text();
 
@@ -115,7 +118,7 @@ const linkedinRewrite = async (req, res) => {
     const quotaRejection = await enforceGeminiQuota(req);
     if (quotaRejection) return res.status(quotaRejection.status).json(quotaRejection.body);
 
-    const content = await generateLinkedInContent(profile, req.geminiApiKey);
+    const content = await generateLinkedInContent(profile, req.geminiApiKey, req);
     res.json(content);
   } catch (error) {
     console.error('AI error:', error);

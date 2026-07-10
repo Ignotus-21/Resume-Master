@@ -20,13 +20,17 @@ const enforceGeminiQuota = async (req) => {
 
   // quotaIdentity is the account id for logged-in users and an IP-derived key
   // for guests, so guests can't reset the quota by rotating the guestId cookie.
-  const { allowed, resetAt } = await consumeQuota(req.quotaIdentity || req.identity);
+  const { allowed, resetAt } = await consumeQuota(req);
   if (allowed) return null;
 
+  // Logged-in users on the shared key have a lifetime cap with no reset window,
+  // so resetAt is null there — only guests (IP-windowed) get one back.
+  const retryHint = resetAt ? ` or try again after ${resetAt.toISOString()}` : '';
   return {
     status: 429,
     body: {
-      message: `Free AI quota exceeded. Add your own Gemini API key in Settings for unlimited use, or try again after ${resetAt.toISOString()}.`,
+      code: 'QUOTA_EXCEEDED',
+      message: `Free AI quota exceeded. Add your own Gemini API key in Settings for unlimited use${retryHint}.`,
       resetAt,
     },
   };

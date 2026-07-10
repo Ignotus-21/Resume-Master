@@ -20,12 +20,12 @@ const STATUS_HEX: Record<string, string> = {
 function StatTile({ icon: Icon, label, value, hint }: { icon: any; label: string; value: string | number; hint?: string }) {
   return (
     <Card className="p-5">
-      <div className="flex items-center gap-2 text-slate-400 mb-2">
+      <div className="flex items-center gap-2 text-[#5f6368] mb-2">
         <Icon className="h-4 w-4" />
         <span className="text-sm">{label}</span>
       </div>
-      <div className="text-3xl font-bold text-slate-100">{value}</div>
-      {hint && <div className="text-xs text-slate-500 mt-1">{hint}</div>}
+      <div className="text-3xl font-bold text-[#202124]">{value}</div>
+      {hint && <div className="text-xs text-[#5f6368] mt-1">{hint}</div>}
     </Card>
   );
 }
@@ -82,10 +82,10 @@ export default function AnalyticsPage() {
   return (
     <div className="p-4 md:p-8 max-w-5xl mx-auto min-h-screen">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-100 flex items-center gap-2">
-          <BarChart3 className="h-7 w-7 text-blue-400" /> Application Analytics
+        <h1 className="text-3xl font-bold text-[#202124] flex items-center gap-2">
+          <BarChart3 className="h-7 w-7 text-[#1a73e8]" /> Application Analytics
         </h1>
-        <p className="text-slate-400">Insights across every job in your tracker.</p>
+        <p className="text-[#5f6368]">Insights across every job in your tracker.</p>
       </div>
 
       {jobs.length === 0 ? (
@@ -100,17 +100,17 @@ export default function AnalyticsPage() {
           </div>
 
           <Card className="p-6">
-            <h2 className="font-bold text-slate-100 mb-5">Status breakdown</h2>
+            <h2 className="font-bold text-[#202124] mb-5">Status breakdown</h2>
             <div className="space-y-3">
               {STATUSES.map((s) => (
                 <div key={s} className="flex items-center gap-3">
-                  <span className="w-24 text-sm text-slate-400 shrink-0">{s}</span>
-                  <div className="flex-1 h-7 bg-slate-800/60 rounded-lg overflow-hidden">
+                  <span className="w-24 text-sm text-[#5f6368] shrink-0">{s}</span>
+                  <div className="flex-1 h-7 bg-[#f8f9fa]/60 rounded-lg overflow-hidden">
                     <div
                       className="h-full rounded-lg transition-all flex items-center justify-end px-2"
                       style={{ width: `${(stats.counts[s] / stats.maxCount) * 100}%`, backgroundColor: STATUS_HEX[s], minWidth: stats.counts[s] > 0 ? '1.75rem' : 0 }}
                     >
-                      {stats.counts[s] > 0 && <span className="text-xs font-bold text-white/90">{stats.counts[s]}</span>}
+                      {stats.counts[s] > 0 && <span className="text-xs font-bold text-white">{stats.counts[s]}</span>}
                     </div>
                   </div>
                 </div>
@@ -119,15 +119,15 @@ export default function AnalyticsPage() {
           </Card>
 
           <Card className="p-6">
-            <h2 className="font-bold text-slate-100 mb-5">Applications over time</h2>
+            <h2 className="font-bold text-[#202124] mb-5">Applications over time</h2>
             {byMonth.entries.length === 0 ? (
-              <p className="text-slate-500 text-sm">No dated applications yet.</p>
+              <p className="text-[#5f6368] text-sm">No dated applications yet.</p>
             ) : (
               <div className="flex items-end gap-3 h-40">
                 {byMonth.entries.map(([month, count]) => (
                   <div key={month} className="flex-1 flex flex-col items-center gap-2">
                     <div className="w-full bg-blue-500/80 rounded-t-md transition-all" style={{ height: `${(count / byMonth.max) * 100}%`, minHeight: '4px' }} title={`${count}`} />
-                    <span className="text-xs text-slate-500">{month}</span>
+                    <span className="text-xs text-[#5f6368]">{month}</span>
                   </div>
                 ))}
               </div>

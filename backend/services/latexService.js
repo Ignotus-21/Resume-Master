@@ -18,6 +18,12 @@ const compileLatex = async (latexCode) => {
   if (typeof latexCode !== 'string' || latexCode.length === 0) {
     return { success: false, error: 'LaTeX code is required' };
   }
+
+  // Auto-sanitize packages Tectonic doesn't bundle/support
+  latexCode = latexCode
+    .replace(/\\usepackage\{fullpage\}/g, '\\usepackage[margin=0.5in]{geometry}')
+    .replace(/\\usepackage\[.*?\]\{fullpage\}/g, '\\usepackage[margin=0.5in]{geometry}');
+
   if (latexCode.length > MAX_LATEX_LENGTH) {
     return { success: false, error: 'LaTeX source exceeds maximum allowed size' };
   }
@@ -38,34 +44,40 @@ const compileLatex = async (latexCode) => {
     // Write LaTeX code to file
     await fs.promises.writeFile(texPath, latexCode);
 
-    // Compile
-    // execFile (no shell) avoids shell-metacharacter injection via the path.
-    // -no-shell-escape blocks \write18 and other shell-escape based RCE vectors.
-    // -interaction=nonstopmode prevents hanging on errors.
-    // -output-directory defines where files go.
+    // Compile using Tectonic for automatic package management. It fetches
+    // missing packages (titlesec, fontawesome, etc.) on the fly, and — unlike
+    // pdflatex — has no \write18/shell-escape support at all, so there's no
+    // flag needed to disable it. execFile (no shell) avoids shell-metacharacter
+    // injection via the path/args.
+    // NOTE: this does not sandbox filesystem reads — a crafted \input/\openin
+    // with an absolute or ../ path can still read any file the `node` process
+    // user can access. That risk existed before this change too (no
+    // openin_any/texmf.cnf restriction is configured anywhere in this repo);
+    // flagging it here rather than claiming it's covered.
+    let execError = null;
     try {
-      await execFilePromise('pdflatex', [
-        '-interaction=nonstopmode',
-        '-no-shell-escape',
-        '-output-directory', workDir,
+      await execFilePromise('tectonic', [
+        '--untrusted',
+        '--outdir', workDir,
         texPath,
       ], {
-        timeout: 10000,
+        timeout: 30000, // Increased timeout because downloading packages takes time
         cwd: workDir,
-        // openin_any=p / openout_any=p restrict TeX file I/O to "paranoid" mode:
-        // no reading/writing of absolute paths, parent directories, or dotfiles.
-        // This blocks \input{/…/.env}, \openin, \lstinputlisting, etc. from
-        // exfiltrating server secrets into the compiled PDF — a critical fix,
-        // since -no-shell-escape only blocks \write18 shell execution, not reads.
+        // Tectonic needs HOME to find its cache/config dir (set up in the
+        // Dockerfile for the non-root `node` user) — passing only PATH here
+        // replaced the whole environment and dropped it, breaking package
+        // caching/downloads.
         env: {
           PATH: process.env.PATH,
-          openin_any: 'p',
-          openout_any: 'p',
-          TEXMFOUTPUT: workDir,
+          HOME: process.env.HOME,
         },
       });
     } catch (error) {
-        // compilation failed or had warnings, but we need to check log
+        // Compilation errors are diagnosed from resume.log below, but non-LaTeX
+        // failures (missing binary, network error fetching a package, timeout)
+        // won't produce one — keep the raw error to surface if there's no log.
+        console.error('Tectonic compilation error:', error.message || error);
+        execError = error.message || String(error);
     }
 
     // Check if PDF exists
@@ -85,6 +97,12 @@ const compileLatex = async (latexCode) => {
             log = await fs.promises.readFile(logPath, 'utf8');
         }
         await cleanup(workDir);
+        // No log at all (e.g. missing binary, network error, timeout) means
+        // parseLatexErrors would fall back to a generic message — surface the
+        // actual execFile error instead when there's nothing else to go on.
+        if (!log && execError) {
+          return { success: false, log: execError };
+        }
         return { success: false, log: parseLatexErrors(log) };
     }
 

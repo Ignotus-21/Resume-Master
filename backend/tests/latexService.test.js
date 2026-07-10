@@ -78,4 +78,24 @@ describe('compileLatex', () => {
     await compileLatex('\\documentclass{article}\\usepackage[utf8]{inputenc}\\inputencoding{utf8}\\begin{document}\\includeonly{a}hi\\end{document}');
     expect(execFile).toHaveBeenCalledTimes(1);
   });
+
+  it('rejects \\csname input\\endcsname (control-sequence construction bypass) without invoking tectonic', async () => {
+    // \csname input\endcsname builds \input from a token list at expansion
+    // time and behaves identically to it, despite containing no literal
+    // \input token — this is a known bypass of naive command-name pattern
+    // matching (see CSNAME_BYPASS_PATTERN in latexService.js). This test
+    // only covers this specific, reported bypass, not the general class:
+    // TeX's other command-construction tricks (\expandafter, \lowercase,
+    // \let-aliasing) aren't defended against by this source-level check.
+    const attempts = [
+      '\\csname input\\endcsname{/etc/passwd}',
+      '\\csname include\\endcsname{../../.env}',
+    ];
+    for (const payload of attempts) {
+      const result = await compileLatex(`\\documentclass{article}\\begin{document}${payload}\\end{document}`);
+      expect(result.success).toBe(false);
+      expect(result.error).toMatch(/disallowed file-inclusion/);
+    }
+    expect(execFile).not.toHaveBeenCalled();
+  });
 });

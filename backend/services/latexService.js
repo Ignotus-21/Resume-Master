@@ -24,6 +24,18 @@ const MAX_PDF_SIZE = 20 * 1024 * 1024; // 20MB safety cap on the compiled output
 // \inputencoding — which are legitimate and unrelated to file inclusion.
 const DANGEROUS_LATEX_PATTERN = /\\(input|include|openin|read|lstinputlisting|verbatiminput|InputIfFileExists|IfFileExists)(?![a-zA-Z])/;
 
+// \csname input\endcsname builds the control sequence \input from a token
+// list at expansion time and behaves identically to it, despite containing
+// no literal \input token — so it walks straight past the pattern above.
+// This closes that specific, concretely reported bypass, but it does not
+// make the block airtight: TeX is Turing-complete and offers other ways to
+// construct a command name dynamically (\expandafter, \lowercase/\uccode
+// tricks, \let-aliasing to a new name). A determined attacker can likely
+// still find a variant this doesn't catch — actually closing this
+// vulnerability class requires OS-level sandboxing of the compiler process,
+// not more regex. Documenting that ceiling rather than claiming it's closed.
+const CSNAME_BYPASS_PATTERN = /\\csname\s*(input|include|openin|read|lstinputlisting|verbatiminput|InputIfFileExists|IfFileExists)\s*\\endcsname/;
+
 // Ensure temp directory exists
 if (!fs.existsSync(TEMP_DIR)) {
   fs.mkdirSync(TEMP_DIR, { recursive: true });
@@ -43,7 +55,7 @@ const compileLatex = async (latexCode) => {
     return { success: false, error: 'LaTeX source exceeds maximum allowed size' };
   }
 
-  if (DANGEROUS_LATEX_PATTERN.test(latexCode)) {
+  if (DANGEROUS_LATEX_PATTERN.test(latexCode) || CSNAME_BYPASS_PATTERN.test(latexCode)) {
     return { success: false, error: 'LaTeX source contains disallowed file-inclusion commands (\\input, \\include, \\openin, etc.)' };
   }
 

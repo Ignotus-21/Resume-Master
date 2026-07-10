@@ -4,32 +4,33 @@ jest.mock('../models/User');
 const ApiUsage = require('../models/ApiUsage');
 const AppConfig = require('../models/AppConfig');
 const User = require('../models/User');
-const { consumeQuota } = require('../services/quotaService');
+const { consumeQuota, refundReservation, RESERVE_ESTIMATE } = require('../services/quotaService');
 
 const GUEST_LIMIT = 5000;
+const DEFAULT_LIMIT = 15000;
 
 describe('quotaService.consumeQuota (guest, IP-based)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    AppConfig.findOneAndUpdate.mockResolvedValue({ defaultTokenLimit: 15000, guestTokenLimit: GUEST_LIMIT });
+    AppConfig.findOneAndUpdate.mockResolvedValue({ defaultTokenLimit: DEFAULT_LIMIT, guestTokenLimit: GUEST_LIMIT });
   });
 
   const guestReq = () => ({ user: null, quotaIdentity: 'ip:1.2.3.4', identity: 'ip:1.2.3.4' });
 
-  it('allows and returns remaining quota when under the limit', async () => {
-    ApiUsage.findOneAndUpdate.mockResolvedValue({
-      identity: 'ip:1.2.3.4', usedTokens: 100, windowStart: new Date(),
-    });
+  it('allows, atomically reserves the estimate, and returns remaining quota when under the limit', async () => {
+    ApiUsage.findOneAndUpdate
+      .mockResolvedValueOnce({ identity: 'ip:1.2.3.4', usedTokens: 100, windowStart: new Date() }) // upsert-if-missing
+      .mockResolvedValueOnce({ identity: 'ip:1.2.3.4', usedTokens: 100 + RESERVE_ESTIMATE, windowStart: new Date() }); // reserve
 
     const result = await consumeQuota(guestReq());
     expect(result.allowed).toBe(true);
-    expect(result.remaining).toBe(GUEST_LIMIT - 100);
+    expect(result.remaining).toBe(GUEST_LIMIT - 100 - RESERVE_ESTIMATE);
   });
 
-  it('rejects when usage is at or above the guest token limit', async () => {
-    ApiUsage.findOneAndUpdate.mockResolvedValue({
-      identity: 'ip:1.2.3.4', usedTokens: GUEST_LIMIT, windowStart: new Date(),
-    });
+  it('rejects (without incrementing) when reserving the estimate would exceed the guest token limit', async () => {
+    ApiUsage.findOneAndUpdate
+      .mockResolvedValueOnce({ identity: 'ip:1.2.3.4', usedTokens: GUEST_LIMIT, windowStart: new Date() }) // upsert-if-missing
+      .mockResolvedValueOnce(null); // reserve: filter doesn't match, already at limit
 
     const result = await consumeQuota(guestReq());
     expect(result.allowed).toBe(false);
@@ -38,7 +39,9 @@ describe('quotaService.consumeQuota (guest, IP-based)', () => {
   });
 
   it('ignores a benign duplicate-key race on the upsert', async () => {
-    ApiUsage.findOneAndUpdate.mockRejectedValueOnce(Object.assign(new Error('dup'), { code: 11000 }));
+    ApiUsage.findOneAndUpdate
+      .mockRejectedValueOnce(Object.assign(new Error('dup'), { code: 11000 })) // upsert loses the race
+      .mockResolvedValueOnce({ identity: 'ip:1.2.3.4', usedTokens: 100 + RESERVE_ESTIMATE, windowStart: new Date() }); // reserve
     ApiUsage.findOne.mockResolvedValue({ identity: 'ip:1.2.3.4', usedTokens: 100, windowStart: new Date() });
 
     const result = await consumeQuota(guestReq());
@@ -51,11 +54,11 @@ describe('quotaService.consumeQuota (guest, IP-based)', () => {
   });
 
   it('re-fetches usage if a concurrent request already reset the expired window', async () => {
-    const windowStart = new Date(Date.now() - 7 * 60 * 60 * 1000); // expired (default 6h window)
+    const windowStart = new Date(Date.now() - 7 * 60 * 60 * 1000); // expired (default 4h window)
     ApiUsage.findOneAndUpdate
-      .mockResolvedValueOnce({ identity: 'ip:1.2.3.4', usedTokens: 100, windowStart })
-      // Reset attempt loses the race; another request already reset it.
-      .mockResolvedValueOnce(null);
+      .mockResolvedValueOnce({ identity: 'ip:1.2.3.4', usedTokens: 100, windowStart }) // upsert-if-missing
+      .mockResolvedValueOnce(null) // reset attempt loses the race; another request already reset it
+      .mockResolvedValueOnce({ identity: 'ip:1.2.3.4', usedTokens: RESERVE_ESTIMATE, windowStart: new Date() }); // reserve
     ApiUsage.findOne.mockResolvedValue({ identity: 'ip:1.2.3.4', usedTokens: 0, windowStart: new Date() });
 
     const result = await consumeQuota(guestReq());
@@ -67,21 +70,23 @@ describe('quotaService.consumeQuota (guest, IP-based)', () => {
 describe('quotaService.consumeQuota (logged-in user)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    AppConfig.findOneAndUpdate.mockResolvedValue({ defaultTokenLimit: 15000, guestTokenLimit: GUEST_LIMIT });
+    AppConfig.findOneAndUpdate.mockResolvedValue({ defaultTokenLimit: DEFAULT_LIMIT, guestTokenLimit: GUEST_LIMIT });
   });
 
   const userReq = (overrides = {}) => ({ user: { id: 'u1' }, ...overrides });
 
-  it('allows and returns remaining quota when under the lifetime limit', async () => {
+  it('allows, atomically reserves the estimate, and returns remaining quota when under the lifetime limit', async () => {
     User.findById.mockResolvedValue({ usedTokens: 1000, extraTokens: 0 });
+    User.findOneAndUpdate.mockResolvedValue({ usedTokens: 1000 + RESERVE_ESTIMATE, extraTokens: 0 });
 
     const result = await consumeQuota(userReq());
     expect(result.allowed).toBe(true);
-    expect(result.remaining).toBe(15000 - 1000);
+    expect(result.remaining).toBe(DEFAULT_LIMIT - 1000 - RESERVE_ESTIMATE);
   });
 
-  it('rejects when the lifetime token limit is reached', async () => {
-    User.findById.mockResolvedValue({ usedTokens: 15000, extraTokens: 0 });
+  it('rejects (without incrementing) when reserving the estimate would exceed the lifetime limit', async () => {
+    User.findById.mockResolvedValue({ usedTokens: DEFAULT_LIMIT, extraTokens: 0 });
+    User.findOneAndUpdate.mockResolvedValue(null); // filter doesn't match, already at limit
 
     const result = await consumeQuota(userReq());
     expect(result.allowed).toBe(false);
@@ -101,14 +106,47 @@ describe('quotaService.consumeQuota (logged-in user)', () => {
     expect(result.allowed).toBe(true);
     expect(result.remaining).toBe(Infinity);
     expect(result.isByok).toBe(true);
+    expect(User.findOneAndUpdate).not.toHaveBeenCalled();
   });
 
   it('does not bypass quota when the stored key exists but failed to decrypt for this request', async () => {
     User.findById.mockResolvedValue({ geminiApiKeyEncrypted: 'encrypted-key', usedTokens: 1000, extraTokens: 0 });
+    User.findOneAndUpdate.mockResolvedValue({ usedTokens: 1000 + RESERVE_ESTIMATE, extraTokens: 0 });
 
     const result = await consumeQuota(userReq());
     expect(result.isByok).toBeUndefined();
     expect(result.allowed).toBe(true);
-    expect(result.remaining).toBe(15000 - 1000);
+    expect(result.remaining).toBe(DEFAULT_LIMIT - 1000 - RESERVE_ESTIMATE);
+  });
+});
+
+describe('quotaService.refundReservation', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('decrements the reserved estimate for a logged-in user', async () => {
+    User.findByIdAndUpdate.mockResolvedValue({});
+    await refundReservation({ user: { id: 'u1' } });
+    expect(User.findByIdAndUpdate).toHaveBeenCalledWith('u1', { $inc: { usedTokens: -RESERVE_ESTIMATE } });
+  });
+
+  it('decrements the reserved estimate for a guest by identity', async () => {
+    ApiUsage.findOneAndUpdate.mockResolvedValue({});
+    await refundReservation({ quotaIdentity: 'ip:1.2.3.4' });
+    expect(ApiUsage.findOneAndUpdate).toHaveBeenCalledWith(
+      { identity: 'ip:1.2.3.4' },
+      { $inc: { usedTokens: -RESERVE_ESTIMATE } }
+    );
+  });
+
+  it('is a no-op for BYOK requests, which never reserved anything', async () => {
+    await refundReservation({ user: { id: 'u1' }, geminiApiKey: 'k' });
+    expect(User.findByIdAndUpdate).not.toHaveBeenCalled();
+  });
+
+  it('swallows its own errors rather than throwing (best-effort)', async () => {
+    User.findByIdAndUpdate.mockRejectedValue(new Error('db down'));
+    await expect(refundReservation({ user: { id: 'u1' } })).resolves.toBeUndefined();
   });
 });

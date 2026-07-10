@@ -45,8 +45,12 @@ describe('enforceGeminiQuota — verified-email gate', () => {
     ApiUsage.updateOne.mockResolvedValue({});
     // Token-based quota: the guest's usage doc already has usedTokens at the
     // configured limit (5000, per the AppConfig mock above), windowStart
-    // recent enough that the window isn't expired/reset.
-    ApiUsage.findOneAndUpdate.mockResolvedValue({ identity: 'ip:1.2.3.4', usedTokens: 5000, windowStart: new Date() });
+    // recent enough that the window isn't expired/reset. The atomic reserve
+    // step's filter (usedTokens <= limit - RESERVE_ESTIMATE) then can't
+    // match, so it returns null.
+    ApiUsage.findOneAndUpdate
+      .mockResolvedValueOnce({ identity: 'ip:1.2.3.4', usedTokens: 5000, windowStart: new Date() }) // upsert-if-missing
+      .mockResolvedValueOnce(null); // reserve: already at limit
     const rejection = await enforceGeminiQuota({ identity: 'ip:1.2.3.4', quotaIdentity: 'ip:1.2.3.4' });
     expect(rejection).toMatchObject({ status: 429 });
   });

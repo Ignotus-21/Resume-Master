@@ -36,18 +36,66 @@ describe('compileLatex', () => {
   });
 
   it('does not leak app secrets into the tectonic child process environment', async () => {
-    // Tectonic has no shell-escape support and --untrusted is set, but it does
-    // NOT sandbox \input/\openin file reads (confirmed against upstream docs —
-    // see the comment in latexService.js). The one thing we *can* and do
-    // enforce is that the child process env is an explicit allowlist (PATH,
-    // HOME) rather than the full process.env, so app secrets can't leak into
-    // it even if a crafted document tried to read its own environment.
-    await compileLatex('\\documentclass{article}\\begin{document}\\input{/etc/passwd}\\end{document}');
+    // The one thing we *can* and do enforce at the process level is that the
+    // child env is an explicit allowlist (PATH, HOME) rather than the full
+    // process.env, so app secrets can't leak into it even indirectly.
+    await compileLatex('\\documentclass{article}\\begin{document}hi\\end{document}');
     expect(execFile).toHaveBeenCalledTimes(1);
     const opts = execFile.mock.calls[0][2];
     expect(Object.keys(opts.env).sort()).toEqual(['HOME', 'PATH']);
     expect(opts.env.JWT_SECRET).toBeUndefined();
     expect(opts.env.ENCRYPTION_KEY).toBeUndefined();
     expect(opts.env.GEMINI_API_KEY).toBeUndefined();
+  });
+
+  it('rejects LaTeX containing file-inclusion commands without invoking tectonic', async () => {
+    // Regression test for the file-read → info-disclosure risk: tectonic
+    // doesn't sandbox \input/\openin, so these are blocked at the source
+    // level instead (see DANGEROUS_LATEX_PATTERN in latexService.js).
+    const attempts = [
+      '\\input{/etc/passwd}',
+      '\\include{../../.env}',
+      '\\openin0=/etc/passwd \\read0 to\\x',
+      '\\lstinputlisting{/etc/passwd}',
+    ];
+    for (const payload of attempts) {
+      const result = await compileLatex(`\\documentclass{article}\\begin{document}${payload}\\end{document}`);
+      expect(result.success).toBe(false);
+      expect(result.error).toMatch(/disallowed file-inclusion/);
+    }
+    expect(execFile).not.toHaveBeenCalled();
+  });
+
+  it('still allows \\includegraphics (legitimate resume use, not a file-read primitive)', async () => {
+    await compileLatex('\\documentclass{article}\\begin{document}\\includegraphics{photo.png}\\end{document}');
+    expect(execFile).toHaveBeenCalledTimes(1);
+  });
+
+  it('still allows \\inputencoding and \\includeonly (legitimate commands sharing a prefix with blocked ones)', async () => {
+    // Regression test: an earlier version of DANGEROUS_LATEX_PATTERN matched
+    // any command starting with "input"/"include", which wrongly rejected
+    // legitimate commands like \inputencoding (inputenc package).
+    await compileLatex('\\documentclass{article}\\usepackage[utf8]{inputenc}\\inputencoding{utf8}\\begin{document}\\includeonly{a}hi\\end{document}');
+    expect(execFile).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects \\csname input\\endcsname (control-sequence construction bypass) without invoking tectonic', async () => {
+    // \csname input\endcsname builds \input from a token list at expansion
+    // time and behaves identically to it, despite containing no literal
+    // \input token — this is a known bypass of naive command-name pattern
+    // matching (see CSNAME_BYPASS_PATTERN in latexService.js). This test
+    // only covers this specific, reported bypass, not the general class:
+    // TeX's other command-construction tricks (\expandafter, \lowercase,
+    // \let-aliasing) aren't defended against by this source-level check.
+    const attempts = [
+      '\\csname input\\endcsname{/etc/passwd}',
+      '\\csname include\\endcsname{../../.env}',
+    ];
+    for (const payload of attempts) {
+      const result = await compileLatex(`\\documentclass{article}\\begin{document}${payload}\\end{document}`);
+      expect(result.success).toBe(false);
+      expect(result.error).toMatch(/disallowed file-inclusion/);
+    }
+    expect(execFile).not.toHaveBeenCalled();
   });
 });

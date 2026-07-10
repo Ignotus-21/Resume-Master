@@ -4,6 +4,14 @@ const AppConfig = require('../models/AppConfig');
 
 const WINDOW_MS = (parseFloat(process.env.SHARED_GEMINI_RATE_WINDOW_HOURS) || 4) * 60 * 60 * 1000;
 
+// Flat estimate reserved atomically at admission time, trued up to the real
+// cost once it's known (see trackUsage). This closes the check-then-act race
+// where concurrent requests could all read the same "under limit" snapshot
+// before any of them recorded usage: the reservation and the admit decision
+// now happen in one atomic conditional update, so a burst can't collectively
+// exceed the limit by more than a single reservation's worth.
+const RESERVE_ESTIMATE = 500;
+
 let cachedConfig = null;
 let lastConfigFetch = 0;
 
@@ -47,12 +55,20 @@ const consumeQuota = async (req) => {
     }
 
     const totalLimit = config.defaultTokenLimit + (user.extraTokens || 0);
-    const used = user.usedTokens || 0;
 
-    if (used >= totalLimit) {
+    // Atomically reserve the estimate as part of the same operation that
+    // decides admission — the filter and the $inc run as one document-level
+    // operation, so two concurrent requests can't both read "under limit"
+    // and both get admitted.
+    const reserved = await User.findOneAndUpdate(
+      { _id: req.user.id, usedTokens: { $lte: totalLimit - RESERVE_ESTIMATE } },
+      { $inc: { usedTokens: RESERVE_ESTIMATE } },
+      { new: true }
+    );
+    if (!reserved) {
       return { allowed: false, remaining: 0, resetAt: null }; // Lifetime limit reached
     }
-    return { allowed: true, remaining: totalLimit - used };
+    return { allowed: true, remaining: totalLimit - reserved.usedTokens };
   } else {
     // Guest (IP-based)
     const identity = req.quotaIdentity || req.identity;
@@ -87,11 +103,14 @@ const consumeQuota = async (req) => {
       usage = resetUsage || await ApiUsage.findOne({ identity });
     }
     
-    // Check tokens. Guard against pre-existing ApiUsage docs from before
-    // usedTokens existed on the schema — undefined would make the >= check
-    // always false (silently unlimited) and the subtraction below NaN.
-    const usedTokens = usage.usedTokens || 0;
-    if (usedTokens >= config.guestTokenLimit) {
+    // Atomically reserve the estimate as part of the same operation that
+    // decides admission (see RESERVE_ESTIMATE above).
+    const reserved = await ApiUsage.findOneAndUpdate(
+      { identity, usedTokens: { $lte: config.guestTokenLimit - RESERVE_ESTIMATE } },
+      { $inc: { usedTokens: RESERVE_ESTIMATE } },
+      { new: true }
+    );
+    if (!reserved) {
       return {
         allowed: false,
         remaining: 0,
@@ -101,9 +120,29 @@ const consumeQuota = async (req) => {
 
     return {
       allowed: true,
-      remaining: config.guestTokenLimit - usedTokens,
-      resetAt: new Date(usage.windowStart.getTime() + WINDOW_MS)
+      remaining: config.guestTokenLimit - reserved.usedTokens,
+      resetAt: new Date(reserved.windowStart.getTime() + WINDOW_MS)
     };
+  }
+};
+
+// Refunds a reservation that was never trued up by trackUsage — the Gemini
+// call threw before trackUsage ran, or trackUsage itself bailed out early
+// (missing response/usageMetadata). Without this, a run of transient
+// failures would permanently burn RESERVE_ESTIMATE tokens each time and
+// could eventually lock a user out even though nothing real was consumed.
+const refundReservation = async (req) => {
+  if (req.geminiApiKey) return; // BYOK never reserved anything
+  try {
+    if (req.user) {
+      await User.findByIdAndUpdate(req.user.id, { $inc: { usedTokens: -RESERVE_ESTIMATE } });
+    } else {
+      const identity = req.quotaIdentity || req.identity;
+      if (!identity) return;
+      await ApiUsage.findOneAndUpdate({ identity }, { $inc: { usedTokens: -RESERVE_ESTIMATE } });
+    }
+  } catch (error) {
+    console.error('Failed to refund quota reservation:', error);
   }
 };
 
@@ -138,4 +177,4 @@ const getQuotaStatus = async (req) => {
   }
 };
 
-module.exports = { consumeQuota, getQuotaStatus, WINDOW_MS, getConfig };
+module.exports = { consumeQuota, getQuotaStatus, WINDOW_MS, getConfig, RESERVE_ESTIMATE, refundReservation };

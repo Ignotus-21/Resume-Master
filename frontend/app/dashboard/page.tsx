@@ -9,6 +9,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { StatusBadgeClass } from '@/components/ui/Badge';
+import { ConfirmModal } from '@/components/ui/Modal';
 
 const STATUSES = ['Wishlist', 'Applied', 'Interviewing', 'Offer', 'Rejected'];
 const EMPTY_FORM = { company: '', role: '', jdText: '', jobUrl: '' };
@@ -95,8 +96,10 @@ export default function DashboardPage() {
     }
   };
 
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+
   const deleteJob = async (id: string) => {
-    if (!confirm('Are you sure?')) return;
+    setPendingDeleteId(null);
     try {
       await apiFetch(`/api/jobs/${id}`, { method: 'DELETE' });
       await fetchJobs();
@@ -297,7 +300,7 @@ export default function DashboardPage() {
                       <button onClick={() => openEditForm(job)} className="text-[#5f6368] hover:text-[#1a73e8] transition" aria-label="Edit job">
                         <Pencil className="h-4 w-4" />
                       </button>
-                      <button onClick={() => deleteJob(job._id)} className="text-[#5f6368] hover:text-[#d93025] transition" aria-label="Delete job">
+                      <button onClick={() => setPendingDeleteId(job._id)} className="text-[#5f6368] hover:text-[#d93025] transition" aria-label="Delete job">
                         <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
@@ -308,6 +311,13 @@ export default function DashboardPage() {
           </AnimatePresence>
         </motion.div>
       )}
+      <ConfirmModal
+        open={pendingDeleteId !== null}
+        title="Delete job"
+        message="Are you sure? This job and its saved data will be permanently deleted."
+        onConfirm={() => pendingDeleteId && deleteJob(pendingDeleteId)}
+        onCancel={() => setPendingDeleteId(null)}
+      />
     </div>
   );
 }

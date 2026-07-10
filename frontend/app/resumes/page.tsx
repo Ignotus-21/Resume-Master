@@ -8,6 +8,7 @@ import { useToast } from '@/components/ui/Toast';
 import { FileText, Sparkles, Loader2, ChevronRight, ChevronLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from '@/components/ui/Card';
+import { ConfirmModal } from '@/components/ui/Modal';
 
 interface ResumeData {
   user?: {
@@ -238,8 +239,10 @@ function ResumesPageContent() {
     setSaving(false);
   };
 
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this resume?')) return;
+    setPendingDeleteId(null);
     try {
       await apiFetch(`/api/resumes/${id}`, { method: 'DELETE' });
       setResumes(resumes.filter(r => r._id !== id));
@@ -329,7 +332,7 @@ function ResumesPageContent() {
                   </div>
                   
                   <button 
-                      onClick={(e) => { e.stopPropagation(); handleDelete(resume._id); }}
+                      onClick={(e) => { e.stopPropagation(); setPendingDeleteId(resume._id); }}
                       className="absolute top-2 right-2 text-[#5f6368] hover:text-red-500 p-1 opacity-0 group-hover:opacity-100 transition"
                       title="Delete Resume"
                   >
@@ -601,6 +604,13 @@ function ResumesPageContent() {
           )}
         </div>
       </div>
+      <ConfirmModal
+        open={pendingDeleteId !== null}
+        title="Delete resume"
+        message="Are you sure you want to delete this resume? This can't be undone."
+        onConfirm={() => pendingDeleteId && handleDelete(pendingDeleteId)}
+        onCancel={() => setPendingDeleteId(null)}
+      />
     </div>
   );
 }

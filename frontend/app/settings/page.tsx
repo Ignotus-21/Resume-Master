@@ -8,6 +8,7 @@ import { useToast } from '@/components/ui/Toast';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { PageSpinner } from '@/components/ui/Spinner';
+import { ConfirmModal } from '@/components/ui/Modal';
 
 interface Quota {
   usingOwnKey: boolean;
@@ -51,8 +52,10 @@ export default function SettingsPage() {
     setSaving(false);
   };
 
+  const [confirmRemoveKey, setConfirmRemoveKey] = useState(false);
+
   const handleRemoveKey = async () => {
-    if (!confirm('Remove your Gemini API key? You will go back to the shared free quota.')) return;
+    setConfirmRemoveKey(false);
     try {
       await apiFetch('/api/auth/gemini-key', { method: 'DELETE' });
       showToast('API key removed', 'success');
@@ -122,7 +125,7 @@ export default function SettingsPage() {
         </p>
 
         {user.hasOwnKey ? (
-          <Button variant="danger" onClick={handleRemoveKey}>
+          <Button variant="danger" onClick={() => setConfirmRemoveKey(true)}>
             <Trash2 className="h-4 w-4" />
             Remove Saved Key
           </Button>
@@ -141,6 +144,14 @@ export default function SettingsPage() {
           </form>
         )}
       </Card>
+      <ConfirmModal
+        open={confirmRemoveKey}
+        title="Remove API key"
+        message="Remove your Gemini API key? You will go back to the shared free quota."
+        confirmLabel="Remove"
+        onConfirm={handleRemoveKey}
+        onCancel={() => setConfirmRemoveKey(false)}
+      />
     </div>
   );
 }

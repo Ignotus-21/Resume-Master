@@ -2,10 +2,16 @@ const request = require('supertest');
 
 jest.mock('../models/User');
 jest.mock('../models/ApiUsage');
+jest.mock('../models/AppConfig');
 
 const User = require('../models/User');
 const ApiUsage = require('../models/ApiUsage');
+const AppConfig = require('../models/AppConfig');
 const { enforceGeminiQuota } = require('../utils/geminiGate');
+
+beforeEach(() => {
+  AppConfig.findOneAndUpdate.mockResolvedValue({ defaultTokenLimit: 15000, guestTokenLimit: 5000 });
+});
 
 process.env.CORS_ORIGIN = 'http://localhost:3000';
 const createApp = require('../app');
@@ -37,8 +43,10 @@ describe('enforceGeminiQuota — verified-email gate', () => {
 
   it('returns a 429 payload when the guest quota is exhausted', async () => {
     ApiUsage.updateOne.mockResolvedValue({});
-    ApiUsage.findOneAndUpdate.mockResolvedValue(null); // over the limit
-    ApiUsage.findOne.mockResolvedValue({ count: 15, windowStart: new Date() });
+    // Token-based quota: the guest's usage doc already has usedTokens at the
+    // configured limit (5000, per the AppConfig mock above), windowStart
+    // recent enough that the window isn't expired/reset.
+    ApiUsage.findOneAndUpdate.mockResolvedValue({ identity: 'ip:1.2.3.4', usedTokens: 5000, windowStart: new Date() });
     const rejection = await enforceGeminiQuota({ identity: 'ip:1.2.3.4', quotaIdentity: 'ip:1.2.3.4' });
     expect(rejection).toMatchObject({ status: 429 });
   });

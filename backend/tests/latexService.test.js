@@ -11,13 +11,13 @@ describe('compileLatex', () => {
     execFile.mockClear();
   });
 
-  it('rejects empty input without invoking pdflatex', async () => {
+  it('rejects empty input without invoking tectonic', async () => {
     const result = await compileLatex('');
     expect(result.success).toBe(false);
     expect(execFile).not.toHaveBeenCalled();
   });
 
-  it('rejects oversized input without invoking pdflatex', async () => {
+  it('rejects oversized input without invoking tectonic', async () => {
     const huge = 'a'.repeat(200001);
     const result = await compileLatex(huge);
     expect(result.success).toBe(false);
@@ -25,25 +25,27 @@ describe('compileLatex', () => {
     expect(execFile).not.toHaveBeenCalled();
   });
 
-  it('invokes pdflatex via execFile (no shell) with -no-shell-escape', async () => {
+  it('invokes tectonic via execFile (no shell) with --untrusted', async () => {
     await compileLatex('\\documentclass{article}\\begin{document}hi\\end{document}');
     expect(execFile).toHaveBeenCalledTimes(1);
     const [cmd, args] = execFile.mock.calls[0];
-    expect(cmd).toBe('pdflatex');
-    expect(args).toContain('-no-shell-escape');
+    expect(cmd).toBe('tectonic');
+    expect(args).toContain('--untrusted');
     // execFile never invokes a shell, so shell metacharacters in args can't be interpreted.
     expect(args.join(' ')).not.toMatch(/[;&|`$]/);
   });
 
-  it('runs pdflatex in paranoid I/O mode so \\input cannot read server files', async () => {
-    // Regression test for the critical LaTeX file-read → secret exfiltration bug.
+  it('does not leak app secrets into the tectonic child process environment', async () => {
+    // Tectonic has no shell-escape support and --untrusted is set, but it does
+    // NOT sandbox \input/\openin file reads (confirmed against upstream docs —
+    // see the comment in latexService.js). The one thing we *can* and do
+    // enforce is that the child process env is an explicit allowlist (PATH,
+    // HOME) rather than the full process.env, so app secrets can't leak into
+    // it even if a crafted document tried to read its own environment.
     await compileLatex('\\documentclass{article}\\begin{document}\\input{/etc/passwd}\\end{document}');
     expect(execFile).toHaveBeenCalledTimes(1);
     const opts = execFile.mock.calls[0][2];
-    // openin_any=p / openout_any=p block absolute-path and parent-dir file access.
-    expect(opts.env.openin_any).toBe('p');
-    expect(opts.env.openout_any).toBe('p');
-    // The restricted env must NOT expose app secrets to the TeX process.
+    expect(Object.keys(opts.env).sort()).toEqual(['HOME', 'PATH']);
     expect(opts.env.JWT_SECRET).toBeUndefined();
     expect(opts.env.ENCRYPTION_KEY).toBeUndefined();
     expect(opts.env.GEMINI_API_KEY).toBeUndefined();

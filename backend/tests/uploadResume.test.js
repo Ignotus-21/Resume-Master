@@ -10,9 +10,11 @@ jest.mock('../models/MasterProfile');
 jest.mock('../models/Job');
 jest.mock('../models/Resume');
 jest.mock('../models/ApiUsage');
+jest.mock('../models/AppConfig');
 
 process.env.CORS_ORIGIN = 'http://localhost:3000';
 const ApiUsage = require('../models/ApiUsage');
+const AppConfig = require('../models/AppConfig');
 const createApp = require('../app');
 
 describe('POST /api/master/upload-resume', () => {
@@ -21,7 +23,8 @@ describe('POST /api/master/upload-resume', () => {
     app = createApp();
     // Allow the shared-key quota gate (atomic flow: upsert + conditional inc).
     ApiUsage.updateOne.mockResolvedValue({});
-    ApiUsage.findOneAndUpdate.mockResolvedValue({ identity: 'guest', count: 1, windowStart: new Date() });
+    ApiUsage.findOneAndUpdate.mockResolvedValue({ identity: 'guest', count: 1, windowStart: new Date(), usedTokens: 0 });
+    AppConfig.findOneAndUpdate.mockResolvedValue({ defaultTokenLimit: 15000, guestTokenLimit: 5000 });
   });
 
   it('rejects non-PDF mimetypes', async () => {

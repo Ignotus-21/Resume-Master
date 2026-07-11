@@ -105,11 +105,11 @@ export function useResumeGeneration(preSelectedJobId: string | null) {
     }
   };
 
-  const handleGenerate = async () => {
+  const handleGenerate = async (templateStyle: string = 'classic') => {
     if (!selectedJobId) return showToast('Select a job first', 'info');
     setGenerating(true);
     try {
-      const data = await apiJson('/api/resumes/generate', 'POST', { jobId: selectedJobId });
+      const data = await apiJson('/api/resumes/generate', 'POST', { jobId: selectedJobId, templateStyle });
       setResumes(prev => [data, ...prev]);
       setViewResume(data);
       setActiveView('preview');

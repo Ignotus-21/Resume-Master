@@ -62,7 +62,7 @@ router.get('/stats', adminAuth, async (req, res) => {
 router.get('/token-breakdown', adminAuth, async (req, res) => {
   try {
     // Registered Users
-    const users = await User.find({}).select('email name usedTokens extraTokens createdAt');
+    const users = await User.find({}).select('email name usedTokens extraTokens createdAt isAdmin geminiApiKeyEncrypted');
     
     // Live Anonymous Users
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
@@ -99,15 +99,22 @@ router.get('/token-breakdown', adminAuth, async (req, res) => {
     if (!config) config = { defaultTokenLimit: 15000, guestTokenLimit: 5000 };
 
     res.json({
-      registeredUsers: users.map(u => ({
-        id: u._id,
-        email: u.email,
-        name: u.name,
-        usedTokens: u.usedTokens || 0,
-        extraTokens: u.extraTokens || 0,
-        totalLimit: config.defaultTokenLimit + (u.extraTokens || 0),
-        services: u._id ? (usageMap[u._id.toString()] || {}) : {}
-      })),
+      registeredUsers: users.map(u => {
+        const services = u._id ? (usageMap[u._id.toString()] || {}) : {};
+        const totalUsage = Object.values(services).reduce((sum, val) => sum + val, 0);
+        return {
+          id: u._id,
+          email: u.email,
+          name: u.name,
+          usedTokens: u.usedTokens || 0,
+          totalUsage: totalUsage,
+          extraTokens: u.extraTokens || 0,
+          totalLimit: config.defaultTokenLimit + (u.extraTokens || 0),
+          isAdmin: u.isAdmin,
+          isByok: !!u.geminiApiKeyEncrypted,
+          services: services
+        };
+      }),
       liveGuests: liveGuestsUsage.map(g => ({
         identity: g.identity,
         usedTokens: g.usedTokens || 0,

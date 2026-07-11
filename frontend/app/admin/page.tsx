@@ -269,26 +269,38 @@ export default function AdminDashboard() {
                 {breakdown.registeredUsers.map((u: any) => (
                   <tr key={u.id} className="border-b border-[#dadce0] hover:bg-[#f8f9fa] transition-colors">
                     <td className="p-4 align-top w-1/4">
-                      <div className="font-medium text-[#202124]">{u.email}</div>
+                      <div className="font-medium text-[#202124] flex items-center gap-2 flex-wrap">
+                        {u.email}
+                        {u.isAdmin && <span className="bg-[#1a73e8] text-white text-[10px] px-2 py-0.5 rounded-full font-bold tracking-wide uppercase">Admin</span>}
+                        {u.isByok && <span className="bg-[#f9ab00] text-[#202124] text-[10px] px-2 py-0.5 rounded-full font-bold tracking-wide uppercase">BYOK</span>}
+                      </div>
                       <div className="text-sm text-[#5f6368]">{u.name}</div>
                     </td>
                     <td className="p-4 w-2/4">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-bold text-[#202124]">{u.usedTokens.toLocaleString()} tokens used</span>
+                        <span className="text-sm font-bold text-[#202124]">{u.totalUsage.toLocaleString()} tokens used</span>
                         <span className="text-xs font-medium text-[#1e8e3e] border border-[#1e8e3e] px-2 py-0.5 rounded-full">
-                          ~${((u.usedTokens / 1000000) * 0.15).toFixed(4)}
+                          ~${((u.totalUsage / 1000000) * 0.15).toFixed(4)}
                         </span>
                       </div>
-                      <ServiceBreakdownBars services={u.services} totalTokens={u.usedTokens} />
+                      <ServiceBreakdownBars services={u.services} totalTokens={u.totalUsage} />
                     </td>
                     <td className="p-4 align-top">
-                      <div className="font-medium text-[#202124]">{u.totalLimit.toLocaleString()}</div>
-                      {u.extraTokens > 0 && <div className="text-xs text-[#1a73e8]">+{u.extraTokens} extra</div>}
+                      {u.isByok ? (
+                        <div className="font-bold text-[#f9ab00]">BYOK (Unlimited)</div>
+                      ) : u.isAdmin ? (
+                        <div className="font-bold text-[#1a73e8]">Unlimited</div>
+                      ) : (
+                        <>
+                          <div className="font-medium text-[#202124]">{u.totalLimit.toLocaleString()}</div>
+                          {u.extraTokens > 0 && <div className="text-xs text-[#1a73e8]">+{u.extraTokens} extra</div>}
+                        </>
+                      )}
                     </td>
                     <td className="p-4 align-top">
-                      <Button onClick={() => handleGrantTokens(u.id, 5000)} className="py-1 px-3 text-xs bg-blue-50 text-[#1a73e8] hover:bg-blue-100">
+                      <button onClick={() => handleGrantTokens(u.id, 5000)} className="py-1 px-3 rounded-full text-xs font-semibold transition-colors bg-[#e8f0fe] text-[#1a73e8] hover:bg-[#d2e3fc]">
                         +5k Tokens
-                      </Button>
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -385,27 +397,24 @@ export default function AdminDashboard() {
         <div>
           {/* Navigation Tabs */}
           <div className="flex gap-2 mb-8 overflow-x-auto pb-2 custom-scrollbar">
-            <Button 
-              variant="outline" 
+            <button 
               onClick={() => setActiveTab('overview')}
-              className={`rounded-full px-6 transition-colors ${activeTab === 'overview' ? 'bg-[#1a73e8] text-white border-transparent hover:bg-[#1557b0]' : 'text-[#5f6368] hover:bg-[#f8f9fa]'}`}
+              className={`inline-flex items-center justify-center gap-2 px-6 py-2 rounded-full text-sm transition-all font-semibold ${activeTab === 'overview' ? 'bg-[#1a73e8] text-white shadow-md' : 'text-[#202124] border-2 border-[#dadce0] bg-white hover:bg-[#f1f3f4]'}`}
             >
-              <LayoutDashboard className="w-4 h-4 mr-2" /> Overview & Config
-            </Button>
-            <Button 
-              variant="outline" 
+              <LayoutDashboard className="w-4 h-4" /> Overview & Config
+            </button>
+            <button 
               onClick={() => setActiveTab('users')}
-              className={`rounded-full px-6 transition-colors ${activeTab === 'users' ? 'bg-[#1a73e8] text-white border-transparent hover:bg-[#1557b0]' : 'text-[#5f6368] hover:bg-[#f8f9fa]'}`}
+              className={`inline-flex items-center justify-center gap-2 px-6 py-2 rounded-full text-sm transition-all font-semibold ${activeTab === 'users' ? 'bg-[#1a73e8] text-white shadow-md' : 'text-[#202124] border-2 border-[#dadce0] bg-white hover:bg-[#f1f3f4]'}`}
             >
-              <Users className="w-4 h-4 mr-2" /> Registered Users
-            </Button>
-            <Button 
-              variant="outline" 
+              <Users className="w-4 h-4" /> Registered Users
+            </button>
+            <button 
               onClick={() => setActiveTab('guests')}
-              className={`rounded-full px-6 transition-colors ${activeTab === 'guests' ? 'bg-[#1a73e8] text-white border-transparent hover:bg-[#1557b0]' : 'text-[#5f6368] hover:bg-[#f8f9fa]'}`}
+              className={`inline-flex items-center justify-center gap-2 px-6 py-2 rounded-full text-sm transition-all font-semibold ${activeTab === 'guests' ? 'bg-[#1a73e8] text-white shadow-md' : 'text-[#202124] border-2 border-[#dadce0] bg-white hover:bg-[#f1f3f4]'}`}
             >
-              <Server className="w-4 h-4 mr-2" /> Anonymous Guests
-            </Button>
+              <Server className="w-4 h-4" /> Anonymous Guests
+            </button>
           </div>
 
           {/* Tab Content */}

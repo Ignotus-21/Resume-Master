@@ -11,6 +11,7 @@ import { generateDocx } from './generateDocx';
 import { ResumeSidebar } from './ResumeSidebar';
 import { PdfPane } from './PdfPane';
 import { FeedbackPanel } from './FeedbackPanel';
+import { LatexEditor } from '@/components/resume/LatexEditor';
 
 export default function ResumesPage() {
   return (
@@ -44,6 +45,7 @@ function ResumesPageContent() {
   const [downloadFormat, setDownloadFormat] = useState<'pdf' | 'docx'>('pdf');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [templateStyle, setTemplateStyle] = useState('classic');
 
   const handleDownload = async () => {
     if (downloadFormat === 'pdf') {
@@ -113,8 +115,20 @@ function ResumesPageContent() {
               ))}
             </select>
           </div>
+          <div className="w-full md:w-64">
+            <label className="block text-sm font-medium mb-2 text-[#5f6368]">Template Style</label>
+            <select
+              value={templateStyle}
+              onChange={(e) => setTemplateStyle(e.target.value)}
+              className="w-full border border-[#dadce0] bg-[#f8f9fa] rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-purple-500 text-[#202124] transition-all appearance-none cursor-pointer"
+            >
+              <option value="classic">Standard ATS (Classic)</option>
+              <option value="modern">Modern (Sans-serif)</option>
+              <option value="compact">Compact (Dense)</option>
+            </select>
+          </div>
           <button
-            onClick={handleGenerate}
+            onClick={() => handleGenerate(templateStyle)}
             disabled={generating || !selectedJobId}
             className="flex items-center justify-center gap-2 bg-gradient-to-r from-[#1a73e8] to-[#174ea6] text-white px-8 py-3 rounded-xl hover:opacity-90 disabled:opacity-50 font-semibold transition-all shadow-lg shadow-blue-200/50 w-full md:w-auto h-12"
           >
@@ -221,15 +235,6 @@ function ResumesPageContent() {
                             </button>
                         </div>
                     )}
-                    {activeView === 'code' && (
-                        <button
-                            onClick={handleUpdate}
-                            disabled={saving}
-                            className="bg-green-600 text-white px-4 py-1 rounded-lg text-sm font-medium hover:bg-green-500 disabled:opacity-50"
-                        >
-                            {saving ? 'Saving...' : 'Save'}
-                        </button>
-                    )}
                  </div>
               </div>
 
@@ -241,18 +246,13 @@ function ResumesPageContent() {
 
               {activeView === 'code' && (
                   <div className="grid grid-cols-2 gap-4 h-[calc(100vh-140px)]">
-                    <div className="flex flex-col h-full">
-                        <div className="flex justify-between items-center mb-2">
-                             <p className="text-sm text-[#5f6368]">LaTeX Code</p>
-                             {isCompiling && <span className="text-xs text-[#1a73e8] animate-pulse">Compiling...</span>}
-                        </div>
-                        <textarea
-                            value={editCode}
-                            onChange={(e) => setEditCode(e.target.value)}
-                            className="w-full flex-1 font-mono text-xs border border-[#dadce0] p-4 rounded-xl bg-[#f8f9fa] text-[#202124] outline-none focus:ring-2 focus:ring-purple-500 resize-none"
-                            spellCheck={false}
-                        />
-                    </div>
+                    <LatexEditor 
+                        value={editCode}
+                        onChange={(val) => setEditCode(val || '')}
+                        onRecompile={handleUpdate}
+                        saving={saving}
+                        isCompiling={isCompiling}
+                    />
                     <div className="flex flex-col h-full bg-[#f8f9fa] rounded-xl border border-[#dadce0] overflow-hidden relative">
                         <PdfPane isCompiling={isCompiling} compileError={compileError} pdfData={pdfData} />
                     </div>

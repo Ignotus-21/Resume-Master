@@ -2,7 +2,7 @@ const { trackUsage } = require('../utils/trackUsage');
 const { refundReservation } = require('./quotaService');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-const MODEL_NAME = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+const MODEL_NAME = process.env.GEMINI_MODEL || "gemini-3.5-flash";
 
 let defaultClient = null;
 const getModel = (apiKey) => {
@@ -129,7 +129,7 @@ const tailorResume = async (masterData, jobDescription, apiKey, req = null) => {
   }
 };
 
-const generateLatex = async (resumeData, apiKey, req = null) => {
+const generateLatex = async (resumeData, apiKey, req = null, templateStyle = 'classic') => {
   const model = getModel(apiKey);
   const prompt = `
     You are a LaTeX Resume Architect.
@@ -142,6 +142,7 @@ const generateLatex = async (resumeData, apiKey, req = null) => {
     4. Ensure ALL sections from the JSON are included. Do not drop content.
     5. Ensure all special characters are escaped properly.
     6. **CRITICAL: DO NOT use the 'fullpage' package. Use '\\usepackage[margin=0.5in]{geometry}' instead, as 'fullpage' is not installed on this system.**
+    7. **TEMPLATE STYLE: Please use the "${templateStyle}" style. If 'modern', make it sleek with sans-serif fonts. If 'compact', optimize spacing heavily.**
     
     Resume Data: ${JSON.stringify(resumeData)}
     

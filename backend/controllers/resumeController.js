@@ -6,7 +6,7 @@ const { compileLatex } = require('../services/latexService');
 const { enforceGeminiQuota } = require('../utils/geminiGate');
 
 const createResumeForJob = async (req, res) => {
-  const { jobId, jdText } = req.body;
+  const { jobId, jdText, templateStyle } = req.body;
 
   try {
     // 1. Get Master Profile
@@ -36,7 +36,7 @@ const createResumeForJob = async (req, res) => {
     const tailoredData = await tailorResume(profile, jobDescription, req.geminiApiKey, req);
 
     // 4. Generate LaTeX
-    const latexCode = await generateLatex(tailoredData, req.geminiApiKey, req);
+    const latexCode = await generateLatex(tailoredData, req.geminiApiKey, req, templateStyle);
 
     // 5. Save
     const userName = profile.user?.name?.split(' ')[0] || 'Resume';

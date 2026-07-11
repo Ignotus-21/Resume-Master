@@ -6,7 +6,7 @@ const { generateLinkedInContent } = require('../services/geminiService');
 const { trackUsage } = require('../utils/trackUsage');
 const { refundReservation } = require('../services/quotaService');
 
-const CHAT_MODEL_NAME = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+const CHAT_MODEL_NAME = process.env.GEMINI_MODEL || "gemini-3.5-flash";
 
 let defaultClient = null;
 const getChatModel = (apiKey) => {

@@ -26,7 +26,7 @@
     "mongoose": "^9.0.2",
     "morgan": "^1.11.0",
     "multer": "^2.0.2",
-    "pdf-parse": "^1.1.1",
+    "pdf-parse": "^1.1.4",
     "rate-limit-redis": "^5.0.0"
   },
   "devDependencies": {

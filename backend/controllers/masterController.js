@@ -2,6 +2,7 @@ const MasterProfile = require('../models/MasterProfile');
 const { parseResumeData } = require('../services/geminiService');
 const { enforceGeminiQuota } = require('../utils/geminiGate');
 const fs = require('fs');
+const pdfParse = require('pdf-parse');
 
 // Fields a client is allowed to set on their own profile. Notably excludes
 // `owner` (and Mongo internals) so a caller can't reassign/orphan the record.
@@ -121,8 +122,9 @@ const uploadResume = async (req, res) => {
       return res.status(quotaRejection.status).json(quotaRejection.body);
     }
 
-    // Send Buffer directly to Gemini (Multimodal)
-    const parsedData = await parseResumeData(dataBuffer, req.geminiApiKey, req);
+    // Extract text using pdf-parse instead of sending the buffer directly
+    const pdfData = await pdfParse(dataBuffer);
+    const parsedData = await parseResumeData(pdfData.text, req.geminiApiKey, req);
 
     // Clean up uploaded file
     fs.unlinkSync(req.file.path);

@@ -91,10 +91,14 @@ export const generateDocx = async (data: ResumeData) => {
             children.push(
                 new Paragraph({
                     children: [new TextRun({ text: proj.title, bold: true })]
-                }),
-                new Paragraph({
-                    children: [new TextRun({ text: `Stack: ${proj.techStack?.join(', ')}`, italics: true })]
-                }),
+                })
+            );
+            if (proj.techStack?.length) {
+                children.push(new Paragraph({
+                    children: [new TextRun({ text: `Stack: ${proj.techStack.join(', ')}`, italics: true })]
+                }));
+            }
+            children.push(
                 new Paragraph({ text: proj.description }),
                 new Paragraph({ text: "" })
             );
@@ -156,6 +160,24 @@ export const generateDocx = async (data: ResumeData) => {
                 ]
             }));
             if (vol.description) children.push(new Paragraph({ text: vol.description }));
+        });
+    }
+
+    // Custom Sections
+    if (data.customSections?.length) {
+        data.customSections.forEach((section) => {
+            if (!section.items?.length) return;
+            children.push(new Paragraph({ text: section.title.toUpperCase(), heading: HeadingLevel.HEADING_2 }));
+            section.items.forEach((item) => {
+                children.push(new Paragraph({
+                    children: [
+                        new TextRun({ text: item.title, bold: true }),
+                        new TextRun({ text: item.subtitle ? ` - ${item.subtitle}` : '' }),
+                        new TextRun({ text: item.date ? ` (${item.date})` : '', italics: true })
+                    ]
+                }));
+                if (item.description) children.push(new Paragraph({ text: item.description }));
+            });
         });
     }
 

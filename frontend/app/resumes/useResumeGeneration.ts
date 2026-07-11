@@ -110,7 +110,7 @@ export function useResumeGeneration(preSelectedJobId: string | null) {
     setGenerating(true);
     try {
       const data = await apiJson('/api/resumes/generate', 'POST', { jobId: selectedJobId });
-      setResumes([data, ...resumes]);
+      setResumes(prev => [data, ...prev]);
       setViewResume(data);
       setActiveView('preview');
     } catch (error: any) {
@@ -142,7 +142,7 @@ export function useResumeGeneration(preSelectedJobId: string | null) {
         versionName: editTitle,
         latexCode: editCode,
       });
-      setResumes(resumes.map(r => r._id === updated._id ? updated : r));
+      setResumes(prev => prev.map(r => r._id === updated._id ? updated : r));
       setViewResume(updated);
       setIsEditingTitle(false);
     } catch (error: any) {
@@ -155,7 +155,7 @@ export function useResumeGeneration(preSelectedJobId: string | null) {
   const handleDelete = async (id: string) => {
     try {
       await apiFetch(`/api/resumes/${id}`, { method: 'DELETE' });
-      setResumes(resumes.filter(r => r._id !== id));
+      setResumes(prev => prev.filter(r => r._id !== id));
       if (viewResume?._id === id) setViewResume(null);
       showToast('Resume deleted', 'success');
     } catch (error: any) {

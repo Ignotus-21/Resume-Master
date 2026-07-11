@@ -84,13 +84,18 @@ export function useMasterProfile() {
     }
   };
 
+  // Saves profile data and reports success/failure via the return value so
+  // callers that need to know the outcome (e.g. handleConfirmMerge) can react,
+  // while the debounced autosave effect can just fire-and-forget.
   const saveProfileData = async (data: any) => {
     try {
       await apiJson('/api/master', 'POST', stripIds(data));
       setSaveStatus('saved');
+      return true;
     } catch (error) {
       console.error('Error saving profile:', error);
       setSaveStatus('error');
+      return false;
     }
   };
 
@@ -98,7 +103,7 @@ export function useMasterProfile() {
     setIngesting(true);
     try {
       const data = await apiJson('/api/master/ingest', 'POST', { text: rawText });
-      setProfile(data);
+      setProfile(normalizeData(data));
       showToast('Resume parsed and merged!', 'success');
       setRawText('');
     } catch (error: any) {
@@ -129,6 +134,7 @@ export function useMasterProfile() {
       console.error('Error uploading resume:', error);
       showToast(error.message || 'Failed to upload/parse resume.', 'error');
     }
+    e.target.value = '';
     setIngesting(false);
   };
 
@@ -137,8 +143,12 @@ export function useMasterProfile() {
     setProfile(normalized);
     setImportPreview(null);
     // Force immediate save to ensure data persists before navigation
-    await saveProfileData(normalized);
-    showToast('Import merged and saved successfully!', 'success');
+    const saved = await saveProfileData(normalized);
+    if (saved) {
+      showToast('Import merged and saved successfully!', 'success');
+    } else {
+      showToast('Import merged, but saving failed. Your changes may not persist.', 'error');
+    }
   };
 
   return {

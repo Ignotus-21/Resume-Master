@@ -73,6 +73,8 @@ function ResumesPageContent() {
           console.error("DOCX generation failed", error);
           showToast("Failed to generate DOCX", 'error');
         }
+      } else {
+        showToast("No tailored data available for DOCX export", 'info');
       }
     }
   };

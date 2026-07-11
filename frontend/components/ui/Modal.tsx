@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useId, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { Button } from './Button';
@@ -19,6 +19,7 @@ export function Modal({
   panelClassName?: string;
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
 
   useEffect(() => {
     if (!open) return;
@@ -49,7 +50,7 @@ export function Modal({
             tabIndex={-1}
             role="dialog"
             aria-modal="true"
-            aria-labelledby="modal-title"
+            aria-labelledby={titleId}
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -57,7 +58,7 @@ export function Modal({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between gap-4 mb-4">
-              <h2 id="modal-title" className="text-lg font-bold text-[#202124]">
+              <h2 id={titleId} className="text-lg font-bold text-[#202124]">
                 {title}
               </h2>
               <button
@@ -99,10 +100,10 @@ export function ConfirmModal({
     <Modal open={open} onClose={onCancel} title={title}>
       <p className="text-sm text-[#5f6368] mb-6">{message}</p>
       <div className="flex justify-end gap-3">
-        <Button variant="secondary" onClick={onCancel} disabled={busy}>
+        <Button type="button" variant="secondary" onClick={onCancel} disabled={busy}>
           Cancel
         </Button>
-        <Button variant="danger" loading={busy} onClick={onConfirm}>
+        <Button type="button" variant="danger" loading={busy} onClick={onConfirm}>
           {confirmLabel}
         </Button>
       </div>

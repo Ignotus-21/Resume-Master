@@ -80,6 +80,12 @@ const clearGuestCookie = (res) => {
   res.clearCookie('guestId');
 };
 
+// Reuses cookieOptions() (minus maxAge, which clearCookie doesn't need) so the
+// clear attributes can't drift from whatever issueToken() set.
+const clearTokenCookie = (res) => {
+  res.clearCookie('token', cookieOptions());
+};
+
 const publicUser = (user) => ({
   id: user._id,
   email: user.email,
@@ -296,8 +302,7 @@ const googleLogin = async (req, res) => {
 };
 
 const logout = (req, res) => {
-  // Clear with the same attributes used to set it so cross-site cookies clear.
-  res.clearCookie('token', { sameSite: crossSite ? 'none' : 'lax', secure: crossSite || isProd });
+  clearTokenCookie(res);
   res.json({ message: 'Logged out' });
 };
 
@@ -306,7 +311,7 @@ const logout = (req, res) => {
 const logoutAll = async (req, res) => {
   try {
     await User.findByIdAndUpdate(req.user.id, { $inc: { tokenVersion: 1 } });
-    res.clearCookie('token', { sameSite: crossSite ? 'none' : 'lax', secure: crossSite || isProd });
+    clearTokenCookie(res);
     res.json({ message: 'Logged out on all devices' });
   } catch (error) {
     console.error('Auth error:', error);

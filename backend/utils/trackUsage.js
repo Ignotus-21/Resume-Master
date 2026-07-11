@@ -37,9 +37,15 @@ const trackUsage = async (req, service, responseResult) => {
     // limit for usage that never touched it).
     if (req.geminiApiKey) return;
 
-    // True up to the real cost instead of adding the full amount again. This
-    // can go negative (refunding an over-estimate), which is correct.
-    const adjustment = totalTokens - RESERVE_ESTIMATE;
+    // True up to the real cost instead of adding the full amount again (can
+    // go negative — refunding an over-estimate — which is correct). Only the
+    // FIRST tracked call in a request trues up against the single reservation
+    // made at admission; later calls in the same request (e.g. the LaTeX call
+    // after the tailor call) charge their full cost, otherwise each would
+    // wrongly subtract RESERVE_ESTIMATE again.
+    const hadReservation = req.quotaReserved === true;
+    if (hadReservation) req.quotaReserved = false;
+    const adjustment = totalTokens - (hadReservation ? RESERVE_ESTIMATE : 0);
 
     if (req.user) {
       await User.findByIdAndUpdate(req.user.id, { $inc: { usedTokens: adjustment } });

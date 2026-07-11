@@ -1,7 +1,20 @@
 import type { NextConfig } from "next";
 
+// Proxy /api/* to the Express backend so the browser only ever talks to the
+// frontend origin. This keeps the auth cookie SameSite=Lax (no CSRF-prone
+// SameSite=None) in production and works identically in `next dev`.
+// Set BACKEND_URL in deployment (e.g. the Fly.io/Railway URL); defaults to
+// the local backend for dev. This rewrite always exists — it's simply
+// unused when the app is configured to call the backend directly
+// cross-origin via NEXT_PUBLIC_API_URL (see lib/api.ts).
+const backendUrl = process.env.BACKEND_URL || "http://localhost:5000";
+
 const nextConfig: NextConfig = {
-  /* config options here */
+  async rewrites() {
+    return [
+      { source: "/api/:path*", destination: `${backendUrl}/api/:path*` },
+    ];
+  },
 };
 
 export default nextConfig;

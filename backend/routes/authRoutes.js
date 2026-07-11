@@ -6,6 +6,7 @@ const {
   login,
   googleLogin,
   logout,
+  logoutAll,
   me,
   quota,
   setGeminiKey,
@@ -21,6 +22,7 @@ router.post('/signup', signup);
 router.post('/login', login);
 router.post('/google', googleLogin);
 router.post('/logout', logout);
+router.post('/logout-all', requireAuth, logoutAll);
 router.get('/me', me);
 router.get('/quota', quota);
 router.get('/my-usage', requireAuth, myUsage);

@@ -72,7 +72,7 @@ export default function QuotaModal() {
 
               <h2 id="quota-modal-title" className="text-2xl font-bold text-[#202124] mb-2">Free AI Quota Reached</h2>
               <p id="quota-modal-description" className="text-[#5f6368] mb-8 max-w-sm">
-                You've hit the limit for our shared community key. It will automatically reset at <strong className="text-[#202124]">{resetTime || 'later'}</strong>.
+                You&apos;ve hit the limit for our shared community key. It will automatically reset at <strong className="text-[#202124]">{resetTime || 'later'}</strong>.
               </p>
 
               <div className="w-full space-y-4">

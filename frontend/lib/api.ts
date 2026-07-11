@@ -1,4 +1,8 @@
-export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+// Empty string = same-origin: requests go to /api/* on the frontend origin and
+// the Next.js rewrite (next.config.ts) proxies them to the backend, in dev and
+// prod alike. Set NEXT_PUBLIC_API_URL only to call a backend directly
+// cross-origin (requires COOKIE_SAMESITE_NONE on the backend).
+export const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
 export class ApiError extends Error {
   status: number;

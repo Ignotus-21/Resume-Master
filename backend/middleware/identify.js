@@ -39,12 +39,29 @@ const trackActiveSession = (req) => {
   }
 };
 
-const identify = (req, res, next) => {
+// A JWT is revoked when the user's tokenVersion moved past the version the
+// token was minted with (password reset / "log out everywhere"), or when the
+// account no longer exists (deleted user). On DB errors it fails open so an
+// outage doesn't log everyone out (revocation is a best-effort defense, not
+// the auth check).
+const isTokenRevoked = async (payload) => {
+  try {
+    const User = require('../models/User');
+    const user = await User.findById(payload.sub).select('tokenVersion').lean();
+    if (!user) return true;
+    return (user.tokenVersion || 0) !== (payload.v || 0);
+  } catch (err) {
+    return false;
+  }
+};
+
+const identify = async (req, res, next) => {
   const token = req.cookies?.token;
 
   if (token) {
     try {
       const payload = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
+      if (await isTokenRevoked(payload)) throw new Error('Token revoked');
       req.user = { id: payload.sub, email: payload.email, name: payload.name };
       req.identity = payload.sub;
       // Logged-in users are quota-limited per account (not per IP), so their

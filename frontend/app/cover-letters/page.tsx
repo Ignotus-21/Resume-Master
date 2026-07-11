@@ -8,6 +8,7 @@ import { useToast } from '@/components/ui/Toast';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { ConfirmModal } from '@/components/ui/Modal';
 
 const TONES = ['Professional', 'Friendly', 'Enthusiastic', 'Formal'];
 const LENGTHS = ['Short', 'Medium', 'Long'];
@@ -69,8 +70,10 @@ export default function CoverLettersPage() {
     setSaving(false);
   };
 
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this cover letter?')) return;
+    setPendingDeleteId(null);
     try {
       await apiFetch(`/api/cover-letters/${id}`, { method: 'DELETE' });
       setLetters(letters.filter((l) => l._id !== id));
@@ -153,7 +156,7 @@ export default function CoverLettersPage() {
                     <div className="font-semibold text-[#202124] truncate">{l.job ? `${l.job.role} @ ${l.job.company}` : l.versionName}</div>
                     <div className="text-xs text-[#5f6368]">{l.tone} · {new Date(l.createdAt).toLocaleDateString()}</div>
                   </div>
-                  <button onClick={(e) => { e.stopPropagation(); handleDelete(l._id); }} className="text-[#5f6368] hover:text-[#d93025] opacity-0 group-hover:opacity-100 transition" aria-label="Delete">
+                  <button onClick={(e) => { e.stopPropagation(); setPendingDeleteId(l._id); }} className="text-[#5f6368] hover:text-[#d93025] opacity-0 group-hover:opacity-100 transition" aria-label="Delete">
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
@@ -185,6 +188,13 @@ export default function CoverLettersPage() {
           )}
         </div>
       </div>
+      <ConfirmModal
+        open={pendingDeleteId !== null}
+        title="Delete cover letter"
+        message="Delete this cover letter? This can't be undone."
+        onConfirm={() => pendingDeleteId && handleDelete(pendingDeleteId)}
+        onCancel={() => setPendingDeleteId(null)}
+      />
     </div>
   );
 }

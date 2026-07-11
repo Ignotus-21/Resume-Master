@@ -8,6 +8,7 @@ import { useToast } from '@/components/ui/Toast';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { PageSpinner } from '@/components/ui/Spinner';
+import { ConfirmModal } from '@/components/ui/Modal';
 
 interface Quota {
   usingOwnKey: boolean;
@@ -51,8 +52,21 @@ export default function SettingsPage() {
     setSaving(false);
   };
 
+  const [confirmRemoveKey, setConfirmRemoveKey] = useState(false);
+
+  const handleLogoutAll = async () => {
+    try {
+      await apiFetch('/api/auth/logout-all', { method: 'POST' });
+      showToast('Logged out on all devices', 'success');
+    } catch (error: any) {
+      showToast(error.message || 'Failed to log out everywhere', 'error');
+      return;
+    }
+    await logout();
+  };
+
   const handleRemoveKey = async () => {
-    if (!confirm('Remove your Gemini API key? You will go back to the shared free quota.')) return;
+    setConfirmRemoveKey(false);
     try {
       await apiFetch('/api/auth/gemini-key', { method: 'DELETE' });
       showToast('API key removed', 'success');
@@ -90,10 +104,19 @@ export default function SettingsPage() {
         </div>
         <p className="text-[#202124] text-sm">{user.name || 'No name set'}</p>
         <p className="text-[#5f6368] text-sm mb-4">{user.email}</p>
-        <Button variant="secondary" onClick={logout}>
-          <LogOut className="h-4 w-4" />
-          Log Out
-        </Button>
+        <div className="flex flex-wrap gap-3">
+          <Button variant="secondary" onClick={logout}>
+            <LogOut className="h-4 w-4" />
+            Log Out
+          </Button>
+          <Button variant="secondary" onClick={handleLogoutAll}>
+            <LogOut className="h-4 w-4" />
+            Log Out Everywhere
+          </Button>
+        </div>
+        <p className="text-xs text-[#5f6368] mt-2">
+          “Log Out Everywhere” signs you out on every device by invalidating all existing sessions.
+        </p>
       </Card>
 
       <Card className="p-6">
@@ -122,7 +145,7 @@ export default function SettingsPage() {
         </p>
 
         {user.hasOwnKey ? (
-          <Button variant="danger" onClick={handleRemoveKey}>
+          <Button variant="danger" onClick={() => setConfirmRemoveKey(true)}>
             <Trash2 className="h-4 w-4" />
             Remove Saved Key
           </Button>
@@ -141,6 +164,14 @@ export default function SettingsPage() {
           </form>
         )}
       </Card>
+      <ConfirmModal
+        open={confirmRemoveKey}
+        title="Remove API key"
+        message="Remove your Gemini API key? You will go back to the shared free quota."
+        confirmLabel="Remove"
+        onConfirm={handleRemoveKey}
+        onCancel={() => setConfirmRemoveKey(false)}
+      />
     </div>
   );
 }

@@ -33,7 +33,9 @@ const googleClient = process.env.GOOGLE_CLIENT_ID ? new OAuth2Client(process.env
 
 const issueToken = (res, user) => {
   const token = jwt.sign(
-    { sub: user._id.toString(), email: user.email, name: user.name },
+    // v = tokenVersion at mint time; identify() rejects the token once the
+    // user's version moves past it (password reset / "log out everywhere").
+    { sub: user._id.toString(), email: user.email, name: user.name, v: user.tokenVersion || 0 },
     process.env.JWT_SECRET,
     { expiresIn: '7d' }
   );
@@ -76,6 +78,12 @@ const migrateGuestData = async (guestId, userId) => {
 
 const clearGuestCookie = (res) => {
   res.clearCookie('guestId');
+};
+
+// Reuses cookieOptions() (minus maxAge, which clearCookie doesn't need) so the
+// clear attributes can't drift from whatever issueToken() set.
+const clearTokenCookie = (res) => {
+  res.clearCookie('token', cookieOptions());
 };
 
 const publicUser = (user) => ({
@@ -137,8 +145,11 @@ const verifyEmail = async (req, res) => {
     if (!user) return res.status(400).json({ message: 'This verification link is invalid or has expired' });
 
     user.emailVerified = true;
-    user.emailVerifyTokenHash = undefined;
-    user.emailVerifyExpires = undefined;
+    // Deliberately keep the token valid until it expires: email scanners
+    // prefetching the link, double clicks, and React StrictMode's double
+    // effect all re-POST the same token, and a single-use token would make
+    // the second call report failure after a successful verification.
+    // Re-verifying is idempotent, so reuse grants nothing extra.
     await user.save();
     res.json({ message: 'Email verified', user: publicUser(user) });
   } catch (error) {
@@ -202,6 +213,8 @@ const resetPassword = async (req, res) => {
     user.passwordResetExpires = undefined;
     // A successful reset proves control of the inbox, so mark the email verified.
     user.emailVerified = true;
+    // Invalidate every session issued before the reset (stolen/old JWTs).
+    user.tokenVersion = (user.tokenVersion || 0) + 1;
     await user.save();
     res.json({ message: 'Password updated. You can now log in.' });
   } catch (error) {
@@ -289,9 +302,21 @@ const googleLogin = async (req, res) => {
 };
 
 const logout = (req, res) => {
-  // Clear with the same attributes used to set it so cross-site cookies clear.
-  res.clearCookie('token', { sameSite: crossSite ? 'none' : 'lax', secure: crossSite || isProd });
+  clearTokenCookie(res);
   res.json({ message: 'Logged out' });
+};
+
+// "Log out everywhere": bumping tokenVersion invalidates every JWT minted
+// before now, on all devices — then clears this device's cookie too.
+const logoutAll = async (req, res) => {
+  try {
+    await User.findByIdAndUpdate(req.user.id, { $inc: { tokenVersion: 1 } });
+    clearTokenCookie(res);
+    res.json({ message: 'Logged out on all devices' });
+  } catch (error) {
+    console.error('Auth error:', error);
+    res.status(500).json({ message: 'Something went wrong' });
+  }
 };
 
 const me = async (req, res) => {
@@ -377,6 +402,6 @@ const myUsage = async (req, res) => {
 };
 
 module.exports = {
-  signup, login, googleLogin, logout, me, quota, setGeminiKey, removeGeminiKey,
+  signup, login, googleLogin, logout, logoutAll, me, quota, setGeminiKey, removeGeminiKey,
   verifyEmail, resendVerification, requestPasswordReset, resetPassword, myUsage,
 };

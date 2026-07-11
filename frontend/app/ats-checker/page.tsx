@@ -45,7 +45,7 @@ export default function AtsCheckerPage() {
         <h1 className="text-3xl font-bold text-[#202124] flex items-center gap-2">
           <Gauge className="h-7 w-7 text-[#1a73e8]" /> ATS Checker
         </h1>
-        <p className="text-[#5f6368]">Score your master profile against a job description and see what's missing.</p>
+        <p className="text-[#5f6368]">Score your master profile against a job description and see what&apos;s missing.</p>
       </div>
 
       <Card className="p-6 mb-8">

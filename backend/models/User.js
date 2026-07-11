@@ -10,6 +10,10 @@ const userSchema = new mongoose.Schema({
   usedTokens: { type: Number, default: 0 },
   extraTokens: { type: Number, default: 0 },
 
+  // Bumped on password reset / "log out everywhere"; JWTs carry the version
+  // they were minted with and identify() rejects stale ones.
+  tokenVersion: { type: Number, default: 0 },
+
   // Email verification (email/password accounts). Google accounts are verified
   // by Google, so they're created with emailVerified = true.
   emailVerified: { type: Boolean, default: false },

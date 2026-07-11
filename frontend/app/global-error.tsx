@@ -1,9 +1,21 @@
 'use client';
 
+import { useEffect } from 'react';
+
 // Last-resort boundary for errors thrown by the root layout itself. It
 // replaces the whole document (globals.css may not have loaded), so styles
 // are inline.
-export default function GlobalError({ reset }: { reset: () => void }) {
+export default function GlobalError({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  useEffect(() => {
+    console.error(error);
+  }, [error]);
+
   return (
     <html lang="en">
       <body style={{ fontFamily: 'system-ui, sans-serif', display: 'flex', minHeight: '100vh', alignItems: 'center', justifyContent: 'center' }}>

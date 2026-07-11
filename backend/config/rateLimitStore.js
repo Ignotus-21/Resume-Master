@@ -13,8 +13,9 @@ const rateLimitStore = (prefix) => {
   if (!client) {
     const Redis = require('ioredis');
     client = new Redis(url, {
-      // Fail fast instead of queueing commands while disconnected — the
-      // limiters are configured to fail open on store errors.
+      // Fail fast instead of queueing commands while disconnected — each
+      // limiter's passOnStoreError setting decides whether that timeout
+      // fails the request open or closed.
       enableOfflineQueue: false,
       maxRetriesPerRequest: 1,
     });

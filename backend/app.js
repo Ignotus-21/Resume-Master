@@ -58,8 +58,11 @@ const createApp = () => {
   app.use(loadGeminiKey);
 
   // Rate limits use Redis when REDIS_URL is set (survives restarts, shared
-  // across instances) and fall back to in-memory otherwise; passOnStoreError
-  // keeps the API up if Redis goes down.
+  // across instances) and fall back to in-memory otherwise. The general limiter
+  // sets passOnStoreError so a Redis outage doesn't take the whole API down;
+  // the AI and auth limiters below fail closed instead, since they exist
+  // specifically to cap AI cost and brute-force risk, and letting requests
+  // through unlimited during an outage defeats that purpose.
   // General rate limit across the API.
   app.use('/api', rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -77,7 +80,7 @@ const createApp = () => {
     standardHeaders: true,
     legacyHeaders: false,
     store: rateLimitStore('ai'),
-    passOnStoreError: true,
+    passOnStoreError: false,
   });
   app.use('/api/ai', aiLimiter);
   app.use('/api/resumes/generate', aiLimiter);
@@ -95,7 +98,7 @@ const createApp = () => {
     standardHeaders: true,
     legacyHeaders: false,
     store: rateLimitStore('auth'),
-    passOnStoreError: true,
+    passOnStoreError: false,
   });
   app.use('/api/auth/signup', authLimiter);
   app.use('/api/auth/login', authLimiter);

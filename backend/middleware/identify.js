@@ -40,14 +40,15 @@ const trackActiveSession = (req) => {
 };
 
 // A JWT is revoked when the user's tokenVersion moved past the version the
-// token was minted with (password reset / "log out everywhere"). Rejects only
-// on a positive mismatch — on DB errors it fails open so an outage doesn't
-// log everyone out (revocation is a best-effort defense, not the auth check).
+// token was minted with (password reset / "log out everywhere"), or when the
+// account no longer exists (deleted user). On DB errors it fails open so an
+// outage doesn't log everyone out (revocation is a best-effort defense, not
+// the auth check).
 const isTokenRevoked = async (payload) => {
   try {
     const User = require('../models/User');
     const user = await User.findById(payload.sub).select('tokenVersion').lean();
-    if (!user) return false;
+    if (!user) return true;
     return (user.tokenVersion || 0) !== (payload.v || 0);
   } catch (err) {
     return false;

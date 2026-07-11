@@ -69,7 +69,7 @@ export function EducationTab({ profile, setProfile }: TabProps) {
             <Input label="Start Date" value={edu.startDate} onChange={(v: string) => updateArrayItem(profile, setProfile, 'education', index, 'startDate', v)} />
             <Input label="End Date" value={edu.endDate} onChange={(v: string) => updateArrayItem(profile, setProfile, 'education', index, 'endDate', v)} />
           </div>
-          <TextArea label="Relevant Coursework" value={edu.coursework} onChange={(v: string) => updateArrayItem(profile, setProfile, 'education', index, 'coursework', v)} />
+          <TextArea label="Relevant Coursework (One per line)" value={edu.coursework?.join('\n')} onChange={(v: string) => updateArrayItem(profile, setProfile, 'education', index, 'coursework', v.split('\n'))} />
         </div>
       ))}
       <button
@@ -185,7 +185,7 @@ export function AdditionalTab({ profile, setProfile }: TabProps) {
           <TextArea
               label="List your hobbies (comma or newline separated)"
               value={typeof profile.hobbies === 'string' ? profile.hobbies : profile.hobbies?.join('\n')}
-              onChange={(v: string) => setProfile({...profile, hobbies: v.split('\n')})}
+              onChange={(v: string) => setProfile({...profile, hobbies: v.split(/[\n,]/).map((s: string) => s.trim()).filter(Boolean)})}
           />
       </div>
 

@@ -10,11 +10,13 @@ export function Modal({
   onClose,
   title,
   children,
+  panelClassName = 'max-w-md',
 }: {
   open: boolean;
   onClose: () => void;
   title: string;
   children: React.ReactNode;
+  panelClassName?: string;
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -51,7 +53,7 @@ export function Modal({
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="w-full max-w-md bg-white border border-[#dadce0] rounded-2xl shadow-2xl p-6 outline-none"
+            className={`w-full ${panelClassName} bg-white border border-[#dadce0] rounded-2xl shadow-2xl p-6 outline-none`}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between gap-4 mb-4">
@@ -59,6 +61,7 @@ export function Modal({
                 {title}
               </h2>
               <button
+                type="button"
                 onClick={onClose}
                 aria-label="Close"
                 className="p-1.5 -m-1.5 rounded-full hover:bg-[#f1f3f4] text-[#5f6368] hover:text-[#202124] transition"

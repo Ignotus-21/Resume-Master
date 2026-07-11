@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { Modal } from '@/components/ui/Modal';
 
 // Review screen for a parsed PDF import: pick which extracted items to merge
 // into the current profile before anything is saved.
@@ -23,14 +24,8 @@ export const ImportReviewModal = ({ currentProfile, importData, onCancel, onConf
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-8">
-      <div className="bg-[#f8f9fa] w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-xl shadow-2xl border border-[#dadce0]">
-        <div className="p-6 border-b border-[#dadce0] flex justify-between items-center">
-          <h2 className="text-2xl font-bold text-[#202124]">Review Import</h2>
-          <button onClick={onCancel} className="text-[#5f6368] hover:text-[#202124]">✕</button>
-        </div>
-
-        <div className="p-6 space-y-8">
+    <Modal open onClose={onCancel} title="Review Import" panelClassName="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <div className="space-y-8">
           {/* User Info */}
           <div>
             <h3 className="text-lg font-bold text-[#1a73e8] mb-2">Personal Info</h3>
@@ -103,16 +98,16 @@ export const ImportReviewModal = ({ currentProfile, importData, onCancel, onConf
           ))}
         </div>
 
-        <div className="p-6 border-t border-[#dadce0] flex justify-end gap-4">
-          <button onClick={onCancel} className="px-6 py-2 text-[#5f6368] hover:text-[#202124]">Cancel</button>
+        <div className="pt-6 mt-6 border-t border-[#dadce0] flex justify-end gap-4">
+          <button type="button" onClick={onCancel} className="px-6 py-2 text-[#5f6368] hover:text-[#202124]">Cancel</button>
           <button
+            type="button"
             onClick={() => onConfirm(merged)}
             className="px-8 py-2 bg-[#1e8e3e] text-white rounded-lg font-bold hover:bg-[#188038] shadow-lg transition"
           >
             Confirm & Save Changes
           </button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 };

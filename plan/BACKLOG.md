@@ -22,12 +22,24 @@ compile jobs concurrently).
 Mitigations when needed: per-worker `TECTONIC_CACHE_DIR`, a compile queue, or
 `--only-cached` once the pre-bake guarantees coverage.
 
-## fontawesome5 crashes Tectonic 0.16.9 on Windows (links: 'icons')
+## fontawesome5 crashes Tectonic 0.16.9 everywhere (links: 'icons') — OPEN TICKET
 
-A minimal `\usepackage{fontawesome5}` + `\faLink` document hard-crashes the
-Windows Tectonic build (silent exit 116/127, fontconfig error at startup, no
-log). Linux verdict comes from the `docker-build` CI job, which compiles the
-icons variant via `warmTectonicCache.js` at image build time. If CI is green
-this is a Windows-dev-machine caveat only; if red, the `links: 'icons'`
-design token compiles nowhere and needs a redesign (see M2.5 step 4 outcome
-in the PR that added this file).
+SETTLED 2026-07-12 by the docker-build CI job: **the crash is NOT
+Windows-only.** On ubuntu-latest the image build compiled warm variants 1-12
+(all templates, all fonts) and died at exactly
+`[warm 13/15] sheets {"links":"icons"}` — the same silent hard-crash while
+loading `FontAwesome5Free-Solid-900.otf` observed natively on Windows (where
+even a minimal `\faLink` document kills tectonic, exit 116/127, no TeX log).
+
+Current state (M2.5 step 4 FAIL branch, per plan):
+- `DEFAULT_DESIGN.links` is `'hyperlink'` (always was).
+- The fontawesome5 variant is removed from `warmTectonicCache.js` so the
+  image can build; the icons option is labeled
+  "experimental — may fail to compile" in the Design panel, not dropped.
+- A user who selects icons today gets a failed compile with no useful log
+  (tectonic aborts before writing one).
+
+Fix directions to evaluate: newer Tectonic release (bundle may carry a fixed
+font), `fontawesome` v4 package instead of v5, shipping the OTF outside the
+bundle, or emoji/text glyph fallbacks for the 4 icons actually used
+(faLink, faLinkedin, faBook, faCertificate + contact icons in helpers.js).

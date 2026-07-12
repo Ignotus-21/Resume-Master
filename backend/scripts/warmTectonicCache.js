@@ -22,7 +22,12 @@ const variants = [
   // Every font once (cheapest template).
   ...FONTS.map((font) => ({ templateId: 'sheets', design: { font } })),
   // Extra-package variants.
-  { templateId: 'sheets', design: { links: 'icons' } }, // fontawesome5
+  // links:'icons' (fontawesome5) is deliberately ABSENT: loading
+  // FontAwesome5Free-Solid-900.otf hard-crashes Tectonic 0.16.9 (silent
+  // abort, no TeX error) on BOTH Windows and Linux — confirmed by the
+  // docker-build CI job failing at exactly this variant on ubuntu-latest.
+  // Until that's fixed the icons link style cannot compile anywhere; it is
+  // labeled experimental in the Design panel. See plan/BACKLOG.md.
   { templateId: 'sheets', design: { columns: 2, headerStyle: 'two-column' } }, // multicol, tabularx
   { templateId: 'sheets', design: { fontSize: 10.5 } }, // fontsize
 ];

@@ -1,6 +1,8 @@
 const { trackUsage } = require('../utils/trackUsage');
 const { refundReservation } = require('./quotaService');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
+const { AiError } = require('../utils/aiError');
+const { GEMINI_CALLS, parseAndValidate } = require('./geminiSchemas');
 
 const MODEL_NAME = process.env.GEMINI_MODEL || "gemini-3.5-flash";
 
@@ -15,52 +17,57 @@ const getModel = (apiKey) => {
   return defaultClient.getGenerativeModel({ model: MODEL_NAME });
 };
 
-const parseResumeData = async (input, apiKey, req = null) => {
+// Every Gemini call goes through here. Structured output (responseMimeType +
+// responseSchema) means the model decodes straight into the call's schema —
+// no prose, no markdown fences, so nothing here ever strips ``` from a
+// response; a payload that still needs that is a schema bug to chase, not a
+// case to handle. parseAndValidate then rejects anything schema-adjacent but
+// wrong (see geminiSchemas.js).
+//
+// trackUsage — which trues up the quota reservation to real cost — runs only
+// AFTER the payload is proven usable. Any failure before that (upstream
+// error, unreadable JSON, schema violation) lands in the catch with the
+// reservation still outstanding, so refundReservation gives it back and the
+// user isn't charged for a response they never got to use.
+const generateJson = async ({ apiKey, req, service, call, label, parts }) => {
   const model = getModel(apiKey);
+  let tracked = false;
+  try {
+    const result = await model.generateContent({
+      contents: [{ role: 'user', parts }],
+      generationConfig: {
+        responseMimeType: 'application/json',
+        responseSchema: call.schema,
+      },
+    });
+    const response = await result.response;
+    const data = parseAndValidate(response.text(), call, label);
+    if (req) { await trackUsage(req, service, result); tracked = true; }
+    return data;
+  } catch (error) {
+    console.error(`Gemini ${label} error:`, error.detail || error);
+    if (req && !tracked) await refundReservation(req).catch(() => {});
+    if (error instanceof AiError) throw error;
+    throw new AiError('The AI service is currently unavailable. Please try again shortly.', {
+      code: 'AI_UNAVAILABLE',
+      cause: error,
+    });
+  }
+};
+
+const parseResumeData = async (input, apiKey, req = null) => {
   const isBuffer = Buffer.isBuffer(input);
-  
+
+  // The output shape is enforced by the response schema; the prompt only has
+  // to carry the semantic rules the schema can't express.
   const systemInstruction = `
-    You are a strict Resume Parsing Agent. Your ONLY task is to extract data from the resume into the EXACT JSON format below.
-    
+    You are a strict Resume Parsing Agent. Extract data from the resume into the required JSON structure.
+
     RULES:
-    1. Output MUST be valid JSON. No markdown, no code blocks, no intro/outro text.
-    2. If a field is missing, use "" (empty string) or [] (empty array). DO NOT use null or undefined.
-    3. Standardize dates to "Month YYYY" format if possible.
-    4. "skills" must be an object with keys: languages, frameworks, tools, other. Categorize intelligently.
-    5. UNKNOWN SECTIONS: If you find sections not listed below (e.g. "Awards", "Speaking", "Leadership"), put them in 'customSections'.
-    
-    REQUIRED JSON STRUCTURE:
-    {
-      "user": {
-        "name": "", "email": "", "phone": "", "linkedin": "", "github": "", "website": "", "location": "", "address": ""
-      },
-      "experience": [{
-        "company": "", "role": "", "startDate": "", "endDate": "", "isCurrent": false, "location": "",
-        "bulletPoints": [], "keywords": []
-      }],
-      "education": [{
-        "institution": "", "degree": "", "fieldOfStudy": "", "startDate": "", "endDate": "", "gpa": "",
-        "coursework": [] 
-      }],
-      "projects": [{
-        "title": "", "techStack": [], "description": "", "link": "", "bulletPoints": []
-      }],
-      "skills": {
-        "languages": [], "frameworks": [], "tools": [], "other": []
-      },
-      "certificates": [{ "name": "", "issuer": "", "date": "", "link": "" }],
-      "achievements": [{ "title": "", "description": "", "date": "" }],
-      "hobbies": [],
-      "publications": [{ "title": "", "link": "", "date": "", "description": "" }],
-      "volunteering": [{ "organization": "", "role": "", "startDate": "", "endDate": "", "description": "" }],
-      "patents": [{ "title": "", "number": "", "date": "", "link": "", "description": "" }],
-      "customSections": [{
-        "title": "Section Name",
-        "items": [{
-          "title": "", "subtitle": "", "date": "", "link": "", "description": "", "bullets": []
-        }]
-      }]
-    }
+    1. If a field is missing, use "" (empty string) or [] (empty array). DO NOT invent data.
+    2. Standardize dates to "Month YYYY" format if possible.
+    3. Categorize skills intelligently across languages, frameworks, tools, other.
+    4. UNKNOWN SECTIONS: If you find sections that fit none of the named ones (e.g. "Awards", "Speaking", "Leadership"), put them in 'customSections'.
   `;
 
   let parts = [];
@@ -78,55 +85,40 @@ const parseResumeData = async (input, apiKey, req = null) => {
       parts = [{ text: `${systemInstruction}\n\nText to parse:\n${input}` }];
   }
 
-  let tracked = false;
-  try {
-    const result = await model.generateContent(parts);
-    if (req) { await trackUsage(req, 'resume-parser', result); tracked = true; }
-    const response = await result.response;
-    const text = response.text();
-    // Clean up if markdown code blocks are present
-    const jsonStr = text.replace(/```json/g, '').replace(/```/g, '');
-    return JSON.parse(jsonStr);
-  } catch (error) {
-    console.error("Gemini Parse Error:", error);
-    if (req && !tracked) await refundReservation(req).catch(() => {});
-    throw new Error("Failed to parse resume data");
-  }
+  return generateJson({
+    apiKey,
+    req,
+    service: 'resume-parser',
+    call: GEMINI_CALLS.resumeContent,
+    label: 'resume parse',
+    parts,
+  });
 };
 
 const tailorResume = async (masterData, jobDescription, apiKey, req = null) => {
-  const model = getModel(apiKey);
   const prompt = `
     You are an ATS Resume Optimizer.
     I have a Master Resume Data (JSON) and a Job Description.
-    
+
     CRITICAL INSTRUCTIONS:
     1. **INCLUDE ALL SECTIONS**: You MUST include 'skills', 'certificates', 'achievements', 'projects', 'education', 'experience' if present in the master data.
     2. **DO NOT DROP SKILLS**: Include ALL technical skills from the master profile. Do not filter them out.
     3. **DO NOT DROP CERTIFICATES**: Include all certificates.
     4. **Tailor Descriptions**: Rewrite bullet points in 'experience' and 'projects' to highlight keywords from the Job Description.
-    5. **Structure**: Return valid JSON matching the Master Resume schema exactly.
-    
+
     Master Resume: ${JSON.stringify(masterData)}
-    
+
     Job Description: ${jobDescription}
-    
-    Return ONLY the tailored JSON.
   `;
-  
-  let tracked = false;
-  try {
-    const result = await model.generateContent(prompt);
-    if (req) { await trackUsage(req, 'resume-tailor', result); tracked = true; }
-    const response = await result.response;
-    const text = response.text();
-    const jsonStr = text.replace(/```json/g, '').replace(/```/g, '');
-    return JSON.parse(jsonStr);
-  } catch (error) {
-    console.error("Gemini Tailor Error:", error);
-    if (req && !tracked) await refundReservation(req).catch(() => {});
-    throw new Error("Failed to tailor resume");
-  }
+
+  return generateJson({
+    apiKey,
+    req,
+    service: 'resume-tailor',
+    call: GEMINI_CALLS.resumeContent,
+    label: 'resume tailor',
+    parts: [{ text: prompt }],
+  });
 };
 
 // v2 invariant: Gemini NEVER emits LaTeX. It does JSON->JSON content
@@ -134,7 +126,6 @@ const tailorResume = async (masterData, jobDescription, apiKey, req = null) => {
 // generateLatex() lived here — do not reintroduce anything like it.
 
 const rewriteBullet = async (bullet, roleContext, jobDescription, apiKey, req = null) => {
-  const model = getModel(apiKey);
   const prompt = `
     You are a resume writing coach. Rewrite the resume bullet point below.
 
@@ -142,7 +133,6 @@ const rewriteBullet = async (bullet, roleContext, jobDescription, apiKey, req = 
     1. Produce exactly 3 alternative rewrites: one tighter, one more metric-driven, one more impact-focused.
     2. Keep every rewrite truthful to the original — never invent metrics, tools, or scope that are not stated or clearly implied.
     3. Strong action verb first, no first person, no trailing period unless the original had one.
-    4. Return ONLY valid JSON: { "rewrites": ["...", "...", "..."] }. No markdown.
 
     Role context: ${roleContext || 'not specified'}
     ${jobDescription ? `Target job description (optimize keyword relevance): ${jobDescription}` : ''}
@@ -150,57 +140,45 @@ const rewriteBullet = async (bullet, roleContext, jobDescription, apiKey, req = 
     Bullet: ${bullet}
   `;
 
-  let tracked = false;
-  try {
-    const result = await model.generateContent(prompt);
-    if (req) { await trackUsage(req, 'bullet-rewrite', result); tracked = true; }
-    const response = await result.response;
-    const text = response.text().replace(/```json/g, '').replace(/```/g, '');
-    const parsed = JSON.parse(text);
-    return Array.isArray(parsed.rewrites) ? parsed.rewrites.slice(0, 3).map(String) : [];
-  } catch (error) {
-    console.error("Gemini Rewrite Error:", error);
-    if (req && !tracked) await refundReservation(req).catch(() => {});
-    throw new Error("Failed to rewrite bullet");
-  }
+  const data = await generateJson({
+    apiKey,
+    req,
+    service: 'bullet-rewrite',
+    call: GEMINI_CALLS.rewriteBullet,
+    label: 'bullet rewrite',
+    parts: [{ text: prompt }],
+  });
+  return data.rewrites;
 };
 
 const suggestTitles = async (role, jobDescription, apiKey, req = null) => {
-  const model = getModel(apiKey);
   const prompt = `
-    You are a resume coach. Suggest job title variants for the candidate's role
-    that better match the target job description.
+    You are a resume coach. Suggest 3-5 job title variants for the candidate's
+    role that better match the target job description.
 
     HONESTY GUARDRAIL: suggest only truthful variants of the SAME role — you may
     modernize wording or align vocabulary with the JD, but NEVER inflate
     seniority, scope, or responsibilities.
 
-    Return ONLY valid JSON: { "titles": ["...", "..."] } with 3-5 titles. No markdown.
-
     Candidate's actual role: ${JSON.stringify(role)}
     Target job description: ${jobDescription}
   `;
 
-  let tracked = false;
-  try {
-    const result = await model.generateContent(prompt);
-    if (req) { await trackUsage(req, 'title-suggest', result); tracked = true; }
-    const response = await result.response;
-    const text = response.text().replace(/```json/g, '').replace(/```/g, '');
-    const parsed = JSON.parse(text);
-    return Array.isArray(parsed.titles) ? parsed.titles.slice(0, 5).map(String) : [];
-  } catch (error) {
-    console.error("Gemini Titles Error:", error);
-    if (req && !tracked) await refundReservation(req).catch(() => {});
-    throw new Error("Failed to suggest titles");
-  }
+  const data = await generateJson({
+    apiKey,
+    req,
+    service: 'title-suggest',
+    call: GEMINI_CALLS.suggestTitles,
+    label: 'title suggest',
+    parts: [{ text: prompt }],
+  });
+  return data.titles;
 };
 
 // The "Work Experience Assistant": with no answer, asks ONE follow-up
 // question to extract scale/outcome/tools; with the user's answer, drafts a
 // STAR-style bullet from it.
 const bulletCoach = async ({ bullet, roleContext, answer }, apiKey, req = null) => {
-  const model = getModel(apiKey);
   const prompt = answer
     ? `
     You are a resume coach. The candidate had this weak bullet: ${JSON.stringify(bullet)}
@@ -208,72 +186,52 @@ const bulletCoach = async ({ bullet, roleContext, answer }, apiKey, req = null) 
     You asked for more detail and they answered: ${JSON.stringify(answer)}
 
     Draft ONE strong STAR-style resume bullet using only facts from the bullet
-    and their answer. Never invent metrics. Return ONLY valid JSON:
-    { "bullet": "..." }. No markdown.
+    and their answer. Never invent metrics.
   `
     : `
     You are a resume coach. This bullet is thin: ${JSON.stringify(bullet)}
     (role: ${roleContext || 'not specified'}).
 
     Ask ONE short follow-up question that would extract the most valuable
-    missing detail (scale, measurable outcome, or tools used). Return ONLY
-    valid JSON: { "question": "..." }. No markdown.
+    missing detail (scale, measurable outcome, or tools used).
   `;
 
-  let tracked = false;
-  try {
-    const result = await model.generateContent(prompt);
-    if (req) { await trackUsage(req, 'bullet-coach', result); tracked = true; }
-    const response = await result.response;
-    const text = response.text().replace(/```json/g, '').replace(/```/g, '');
-    return JSON.parse(text);
-  } catch (error) {
-    console.error("Gemini Coach Error:", error);
-    if (req && !tracked) await refundReservation(req).catch(() => {});
-    throw new Error("Failed to coach bullet");
-  }
+  return generateJson({
+    apiKey,
+    req,
+    service: 'bullet-coach',
+    call: answer ? GEMINI_CALLS.coachBullet : GEMINI_CALLS.coachQuestion,
+    label: 'bullet coach',
+    parts: [{ text: prompt }],
+  });
 };
 
 const getRecommendations = async (masterData, jobDescription, apiKey, req = null) => {
-  const model = getModel(apiKey);
   const prompt = `
     You are an expert Career Coach and ATS Analyst.
     Analyze the Candidate's Master Profile against the provided Job Description.
-    
+
     Job Description:
     ${jobDescription}
-    
+
     Candidate Profile:
     ${JSON.stringify(masterData)}
-    
-    Provide a detailed JSON response with the following structure:
-    {
-      "matchScore": number (0-100),
-      "missingSkills": [string],
-      "missingKeywords": [string],
-      "improvements": [string] (specific advice on what to add or change),
-      "gapAnalysis": string (summary of fit)
-    }
-    Return ONLY valid JSON. Do not include markdown formatting.
+
+    Report: a matchScore from 0-100, the skills and keywords missing from the
+    profile, specific improvements to make, and a gapAnalysis summarizing fit.
   `;
-  
-  let tracked = false;
-  try {
-    const result = await model.generateContent(prompt);
-    if (req) { await trackUsage(req, 'other', result); tracked = true; }
-    const response = await result.response;
-    const text = response.text();
-    const jsonStr = text.replace(/```json/g, '').replace(/```/g, '');
-    return JSON.parse(jsonStr);
-  } catch (error) {
-    console.error("Gemini Recommendation Error:", error);
-    if (req && !tracked) await refundReservation(req).catch(() => {});
-    throw new Error("Failed to get recommendations");
-  }
+
+  return generateJson({
+    apiKey,
+    req,
+    service: 'other',
+    call: GEMINI_CALLS.recommendations,
+    label: 'recommendations',
+    parts: [{ text: prompt }],
+  });
 };
 
 const generateCoverLetter = async (masterData, jobDescription, options, apiKey, req = null) => {
-  const model = getModel(apiKey);
   const tone = options?.tone || 'Professional';
   const length = options?.length || 'Medium';
 
@@ -287,28 +245,25 @@ const generateCoverLetter = async (masterData, jobDescription, options, apiKey, 
     3. Use concrete achievements from the candidate profile that match the job's requirements.
     4. Do NOT invent facts, employers, or metrics that are not in the profile.
     5. Structure: greeting, a strong opening hook, 1-2 body paragraphs mapping experience to the role, and a confident closing with a call to action.
-    6. Return ONLY the cover letter text. No markdown, no commentary, no placeholders like [Company] unless the info is genuinely missing.
+    6. Write plain prose — no markdown, no commentary, no placeholders like [Company] unless the info is genuinely missing.
 
     Candidate Profile: ${JSON.stringify(masterData)}
 
     Job Description: ${jobDescription}
   `;
 
-  let tracked = false;
-  try {
-    const result = await model.generateContent(prompt);
-    if (req) { await trackUsage(req, 'cover-letter', result); tracked = true; }
-    const response = await result.response;
-    return response.text().replace(/```/g, '').trim();
-  } catch (error) {
-    console.error("Gemini Cover Letter Error:", error);
-    if (req && !tracked) await refundReservation(req).catch(() => {});
-    throw new Error("Failed to generate cover letter");
-  }
+  const data = await generateJson({
+    apiKey,
+    req,
+    service: 'cover-letter',
+    call: GEMINI_CALLS.coverLetter,
+    label: 'cover letter',
+    parts: [{ text: prompt }],
+  });
+  return data.body.trim();
 };
 
 const generateInterviewQuestions = async (jobDescription, masterData, apiKey, req = null) => {
-  const model = getModel(apiKey);
   const prompt = `
     You are an experienced technical and behavioral interviewer.
     Based on the job description (and candidate background if provided), produce a set of realistic interview questions.
@@ -316,88 +271,63 @@ const generateInterviewQuestions = async (jobDescription, masterData, apiKey, re
     RULES:
     1. Return 6 questions: a mix of behavioral, role-specific technical, and situational.
     2. Order them from warm-up to more challenging.
-    3. Return ONLY valid JSON: { "questions": ["...", "..."] }. No markdown.
 
     Job Description: ${jobDescription}
 
     Candidate Background (optional): ${JSON.stringify(masterData || {})}
   `;
 
-  let tracked = false;
-  try {
-    const result = await model.generateContent(prompt);
-    if (req) { await trackUsage(req, 'interview-prep', result); tracked = true; }
-    const response = await result.response;
-    const text = response.text().replace(/```json/g, '').replace(/```/g, '');
-    const parsed = JSON.parse(text);
-    return Array.isArray(parsed.questions) ? parsed.questions : [];
-  } catch (error) {
-    console.error("Gemini Interview Questions Error:", error);
-    if (req && !tracked) await refundReservation(req).catch(() => {});
-    throw new Error("Failed to generate interview questions");
-  }
+  const data = await generateJson({
+    apiKey,
+    req,
+    service: 'interview-prep',
+    call: GEMINI_CALLS.interviewQuestions,
+    label: 'interview questions',
+    parts: [{ text: prompt }],
+  });
+  return data.questions;
 };
 
 const evaluateInterviewAnswer = async (question, answer, jobDescription, apiKey, req = null) => {
-  const model = getModel(apiKey);
   const prompt = `
     You are an interview coach. Evaluate the candidate's answer to an interview question.
+    Give a score from 0-100 and 2-4 sentences of feedback: what was strong,
+    what to improve, and a concrete tip.
 
     Question: ${question}
     Candidate's Answer: ${answer}
     Job Context: ${jobDescription || 'General role'}
-
-    Return ONLY valid JSON with this structure:
-    {
-      "score": number (0-100),
-      "feedback": string (2-4 sentences: what was strong, what to improve, and a concrete tip)
-    }
-    No markdown.
   `;
 
-  let tracked = false;
-  try {
-    const result = await model.generateContent(prompt);
-    if (req) { await trackUsage(req, 'interview-prep', result); tracked = true; }
-    const response = await result.response;
-    const text = response.text().replace(/```json/g, '').replace(/```/g, '');
-    return JSON.parse(text);
-  } catch (error) {
-    console.error("Gemini Interview Eval Error:", error);
-    if (req && !tracked) await refundReservation(req).catch(() => {});
-    throw new Error("Failed to evaluate answer");
-  }
+  return generateJson({
+    apiKey,
+    req,
+    service: 'interview-prep',
+    call: GEMINI_CALLS.interviewEvaluation,
+    label: 'interview evaluation',
+    parts: [{ text: prompt }],
+  });
 };
 
 const generateLinkedInContent = async (masterData, apiKey, req = null) => {
-  const model = getModel(apiKey);
   const prompt = `
     You are a LinkedIn personal-branding expert.
-    Using the candidate's profile, write optimized LinkedIn content.
-
-    Return ONLY valid JSON with this structure:
-    {
-      "headline": string (max 220 chars, keyword-rich, punchy),
-      "about": string (first-person "About" section, 3-5 short paragraphs),
-      "experienceHighlights": [string] (5-7 achievement-oriented bullet points suitable for LinkedIn experience entries)
-    }
-    Do NOT invent facts not present in the profile. No markdown.
+    Using the candidate's profile, write optimized LinkedIn content: a punchy
+    keyword-rich headline (max 220 chars), a first-person "About" section of
+    3-5 short paragraphs, and 5-7 achievement-oriented experience highlights.
+    Do NOT invent facts not present in the profile.
 
     Candidate Profile: ${JSON.stringify(masterData)}
   `;
 
-  let tracked = false;
-  try {
-    const result = await model.generateContent(prompt);
-    if (req) { await trackUsage(req, 'linkedin-optimizer', result); tracked = true; }
-    const response = await result.response;
-    const text = response.text().replace(/```json/g, '').replace(/```/g, '');
-    return JSON.parse(text);
-  } catch (error) {
-    console.error("Gemini LinkedIn Error:", error);
-    if (req && !tracked) await refundReservation(req).catch(() => {});
-    throw new Error("Failed to generate LinkedIn content");
-  }
+  return generateJson({
+    apiKey,
+    req,
+    service: 'linkedin-optimizer',
+    call: GEMINI_CALLS.linkedin,
+    label: 'linkedin content',
+    parts: [{ text: prompt }],
+  });
 };
 
 module.exports = {

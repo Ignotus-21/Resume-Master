@@ -1,6 +1,7 @@
 const MasterProfile = require('../models/MasterProfile');
 const { parseResumeData } = require('../services/geminiService');
 const { enforceGeminiQuota } = require('../utils/geminiGate');
+const { respondError } = require('../utils/aiError');
 const fs = require('fs');
 const pdfParse = require('pdf-parse');
 
@@ -98,7 +99,7 @@ const ingestRawText = async (req, res) => {
     res.json(profile);
   } catch (error) {
     console.error('Ingest Text Error:', error);
-    res.status(500).json({ message: 'Failed to parse text' });
+    respondError(res, error, 'Failed to parse text');
   }
 };
 
@@ -137,7 +138,7 @@ const uploadResume = async (req, res) => {
     if (req.file?.path && fs.existsSync(req.file.path)) {
       fs.unlinkSync(req.file.path);
     }
-    res.status(500).json({ message: 'Failed to process resume' });
+    respondError(res, error, 'Failed to process resume');
   }
 };
 

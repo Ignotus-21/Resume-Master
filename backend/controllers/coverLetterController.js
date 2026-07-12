@@ -3,6 +3,7 @@ const MasterProfile = require('../models/MasterProfile');
 const Job = require('../models/Job');
 const { generateCoverLetter } = require('../services/geminiService');
 const { enforceGeminiQuota } = require('../utils/geminiGate');
+const { respondError } = require('../utils/aiError');
 
 const ALLOWED_UPDATE_FIELDS = ['versionName', 'body', 'tone'];
 const pickAllowed = (body) => {
@@ -57,7 +58,7 @@ const generate = async (req, res) => {
     res.json(coverLetter);
   } catch (error) {
     console.error('Cover Letter error:', error);
-    res.status(500).json({ message: 'Something went wrong' });
+    respondError(res, error);
   }
 };
 

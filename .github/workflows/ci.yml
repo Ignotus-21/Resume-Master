@@ -24,7 +24,16 @@ jobs:
       # The Jest suite mocks all Mongoose models (see tests/*.test.js), so no
       # MongoDB service is needed here.
       - run: npm ci
-      - run: npm test
+      # On failure, surface the failing test names + summary as annotations
+      # so the reason is visible without opening the raw log (annotations
+      # are also readable through the public API on this repo).
+      - run: |
+          set -o pipefail
+          npm test 2>&1 | tee test.log || {
+            grep -E "✕|● " test.log | sort -u | head -n 10 | while IFS= read -r l; do echo "::error::TEST: $l"; done
+            grep -E "^Tests:" test.log | while IFS= read -r l; do echo "::error::$l"; done
+            exit 1
+          }
 
   # Builds the backend image on real Linux. The image build runs
   # scripts/warmTectonicCache.js, which compiles every template / font /
@@ -42,7 +51,18 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - run: docker build -f backend/Dockerfile backend
+      # --progress=plain so the [warm N/15] lines from warmTectonicCache.js
+      # appear in the log; on failure the tail is annotated so the failing
+      # variant is identifiable without opening the raw log.
+      - run: |
+          set -o pipefail
+          docker build --progress=plain -f backend/Dockerfile backend 2>&1 | tee build.log || {
+            echo "--- tail of failed docker build ---"
+            tail -n 60 build.log
+            tail -n 12 build.log | while IFS= read -r l; do echo "::error::DOCKER: $l"; done
+            grep -E "\[warm [0-9]+/" build.log | tail -n 3 | while IFS= read -r l; do echo "::error::LAST WARM STEPS: $l"; done
+            exit 1
+          }
 
   frontend:
     runs-on: ubuntu-latest

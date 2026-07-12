@@ -58,9 +58,12 @@ jobs:
           set -o pipefail
           docker build --progress=plain -f backend/Dockerfile backend 2>&1 | tee build.log || {
             echo "--- tail of failed docker build ---"
-            tail -n 60 build.log
-            tail -n 12 build.log | while IFS= read -r l; do echo "::error::DOCKER: $l"; done
-            grep -E "\[warm [0-9]+/" build.log | tail -n 3 | while IFS= read -r l; do echo "::error::LAST WARM STEPS: $l"; done
+            tail -n 80 build.log
+            # GitHub caps annotations at 10 per step — be surgical: the error
+            # lines themselves, the last warm-variant marker, then a short tail.
+            grep -inE "error|cannot find|throw|enoent" build.log | tail -n 5 | while IFS= read -r l; do echo "::error::DOCKER-ERR: $l"; done
+            grep -E "\[warm [0-9]+/" build.log | tail -n 1 | while IFS= read -r l; do echo "::error::LAST-WARM: $l"; done
+            tail -n 30 build.log | head -n 4 | while IFS= read -r l; do echo "::error::DOCKER-TAIL: $l"; done
             exit 1
           }
 

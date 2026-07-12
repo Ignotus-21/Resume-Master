@@ -12,7 +12,9 @@ const os = require('os');
 const path = require('path');
 const { render, TEMPLATES } = require('../services/latex/render');
 const { validateDesign, FONTS } = require('../shared/resume');
-const { profile } = require('../tests/fixtures/profile');
+// From shared/, not tests/: the image build excludes tests/ (this exact
+// require crashed the first Linux docker-build in CI with MODULE_NOT_FOUND).
+const { profile } = require('../shared/fixtureProfile');
 
 const variants = [
   // Every template with defaults.

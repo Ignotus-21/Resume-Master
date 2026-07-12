@@ -53,6 +53,23 @@ const colorPreamble = (design) => {
 const sectionRule = (design) =>
   design.sectionRule === 'line' ? '[\\color{accent}\\titlerule]' : '';
 
+// Placed before every \section: if less than ~a heading plus one content
+// line remains on the page, break early instead of orphaning the heading at
+// the page bottom. Needs \usepackage{needspace} (see pageBreakPreamble).
+const SECTION_GUARD = '\\needspace{4\\baselineskip}';
+
+// Page-break quality: needspace for the section guard above, \raggedbottom
+// so the early breaks it forces never stretch inter-section glue (also the
+// article/oneside default — stated here so it's deliberate), and max
+// club/widow penalties so a bullet's first or last line is never split from
+// the rest of the bullet across a page break.
+const pageBreakPreamble = () => [
+  '\\usepackage{needspace}',
+  '\\raggedbottom',
+  '\\clubpenalty=10000',
+  '\\widowpenalty=10000',
+].join('\n');
+
 const bulletLabel = (design) => {
   // ▪ as a plain \rule square avoids pulling in amssymb just for a bullet.
   const map = { '•': '\\textbullet', '–': '--', '▪': '\\rule{3pt}{3pt}' };
@@ -69,4 +86,6 @@ module.exports = {
   colorPreamble,
   sectionRule,
   bulletLabel,
+  SECTION_GUARD,
+  pageBreakPreamble,
 };

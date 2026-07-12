@@ -17,7 +17,9 @@ const { validateDesign, FONTS } = require('../shared/resume');
 const { profile } = require('../shared/fixtureProfile');
 
 const variants = [
-  // Every template with defaults.
+  // Every template with defaults. Unconditional preamble packages (titlesec,
+  // enumitem, setspace, xcolor, hyperref, needspace, ...) are cached by these
+  // four alone — only design-gated packages need extra variants below.
   ...TEMPLATES.map((templateId) => ({ templateId, design: {} })),
   // Every font once (cheapest template).
   ...FONTS.map((font) => ({ templateId: 'sheets', design: { font } })),

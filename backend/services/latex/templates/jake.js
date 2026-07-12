@@ -190,7 +190,7 @@ module.exports = (content, design) => {
     '\\usepackage[hidelinks]{hyperref}',
     '\\urlstyle{same}',
     '\\pagestyle{empty}',
-    '\\raggedbottom',
+    tokens.pageBreakPreamble(), // includes \raggedbottom (was standalone here)
     '\\raggedright',
     '\\setlength{\\tabcolsep}{0in}',
     `\\titleformat{\\section}{\\vspace{-4pt}\\scshape\\raggedright\\large\\color{accent}}{}{0em}{}${rule}`,
@@ -224,6 +224,7 @@ module.exports = (content, design) => {
       return (content.customSections || [])
         .filter((s) => hasItems(s.items))
         .map((s) => [
+          tokens.SECTION_GUARD,
           `\\section{${escapeLatex(s.title || 'Additional')}}`,
           '  \\resumeSubHeadingListStart',
           customSectionBody(s, design),
@@ -233,7 +234,7 @@ module.exports = (content, design) => {
     }
     const body = bodies[key]();
     if (!body) return '';
-    const heading = `\\section{${escapeLatex(sectionTitle(key, design))}}`;
+    const heading = `${tokens.SECTION_GUARD}\n\\section{${escapeLatex(sectionTitle(key, design))}}`;
     if (SELF_CONTAINED.has(key)) return `${heading}\n${body}`;
     return [heading, '  \\resumeSubHeadingListStart', body, '  \\resumeSubHeadingListEnd'].join('\n');
   }).filter(Boolean).join('\n\n');

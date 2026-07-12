@@ -112,10 +112,25 @@ const getResumeById = async (req, res) => {
 
 const updateResume = async (req, res) => {
   try {
-    const { versionName, content, design, templateId, mode, latexSource } = req.body;
+    const { versionName, content, design, templateId, mode, latexSource, baseUpdatedAt } = req.body;
 
     const resume = await Resume.findOne({ _id: req.params.id, owner: req.identity });
     if (!resume) return res.status(404).json({ message: 'Resume not found' });
+
+    // Concurrent-edit detection (same resume open in two tabs/sessions).
+    // baseUpdatedAt is the updatedAt the client loaded; if the stored doc has
+    // moved past it, someone else wrote in between. Last-write-wins is the
+    // accepted v1 behavior — this save still applies — but the response
+    // carries conflict:true so the client can warn instead of clobbering
+    // silently. Clients that don't send baseUpdatedAt are unaffected.
+    let conflict = false;
+    if (typeof baseUpdatedAt === 'string' && baseUpdatedAt) {
+      const base = Date.parse(baseUpdatedAt);
+      conflict =
+        Number.isFinite(base) &&
+        resume.updatedAt instanceof Date &&
+        resume.updatedAt.getTime() > base;
+    }
 
     if (typeof versionName === 'string' && versionName.trim()) resume.versionName = versionName;
     if (content && typeof content === 'object') resume.content = content;
@@ -143,7 +158,9 @@ const updateResume = async (req, res) => {
 
     await resume.save();
     await resume.populate('job');
-    res.json(withLatex(resume));
+    const payload = withLatex(resume);
+    if (conflict) payload.conflict = true;
+    res.json(payload);
   } catch (error) {
     console.error('Resume error:', error);
     res.status(500).json({ message: 'Something went wrong' });

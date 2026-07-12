@@ -2,16 +2,20 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { apiFetch, apiJson } from '@/lib/api';
 import { useToast } from '@/components/ui/Toast';
+import { createAutosaver, type Autosaver, type AutosaveState } from '@/lib/autosave';
 import type { ResumeDocument, ResumeContent, DesignTokens, TemplateId, CompileError } from '@/lib/resumeSchema';
 import { DEFAULT_DESIGN } from '@/lib/resumeSchema';
 
 // All data/API state for the resume workspace: list + job fetching,
 // generation, the compile pipeline (debounced, cancellable, cache-friendly),
-// saving, eject/revert, duplication and feedback. Pure UI state stays in the
-// components.
+// saving (autosave with retry), eject/revert, duplication and feedback. Pure
+// UI state stays in the components.
 
 const AUTO_COMPILE_KEY = 'rm.autoCompile';
 const COMPILE_DEBOUNCE_MS = 800;
+// Deliberately a separate debounce from COMPILE_DEBOUNCE_MS: how often the
+// preview refreshes and how often work is persisted are unrelated concerns.
+const AUTOSAVE_DEBOUNCE_MS = 1500;
 
 export function useWorkspace(preSelectedJobId: string | null) {
   const { showToast } = useToast();
@@ -26,7 +30,17 @@ export function useWorkspace(preSelectedJobId: string | null) {
 
   // The open document (editable working copy).
   const [doc, setDoc] = useState<ResumeDocument | null>(null);
-  const [dirty, setDirty] = useState(false);
+  // Autosave state drives the top-bar indicator; `dirty` is derived from it.
+  const [saveState, setSaveState] = useState<AutosaveState>('saved');
+  const dirty = saveState !== 'saved';
+  const autosaveRef = useRef<Autosaver | null>(null);
+  // The autosaver reads the document through this ref at save time, so a
+  // retry after more edits always persists the LATEST state, never a stale
+  // snapshot captured when the save was first scheduled.
+  const docRef = useRef<ResumeDocument | null>(null);
+  useEffect(() => {
+    docRef.current = doc;
+  });
 
   // Compile state
   const [pdfData, setPdfData] = useState<string | null>(null);
@@ -80,12 +94,14 @@ export function useWorkspace(preSelectedJobId: string | null) {
   // --- selection ------------------------------------------------------------
 
   const selectResume = useCallback(async (r: ResumeDocument | null) => {
+    // Persist any pending edits on the outgoing document before switching —
+    // the autosaver still points at it until the new one loads.
+    await autosaveRef.current?.flush().catch(() => {});
     setRecommendations(null);
     setCompileErrors([]);
     setCompileLog(null);
     setPdfData(null);
     setPages(null);
-    setDirty(false);
     if (!r) {
       setDoc(null);
       setTex('');
@@ -107,24 +123,24 @@ export function useWorkspace(preSelectedJobId: string | null) {
 
   const patchDoc = useCallback((patch: Partial<ResumeDocument>) => {
     setDoc((d) => (d ? { ...d, ...patch } : d));
-    setDirty(true);
+    autosaveRef.current?.notifyChange();
   }, []);
 
   const setContent = useCallback((updater: (c: ResumeContent) => ResumeContent) => {
     setDoc((d) => (d ? { ...d, content: updater(d.content || {}) } : d));
-    setDirty(true);
+    autosaveRef.current?.notifyChange();
   }, []);
 
   const setDesign = useCallback((patch: Partial<DesignTokens>) => {
     setDoc((d) => (d ? { ...d, design: { ...(d.design || DEFAULT_DESIGN), ...patch } } : d));
-    setDirty(true);
+    autosaveRef.current?.notifyChange();
   }, []);
 
   const setTemplateId = useCallback((templateId: TemplateId) => patchDoc({ templateId }), [patchDoc]);
   const setLatexSource = useCallback((latexSource: string) => {
     setDoc((d) => (d ? { ...d, latexSource } : d));
     setTex(latexSource);
-    setDirty(true);
+    autosaveRef.current?.notifyChange();
   }, []);
 
   // --- compile --------------------------------------------------------------
@@ -190,33 +206,93 @@ export function useWorkspace(preSelectedJobId: string | null) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [compileKey, autoCompile]);
 
-  // --- persistence ----------------------------------------------------------
+  // --- persistence (autosave) -------------------------------------------------
 
-  const save = useCallback(async (extra?: Partial<ResumeDocument>) => {
-    if (!doc) return null;
-    setSaving(true);
-    try {
-      const payload: any = { versionName: doc.versionName, ...extra };
-      if (doc.mode === 'latex') {
-        payload.latexSource = doc.latexSource;
-      } else {
-        payload.content = doc.content;
-        payload.design = doc.design;
-        payload.templateId = doc.templateId;
-      }
-      const updated: ResumeDocument = await apiJson(`/api/resumes/${doc._id}`, 'PUT', payload);
-      setResumes((prev) => prev.map((r) => (r._id === updated._id ? updated : r)));
-      setDoc(updated);
-      setDirty(false);
-      return updated;
-    } catch (error: any) {
-      showToast(error.message || 'Failed to save resume', 'error');
-      return null;
-    } finally {
-      setSaving(false);
+  // The actual network save. Reads the document from docRef (latest state at
+  // call time) and sends baseUpdatedAt so the server can detect that another
+  // tab/session wrote this resume since we loaded it (last-write-wins, but
+  // surfaced instead of silent).
+  const performSave = useCallback(async () => {
+    const d = docRef.current;
+    if (!d) return;
+    const payload: any = { versionName: d.versionName, baseUpdatedAt: d.updatedAt };
+    if (d.mode === 'latex') {
+      payload.latexSource = d.latexSource;
+    } else {
+      payload.content = d.content;
+      payload.design = d.design;
+      payload.templateId = d.templateId;
     }
+    const updated: ResumeDocument & { conflict?: boolean } =
+      await apiJson(`/api/resumes/${d._id}`, 'PUT', payload);
+    if (updated.conflict) {
+      showToast(
+        'This resume was also edited in another tab or session — that version has been overwritten by this one.',
+        'info'
+      );
+    }
+    // Merge only server-authoritative fields. Replacing the whole doc would
+    // clobber keystrokes typed while this request was in flight; those edits
+    // stay local and the autosaver persists them on its next pass.
+    setDoc((cur) => (cur && cur._id === updated._id ? { ...cur, updatedAt: updated.updatedAt } : cur));
+    setResumes((prev) =>
+      prev.map((r) =>
+        r._id === updated._id ? { ...r, versionName: updated.versionName, updatedAt: updated.updatedAt } : r
+      )
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [doc]);
+  }, []);
+
+  // One autosaver per open document.
+  const docId = doc?._id || null;
+  useEffect(() => {
+    if (!docId) {
+      setSaveState('saved');
+      return;
+    }
+    const saver = createAutosaver({
+      save: performSave,
+      debounceMs: AUTOSAVE_DEBOUNCE_MS,
+      onStateChange: setSaveState,
+    });
+    autosaveRef.current = saver;
+    setSaveState('saved');
+    return () => {
+      saver.dispose();
+      if (autosaveRef.current === saver) autosaveRef.current = null;
+    };
+  }, [docId, performSave]);
+
+  // The tab must not close silently while edits exist only in this tab's
+  // memory — that's the one way autosave can still lose work.
+  const saveStateRef = useRef(saveState);
+  useEffect(() => {
+    saveStateRef.current = saveState;
+  });
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (saveStateRef.current !== 'saved') {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, []);
+
+  // Manual save (top-bar chip, title blur): force the autosaver to persist
+  // everything now instead of waiting out the debounce.
+  const save = useCallback(async () => {
+    const saver = autosaveRef.current;
+    if (!saver) return null;
+    const ok = await saver.flush();
+    if (!ok) {
+      showToast('Save failed — your changes are kept in this tab and will be retried.', 'error');
+      return null;
+    }
+    return docRef.current;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const eject = useCallback(async () => {
     if (!doc) return;
@@ -233,7 +309,8 @@ export function useWorkspace(preSelectedJobId: string | null) {
       setResumes((prev) => prev.map((r) => (r._id === updated._id ? updated : r)));
       setDoc(updated);
       setTex(updated.latexSource || '');
-      setDirty(false);
+      // This request already persisted the full document — nothing pending.
+      autosaveRef.current?.markClean();
       showToast('Ejected to LaTeX. The visual editor is disabled for this version.', 'info');
     } catch (error: any) {
       showToast(error.message || 'Failed to eject', 'error');
@@ -251,7 +328,7 @@ export function useWorkspace(preSelectedJobId: string | null) {
       setResumes((prev) => prev.map((r) => (r._id === updated._id ? updated : r)));
       setDoc(updated);
       setTex(updated.latex || '');
-      setDirty(false);
+      autosaveRef.current?.markClean();
       showToast('Reverted to the structured version. LaTeX edits were discarded.', 'info');
     } catch (error: any) {
       showToast(error.message || 'Failed to revert', 'error');
@@ -324,7 +401,7 @@ export function useWorkspace(preSelectedJobId: string | null) {
   return {
     resumes, jobs,
     selectedJobId, setSelectedJobId,
-    generating, analyzing, saving, dirty,
+    generating, analyzing, saving, dirty, saveState,
     recommendations,
     doc, selectResume, patchDoc, setContent, setDesign, setTemplateId, setLatexSource,
     pdfData, pages, tex, compileErrors, compileLog, isCompiling,

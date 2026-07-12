@@ -1,65 +1,149 @@
-import React, { useRef } from 'react';
-import Editor, { useMonaco } from '@monaco-editor/react';
+import React, { useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
+import Editor from '@monaco-editor/react';
+import type { CompileError } from '@/lib/resumeSchema';
 
 interface LatexEditorProps {
   value: string;
   onChange: (value: string | undefined) => void;
   onRecompile: () => void;
-  saving: boolean;
-  isCompiling: boolean;
+  readOnly?: boolean;
+  errors?: CompileError[];
+  onEject?: () => void;
 }
 
-export function LatexEditor({ value, onChange, onRecompile, saving, isCompiling }: LatexEditorProps) {
+export interface LatexEditorHandle {
+  /** Reveal a \section heading by its (rendered) title text. */
+  scrollToSection: (title: string) => void;
+}
+
+// Monaco doesn't ship a LaTeX language — register a small Monarch tokenizer
+// once so \commands, comments, math and braces highlight properly.
+const registerLatex = (monaco: any) => {
+  if (monaco.languages.getLanguages().some((l: any) => l.id === 'latex')) return;
+  monaco.languages.register({ id: 'latex' });
+  monaco.languages.setMonarchTokensProvider('latex', {
+    defaultToken: '',
+    tokenizer: {
+      root: [
+        [/%.*$/, 'comment'],
+        [/\\(?:begin|end)\b/, 'keyword'],
+        [/\\[a-zA-Z@]+\*?/, 'tag'],
+        [/\\[^a-zA-Z@]/, 'string.escape'],
+        [/\$\$?/, { token: 'string', next: '@math' }],
+        [/[{}[\]]/, 'delimiter'],
+        [/&/, 'delimiter'],
+      ],
+      math: [
+        [/\$\$?/, { token: 'string', next: '@pop' }],
+        [/\\[a-zA-Z@]+/, 'tag'],
+        [/[^$\\]+/, 'string'],
+        [/./, 'string'],
+      ],
+    },
+  });
+  monaco.languages.setLanguageConfiguration('latex', {
+    comments: { lineComment: '%' },
+    brackets: [['{', '}'], ['[', ']']],
+    autoClosingPairs: [
+      { open: '{', close: '}' },
+      { open: '[', close: ']' },
+      { open: '$', close: '$' },
+    ],
+  });
+};
+
+export const LatexEditor = forwardRef<LatexEditorHandle, LatexEditorProps>(function LatexEditor(
+  { value, onChange, onRecompile, readOnly = false, errors = [], onEject },
+  ref
+) {
+  const editorRef = useRef<any>(null);
+  const monacoRef = useRef<any>(null);
+  // Keep the latest recompile callback without re-registering the command.
+  const recompileRef = useRef(onRecompile);
+  recompileRef.current = onRecompile;
+
+  const handleEditorWillMount = (monaco: any) => {
+    registerLatex(monaco);
+  };
+
   const handleEditorDidMount = (editor: any, monaco: any) => {
-    // Add command for Cmd+S or Ctrl+S to save/recompile
+    editorRef.current = editor;
+    monacoRef.current = monaco;
+    // Cmd/Ctrl+S = recompile (Overleaf muscle memory).
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
-      onRecompile();
+      recompileRef.current();
     });
   };
 
+  // Structured compile errors -> gutter markers.
+  useEffect(() => {
+    const editor = editorRef.current;
+    const monaco = monacoRef.current;
+    if (!editor || !monaco) return;
+    const model = editor.getModel();
+    if (!model) return;
+    const markers = (errors || [])
+      .filter((e) => e.line !== null && e.line !== undefined)
+      .map((e) => ({
+        startLineNumber: Math.max(1, Math.min(e.line as number, model.getLineCount())),
+        endLineNumber: Math.max(1, Math.min(e.line as number, model.getLineCount())),
+        startColumn: 1,
+        endColumn: model.getLineMaxColumn(Math.max(1, Math.min(e.line as number, model.getLineCount()))),
+        message: e.message + (e.context ? `\n${e.context}` : ''),
+        severity: e.severity === 'error' ? monaco.MarkerSeverity.Error : monaco.MarkerSeverity.Warning,
+      }));
+    monaco.editor.setModelMarkers(model, 'latex-compile', markers);
+  }, [errors, value]);
+
+  // Outline navigation: reveal a \section heading by its title text.
+  useImperativeHandle(ref, () => ({
+    scrollToSection: (title: string) => {
+      const editor = editorRef.current;
+      const model = editor?.getModel();
+      if (!editor || !model) return;
+      const match = model.findNextMatch(title, { lineNumber: 1, column: 1 }, false, false, null, false);
+      if (match) editor.revealLineNearTop(match.range.startLineNumber);
+    },
+  }));
+
   return (
     <div className="flex flex-col h-full border border-[#dadce0] rounded-xl overflow-hidden bg-white">
-      <div className="flex justify-between items-center px-4 py-2 bg-[#f8f9fa] border-b border-[#dadce0]">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-[#202124]">main.tex</span>
-          {isCompiling && <span className="text-xs text-[#1a73e8] animate-pulse">Compiling...</span>}
-        </div>
-        <button
-          onClick={onRecompile}
-          disabled={saving || isCompiling}
-          className="bg-green-600 text-white px-4 py-1.5 rounded-lg text-sm font-semibold hover:bg-green-700 disabled:opacity-50 transition-colors flex items-center gap-2"
-        >
-          {saving || isCompiling ? (
-            <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-          ) : (
-             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
-             </svg>
+      {readOnly && (
+        <div className="flex items-center justify-between gap-3 px-4 py-2 bg-amber-50 border-b border-amber-200 text-amber-900 text-sm">
+          <span>
+            This LaTeX is generated from your content. Eject to edit it directly.
+          </span>
+          {onEject && (
+            <button
+              onClick={onEject}
+              className="shrink-0 border border-amber-400 text-amber-900 px-3 py-1 rounded-lg text-xs font-semibold hover:bg-amber-100 transition"
+            >
+              Eject to LaTeX
+            </button>
           )}
-          Recompile
-        </button>
-      </div>
+        </div>
+      )}
       <div className="flex-1 min-h-0 relative">
         <Editor
           height="100%"
-          defaultLanguage="latex"
+          language="latex"
           theme="light"
           value={value}
           onChange={onChange}
+          beforeMount={handleEditorWillMount}
           onMount={handleEditorDidMount}
           options={{
+            readOnly,
             minimap: { enabled: false },
             fontSize: 14,
-            wordWrap: "on",
+            wordWrap: 'on',
             padding: { top: 16 },
-            lineNumbers: "on",
+            lineNumbers: 'on',
             scrollBeyondLastLine: false,
+            renderValidationDecorations: 'on',
           }}
         />
       </div>
     </div>
   );
-}
+});

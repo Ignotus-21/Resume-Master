@@ -7,6 +7,7 @@ const { render } = require('../services/latex/render');
 const compileCache = require('../services/compileCache');
 const { enforceGeminiQuota } = require('../utils/geminiGate');
 const { validateDesign, TEMPLATE_IDS, DEFAULT_DESIGN } = require('../shared/resume');
+const { respondError } = require('../utils/aiError');
 
 // LaTeX is never a stored truth for structured resumes — it's derived here
 // on the way out. Ejected docs (mode 'latex') and unmigrated legacy rows
@@ -82,7 +83,7 @@ const createResumeForJob = async (req, res) => {
 
   } catch (error) {
     console.error('Resume error:', error);
-    res.status(500).json({ message: 'Something went wrong' });
+    respondError(res, error);
   }
 };
 
@@ -205,7 +206,7 @@ const getResumeFeedback = async (req, res) => {
     res.json(recommendations);
   } catch (error) {
     console.error('Resume error:', error);
-    res.status(500).json({ message: 'Something went wrong' });
+    respondError(res, error);
   }
 };
 

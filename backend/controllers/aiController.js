@@ -5,6 +5,7 @@ const { enforceGeminiQuota } = require('../utils/geminiGate');
 const { generateLinkedInContent } = require('../services/geminiService');
 const { trackUsage } = require('../utils/trackUsage');
 const { refundReservation } = require('../services/quotaService');
+const { respondError } = require('../utils/aiError');
 
 const CHAT_MODEL_NAME = process.env.GEMINI_MODEL || "gemini-3.5-flash";
 
@@ -144,7 +145,7 @@ const rewriteBulletHandler = async (req, res) => {
     res.json({ rewrites });
   } catch (error) {
     console.error('AI error:', error);
-    res.status(500).json({ message: 'Something went wrong' });
+    respondError(res, error);
   }
 };
 
@@ -168,7 +169,7 @@ const suggestTitlesHandler = async (req, res) => {
     res.json({ titles });
   } catch (error) {
     console.error('AI error:', error);
-    res.status(500).json({ message: 'Something went wrong' });
+    respondError(res, error);
   }
 };
 
@@ -189,7 +190,7 @@ const bulletCoachHandler = async (req, res) => {
     res.json(result);
   } catch (error) {
     console.error('AI error:', error);
-    res.status(500).json({ message: 'Something went wrong' });
+    respondError(res, error);
   }
 };
 
@@ -205,7 +206,7 @@ const linkedinRewrite = async (req, res) => {
     res.json(content);
   } catch (error) {
     console.error('AI error:', error);
-    res.status(500).json({ message: 'Something went wrong' });
+    respondError(res, error);
   }
 };
 

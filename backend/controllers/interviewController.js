@@ -3,6 +3,7 @@ const MasterProfile = require('../models/MasterProfile');
 const Job = require('../models/Job');
 const { generateInterviewQuestions, evaluateInterviewAnswer } = require('../services/geminiService');
 const { enforceGeminiQuota } = require('../utils/geminiGate');
+const { respondError } = require('../utils/aiError');
 
 const start = async (req, res) => {
   const { jobId, jdText } = req.body;
@@ -43,7 +44,7 @@ const start = async (req, res) => {
     res.json(session);
   } catch (error) {
     console.error('Interview error:', error);
-    res.status(500).json({ message: 'Something went wrong' });
+    respondError(res, error);
   }
 };
 
@@ -81,7 +82,7 @@ const answer = async (req, res) => {
     res.json({ feedback: evaluation.feedback, score: evaluation.score, turns: session.turns });
   } catch (error) {
     console.error('Interview error:', error);
-    res.status(500).json({ message: 'Something went wrong' });
+    respondError(res, error);
   }
 };
 

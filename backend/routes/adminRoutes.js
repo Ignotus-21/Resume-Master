@@ -5,8 +5,15 @@ const User = require('../models/User');
 const TokenUsage = require('../models/TokenUsage');
 const ActiveSession = require('../models/ActiveSession');
 const AppConfig = require('../models/AppConfig');
+const compileCache = require('../services/compileCache');
 
 const router = express.Router();
+
+// Compile-cache effectiveness counters (in-process, reset on restart) — the
+// baseline numbers Phase 2 compile-pipeline decisions are supposed to use.
+router.get('/compile-stats', adminAuth, (req, res) => {
+  res.json(compileCache.getStats());
+});
 
 router.get('/stats', adminAuth, async (req, res) => {
   try {

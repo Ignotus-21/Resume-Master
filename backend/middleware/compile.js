@@ -32,6 +32,7 @@ const prepareCompile = async (req, res, next) => {
   req.compileHash = compileCache.hashTex(req.compileTex);
   const cached = await compileCache.get(req.compileHash);
   if (cached) {
+    console.log(`[compile] cache hit hash=${req.compileHash.slice(0, 12)}`);
     return res.json({
       success: true,
       pdf: cached.pdf,

@@ -55,7 +55,11 @@ describe('POST /api/master/upload-resume', () => {
   });
 
   it('accepts a genuine small PDF', async () => {
-    const realPdf = Buffer.concat([Buffer.from('%PDF-1.4\n'), Buffer.from('minimal pdf body')]);
+    // fixtures/minimal.pdf is a real one-page PDF (compiled once with
+    // Tectonic). The previous inline fixture only had the %PDF- magic bytes
+    // and made pdf-parse throw InvalidPDFException, so this test always
+    // failed; pdf-parse also rejects hand-rolled minimal xref tables.
+    const realPdf = require('fs').readFileSync(require('path').join(__dirname, 'fixtures', 'minimal.pdf'));
     const res = await request(app)
       .post('/api/master/upload-resume')
       .attach('resume', realPdf, { filename: 'resume.pdf', contentType: 'application/pdf' });

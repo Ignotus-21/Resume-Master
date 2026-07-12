@@ -214,7 +214,9 @@ const getResumeFeedback = async (req, res) => {
 // compileLimiter.
 const compileResume = async (req, res) => {
   try {
+    const started = Date.now();
     const result = await compileLatex(req.compileTex);
+    console.log(`[compile] cache miss hash=${req.compileHash.slice(0, 12)} success=${result.success} durationMs=${Date.now() - started}`);
     if (result.success) {
       const payload = { pdf: result.pdf.toString('base64'), pages: result.pages };
       await compileCache.set(req.compileHash, payload);

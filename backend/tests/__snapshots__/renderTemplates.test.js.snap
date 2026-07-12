@@ -10,7 +10,7 @@ exports[`render: snapshots (fixture profile x templates x design variants) compa
 \\usepackage{enumitem}
 \\usepackage{xcolor}
 \\definecolor{accent}{HTML}{000000}
-\\usepackage[hidelinks]{hyperref}
+\\usepackage[hidelinks,bookmarks=false]{hyperref}
 \\pagestyle{empty}
 \\setlength{\\parindent}{0pt}
 \\titleformat{\\section}{\\normalsize\\bfseries}{}{0em}{}[\\color{accent}\\titlerule]
@@ -97,7 +97,7 @@ exports[`render: snapshots (fixture profile x templates x design variants) compa
 \\usepackage{enumitem}
 \\usepackage{xcolor}
 \\definecolor{accent}{HTML}{000000}
-\\usepackage[hidelinks]{hyperref}
+\\usepackage[hidelinks,bookmarks=false]{hyperref}
 \\pagestyle{empty}
 \\setlength{\\parindent}{0pt}
 \\titleformat{\\section}{\\normalsize\\bfseries}{}{0em}{}
@@ -183,7 +183,7 @@ exports[`render: snapshots (fixture profile x templates x design variants) compa
 \\usepackage{xcolor}
 \\definecolor{accent}{HTML}{1A73E8}
 \\usepackage{tabularx}
-\\usepackage[hidelinks]{hyperref}
+\\usepackage[hidelinks,bookmarks=false]{hyperref}
 \\pagestyle{empty}
 \\setlength{\\parindent}{0pt}
 \\titleformat{\\section}{\\normalsize\\bfseries}{}{0em}{}[\\color{accent}\\titlerule]
@@ -685,7 +685,7 @@ exports[`render: snapshots (fixture profile x templates x design variants) moder
 \\usepackage{enumitem}
 \\usepackage{xcolor}
 \\definecolor{accent}{HTML}{000000}
-\\usepackage[hidelinks]{hyperref}
+\\usepackage[hidelinks,bookmarks=false]{hyperref}
 \\pagestyle{empty}
 \\setlength{\\parindent}{0pt}
 \\titleformat{\\section}{\\Large\\bfseries}{}{0em}{}[\\color{accent}\\titlerule]
@@ -772,7 +772,7 @@ exports[`render: snapshots (fixture profile x templates x design variants) moder
 \\usepackage{enumitem}
 \\usepackage{xcolor}
 \\definecolor{accent}{HTML}{000000}
-\\usepackage[hidelinks]{hyperref}
+\\usepackage[hidelinks,bookmarks=false]{hyperref}
 \\pagestyle{empty}
 \\setlength{\\parindent}{0pt}
 \\titleformat{\\section}{\\Large\\bfseries}{}{0em}{}
@@ -858,7 +858,7 @@ exports[`render: snapshots (fixture profile x templates x design variants) moder
 \\usepackage{xcolor}
 \\definecolor{accent}{HTML}{1A73E8}
 \\usepackage{tabularx}
-\\usepackage[hidelinks]{hyperref}
+\\usepackage[hidelinks,bookmarks=false]{hyperref}
 \\pagestyle{empty}
 \\setlength{\\parindent}{0pt}
 \\titleformat{\\section}{\\color{accent}\\Large\\bfseries}{}{0em}{}[\\color{accent}\\titlerule]
@@ -941,7 +941,7 @@ exports[`render: snapshots (fixture profile x templates x design variants) sheet
 \\usepackage{enumitem}
 \\usepackage{xcolor}
 \\definecolor{accent}{HTML}{000000}
-\\usepackage[hidelinks]{hyperref}
+\\usepackage[hidelinks,bookmarks=false]{hyperref}
 \\pagestyle{empty}
 \\setlength{\\parindent}{0pt}
 \\titleformat{\\section}{\\large\\bfseries}{}{0em}{}[\\color{accent}\\titlerule]
@@ -1028,7 +1028,7 @@ exports[`render: snapshots (fixture profile x templates x design variants) sheet
 \\usepackage{enumitem}
 \\usepackage{xcolor}
 \\definecolor{accent}{HTML}{000000}
-\\usepackage[hidelinks]{hyperref}
+\\usepackage[hidelinks,bookmarks=false]{hyperref}
 \\pagestyle{empty}
 \\setlength{\\parindent}{0pt}
 \\titleformat{\\section}{\\large\\bfseries}{}{0em}{}
@@ -1114,7 +1114,7 @@ exports[`render: snapshots (fixture profile x templates x design variants) sheet
 \\usepackage{xcolor}
 \\definecolor{accent}{HTML}{1A73E8}
 \\usepackage{tabularx}
-\\usepackage[hidelinks]{hyperref}
+\\usepackage[hidelinks,bookmarks=false]{hyperref}
 \\pagestyle{empty}
 \\setlength{\\parindent}{0pt}
 \\titleformat{\\section}{\\large\\bfseries}{}{0em}{}[\\color{accent}\\titlerule]

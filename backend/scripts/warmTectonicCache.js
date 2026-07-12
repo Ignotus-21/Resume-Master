@@ -12,7 +12,9 @@ const os = require('os');
 const path = require('path');
 const { render, TEMPLATES } = require('../services/latex/render');
 const { validateDesign, FONTS } = require('../shared/resume');
-const { profile } = require('../tests/fixtures/profile');
+// From shared/, not tests/: the image build excludes tests/ (this exact
+// require crashed the first Linux docker-build in CI with MODULE_NOT_FOUND).
+const { profile } = require('../shared/fixtureProfile');
 
 const variants = [
   // Every template with defaults.
@@ -20,7 +22,12 @@ const variants = [
   // Every font once (cheapest template).
   ...FONTS.map((font) => ({ templateId: 'sheets', design: { font } })),
   // Extra-package variants.
-  { templateId: 'sheets', design: { links: 'icons' } }, // fontawesome5
+  // links:'icons' (fontawesome5) is deliberately ABSENT: loading
+  // FontAwesome5Free-Solid-900.otf hard-crashes Tectonic 0.16.9 (silent
+  // abort, no TeX error) on BOTH Windows and Linux — confirmed by the
+  // docker-build CI job failing at exactly this variant on ubuntu-latest.
+  // Until that's fixed the icons link style cannot compile anywhere; it is
+  // labeled experimental in the Design panel. See plan/BACKLOG.md.
   { templateId: 'sheets', design: { columns: 2, headerStyle: 'two-column' } }, // multicol, tabularx
   { templateId: 'sheets', design: { fontSize: 10.5 } }, // fontsize
 ];

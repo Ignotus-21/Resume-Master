@@ -155,7 +155,12 @@ const renderBase = (content, design, opts) => {
     needsTabularx ? '\\usepackage{tabularx}' : '',
     design.columns === 2 ? '\\usepackage{multicol}' : '',
     needsIcons ? '\\usepackage{fontawesome5}' : '',
-    '\\usepackage[hidelinks]{hyperref}',
+    // bookmarks=false: with bookmarks on, hyperref writes each \section title
+    // into the PDF outline, and \MakeUppercase (sheets/compact headings) is
+    // not expandable in that PDF-string context — the compile dies with
+    // "\MakeUppercaseUnsupportedInPdfStrings". A one-page resume has no use
+    // for outline bookmarks anyway.
+    '\\usepackage[hidelinks,bookmarks=false]{hyperref}',
     '\\pagestyle{empty}',
     '\\setlength{\\parindent}{0pt}',
     `\\titleformat{\\section}{${accent}${opts.headingFormat}}{}{0em}{}${rule}`,

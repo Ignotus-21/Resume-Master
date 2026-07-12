@@ -56,6 +56,11 @@ const countPdfPages = (pdfBuffer) => {
   return max || 1;
 };
 
+// KNOWN RISK (pipeline proof, 2026-07-12): concurrent tectonic processes
+// contend on the shared package-cache lock — a compile running alongside
+// parallel compiles was observed blocking 250s+ despite the 30s execFile
+// timeout below. Fine while compiles are serialized per process; revisit
+// before ever parallelizing compiles in production. See plan/BACKLOG.md.
 const compileLatex = async (latexCode) => {
   if (typeof latexCode !== 'string' || latexCode.length === 0) {
     return { success: false, error: 'LaTeX code is required' };

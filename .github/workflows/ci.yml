@@ -2,8 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, bug-fix-1, 'fix/**']
   pull_request:
+  workflow_dispatch:
 
 jobs:
   backend:
@@ -24,6 +25,24 @@ jobs:
       # MongoDB service is needed here.
       - run: npm ci
       - run: npm test
+
+  # Builds the backend image on real Linux. The image build runs
+  # scripts/warmTectonicCache.js, which compiles every template / font /
+  # extra-package variant with real Tectonic — including fontawesome5
+  # (links:'icons'), which hard-crashes the Windows Tectonic 0.16.9 build.
+  # A green run here is the evidence that the crash is Windows-only; a red
+  # run means the icons variant is broken on the deploy platform too.
+  # Skipped on pull_request events (a full docker build with 15 Tectonic
+  # compiles is slow) — runs on branch pushes and on demand via
+  # workflow_dispatch.
+  docker-build:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: docker build -f backend/Dockerfile backend
 
   frontend:
     runs-on: ubuntu-latest

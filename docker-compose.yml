@@ -16,5 +16,24 @@ services:
       - mongodb_data:/data/db
     restart: always
 
+  backend:
+    build: ./backend
+    container_name: master_resume_backend
+    # App secrets (JWT_SECRET, GEMINI_API_KEY, ...) come from backend/.env —
+    # the same file `npm run dev` uses.
+    env_file:
+      - ./backend/.env
+    environment:
+      # Inside the compose network the DB host is the `mongodb` service.
+      # This deliberately overrides whatever MONGO_URI backend/.env carries
+      # (localhost, or a remote Atlas cluster) so a containerized backend
+      # never points at a non-compose database by accident.
+      MONGO_URI: mongodb://${MONGO_ROOT_USERNAME:-admin}:${MONGO_ROOT_PASSWORD:?}@mongodb:27017/master_resume?authSource=admin
+    ports:
+      - "127.0.0.1:5000:5000"
+    depends_on:
+      - mongodb
+    restart: unless-stopped
+
 volumes:
   mongodb_data:

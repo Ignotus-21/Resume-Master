@@ -5,7 +5,9 @@ import { saveAs } from 'file-saver';
 import {
   Code2, Eye, Download, Loader2, Palette, LayoutGrid, BarChart3,
   Copy, Trash2, RefreshCw, PanelLeftClose, PanelLeftOpen, FileText, Pencil,
+  Check, CloudOff,
 } from 'lucide-react';
+import type { AutosaveState } from '@/lib/autosave';
 import { useToast } from '@/components/ui/Toast';
 import { ConfirmModal } from '@/components/ui/Modal';
 import { LatexEditor, LatexEditorHandle } from '@/components/resume/LatexEditor';
@@ -34,7 +36,7 @@ export function ResumeWorkspace({ ws }: { ws: Workspace }) {
     pdfData, pages, tex, compileErrors, compileLog, isCompiling,
     autoCompile, setAutoCompile, compile,
     save, eject, revert, duplicate, remove, getFeedback,
-    recommendations, analyzing, saving, dirty,
+    recommendations, analyzing, saveState,
   } = ws;
 
   const [view, setView] = useState<'visual' | 'code'>('visual');
@@ -132,10 +134,27 @@ export function ResumeWorkspace({ ws }: { ws: Workspace }) {
     : 0;
 
   if (!doc) {
+    // Without this list an existing resume is unreachable after a tab close —
+    // the Versions rail only renders once a document is open.
     return (
-      <div className="flex flex-col items-center justify-center flex-1 text-[#5f6368] bg-[#f8f9fa] rounded-xl border border-dashed border-[#dadce0] min-h-[400px]">
+      <div className="flex flex-col items-center justify-center flex-1 text-[#5f6368] bg-[#f8f9fa] rounded-xl border border-dashed border-[#dadce0] min-h-[400px] py-8">
         <FileText className="h-10 w-10 mb-2" />
-        <p>Generate a resume or pick a version from the list</p>
+        <p>{resumes.length > 0 ? 'Pick a version to continue editing, or generate a new one' : 'Generate a resume to get started'}</p>
+        {resumes.length > 0 && (
+          <div className="mt-4 w-full max-w-md space-y-1 overflow-y-auto max-h-72 px-4">
+            {resumes.map((r) => (
+              <button
+                key={r._id}
+                onClick={() => selectResume(r)}
+                title={r.versionName}
+                className="block w-full text-left text-sm px-3 py-2 rounded-lg border border-[#dadce0] bg-white hover:border-[#1a73e8] hover:text-[#1a73e8] truncate"
+              >
+                {r.versionName}
+                {r.parentResumeId && <span className="ml-1 text-[10px] opacity-60">↳ fork</span>}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     );
   }
@@ -224,15 +243,8 @@ export function ResumeWorkspace({ ws }: { ws: Workspace }) {
           )}
         </div>
 
-        {/* Save / eject / revert */}
-        <button
-          onClick={() => save()}
-          disabled={saving || !dirty}
-          className="px-3 py-1 rounded-lg text-sm font-semibold bg-[#1a73e8] text-white disabled:opacity-40 hover:opacity-90"
-          title={dirty ? 'Save changes' : 'All changes saved'}
-        >
-          {saving ? 'Saving…' : dirty ? 'Save' : 'Saved'}
-        </button>
+        {/* Autosave status / eject / revert */}
+        <SaveStatus state={saveState} onSave={() => save()} />
         {isLatexMode ? (
           <button onClick={() => setShowRevert(true)} className="px-2.5 py-1 rounded-lg text-sm text-[#5f6368] border border-[#dadce0] hover:text-[#202124]" title="Back to the structured version">
             Revert to structured
@@ -386,5 +398,37 @@ export function ResumeWorkspace({ ws }: { ws: Workspace }) {
         onCancel={() => setPendingDelete(null)}
       />
     </div>
+  );
+}
+
+// Small trust-signal chip for the autosave lifecycle. Clicking it forces a
+// save (useful in 'pending' and mandatory UX in 'failed'); otherwise it's
+// purely informational.
+function SaveStatus({ state, onSave }: { state: AutosaveState; onSave: () => void }) {
+  if (state === 'failed') {
+    return (
+      <button
+        onClick={onSave}
+        className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-[#d93025] text-white hover:opacity-90"
+        title="Automatic saving failed repeatedly. Your changes are kept in this tab — click to retry."
+      >
+        <CloudOff className="h-3.5 w-3.5" /> Save failed — retry
+      </button>
+    );
+  }
+  const view = {
+    saved: { label: 'Saved', cls: 'text-[#5f6368]', icon: <Check className="h-3.5 w-3.5 text-[#1e8e3e]" /> },
+    pending: { label: 'Unsaved changes', cls: 'text-[#5f6368]', icon: <span className="h-2 w-2 rounded-full bg-[#f9ab00]" /> },
+    saving: { label: 'Saving…', cls: 'text-[#5f6368]', icon: <Loader2 className="h-3.5 w-3.5 animate-spin" /> },
+    retrying: { label: 'Save failed — retrying…', cls: 'text-amber-700', icon: <Loader2 className="h-3.5 w-3.5 animate-spin" /> },
+  }[state];
+  return (
+    <button
+      onClick={onSave}
+      className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs ${view.cls} hover:bg-[#f1f3f4]`}
+      title="Changes save automatically. Click to save now."
+    >
+      {view.icon} {view.label}
+    </button>
   );
 }

@@ -119,6 +119,80 @@ const getHistory = async (req, res) => {
   }
 };
 
+// --- v2 content operations: JSON in, JSON out. Never LaTeX. -----------------
+
+const MAX_BULLET_LENGTH = 1000;
+const MAX_JD_LENGTH = 20000;
+
+const rewriteBulletHandler = async (req, res) => {
+  const { bullet, roleContext, jd } = req.body;
+  if (typeof bullet !== 'string' || !bullet.trim()) {
+    return res.status(400).json({ message: 'bullet is required' });
+  }
+  if (bullet.length > MAX_BULLET_LENGTH) {
+    return res.status(400).json({ message: 'bullet is too long' });
+  }
+  if (typeof jd === 'string' && jd.length > MAX_JD_LENGTH) {
+    return res.status(400).json({ message: 'jd is too long' });
+  }
+  try {
+    const quotaRejection = await enforceGeminiQuota(req);
+    if (quotaRejection) return res.status(quotaRejection.status).json(quotaRejection.body);
+
+    const { rewriteBullet } = require('../services/geminiService');
+    const rewrites = await rewriteBullet(bullet, roleContext, jd, req.geminiApiKey, req);
+    res.json({ rewrites });
+  } catch (error) {
+    console.error('AI error:', error);
+    res.status(500).json({ message: 'Something went wrong' });
+  }
+};
+
+const suggestTitlesHandler = async (req, res) => {
+  const { role, jd } = req.body;
+  if (typeof role !== 'string' || !role.trim()) {
+    return res.status(400).json({ message: 'role is required' });
+  }
+  if (typeof jd !== 'string' || !jd.trim()) {
+    return res.status(400).json({ message: 'jd is required' });
+  }
+  if (jd.length > MAX_JD_LENGTH) {
+    return res.status(400).json({ message: 'jd is too long' });
+  }
+  try {
+    const quotaRejection = await enforceGeminiQuota(req);
+    if (quotaRejection) return res.status(quotaRejection.status).json(quotaRejection.body);
+
+    const { suggestTitles } = require('../services/geminiService');
+    const titles = await suggestTitles(role, jd, req.geminiApiKey, req);
+    res.json({ titles });
+  } catch (error) {
+    console.error('AI error:', error);
+    res.status(500).json({ message: 'Something went wrong' });
+  }
+};
+
+const bulletCoachHandler = async (req, res) => {
+  const { bullet, roleContext, answer } = req.body;
+  if (typeof bullet !== 'string' || !bullet.trim()) {
+    return res.status(400).json({ message: 'bullet is required' });
+  }
+  if (bullet.length > MAX_BULLET_LENGTH || (typeof answer === 'string' && answer.length > MAX_BULLET_LENGTH * 2)) {
+    return res.status(400).json({ message: 'input is too long' });
+  }
+  try {
+    const quotaRejection = await enforceGeminiQuota(req);
+    if (quotaRejection) return res.status(quotaRejection.status).json(quotaRejection.body);
+
+    const { bulletCoach } = require('../services/geminiService');
+    const result = await bulletCoach({ bullet, roleContext, answer }, req.geminiApiKey, req);
+    res.json(result);
+  } catch (error) {
+    console.error('AI error:', error);
+    res.status(500).json({ message: 'Something went wrong' });
+  }
+};
+
 const linkedinRewrite = async (req, res) => {
   try {
     const profile = await MasterProfile.findOne({ owner: req.identity });
@@ -135,4 +209,4 @@ const linkedinRewrite = async (req, res) => {
   }
 };
 
-module.exports = { startChat, sendMessage, getHistory, linkedinRewrite };
+module.exports = { startChat, sendMessage, getHistory, linkedinRewrite, rewriteBulletHandler, suggestTitlesHandler, bulletCoachHandler };

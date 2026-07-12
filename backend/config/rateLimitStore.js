@@ -6,9 +6,12 @@ const { RedisStore } = require('rate-limit-redis');
 // returns undefined and express-rate-limit falls back to its in-memory store.
 let client;
 
-const rateLimitStore = (prefix) => {
+// Lazily create the single shared ioredis connection. Also used by the
+// compile cache (services/compileCache.js) so the whole app holds one
+// connection. Returns null when no Redis is configured.
+const getRedisClient = () => {
   const url = process.env.REDIS_URL || process.env.UPSTASH_REDIS_URL;
-  if (!url) return undefined;
+  if (!url) return null;
 
   if (!client) {
     const Redis = require('ioredis');
@@ -21,13 +24,19 @@ const rateLimitStore = (prefix) => {
     });
     client.on('error', (err) => console.error('Rate-limit Redis error:', err.message));
   }
+  return client;
+};
+
+const rateLimitStore = (prefix) => {
+  const redis = getRedisClient();
+  if (!redis) return undefined;
 
   // Distinct prefix per limiter so the general/AI/auth counters don't collide
   // (they all key on the client IP).
   return new RedisStore({
-    sendCommand: (...args) => client.call(...args),
+    sendCommand: (...args) => redis.call(...args),
     prefix: `rl:${prefix}:`,
   });
 };
 
-module.exports = { rateLimitStore };
+module.exports = { rateLimitStore, getRedisClient };

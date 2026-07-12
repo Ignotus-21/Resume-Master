@@ -129,36 +129,108 @@ const tailorResume = async (masterData, jobDescription, apiKey, req = null) => {
   }
 };
 
-const generateLatex = async (resumeData, apiKey, req = null, templateStyle = 'classic') => {
+// v2 invariant: Gemini NEVER emits LaTeX. It does JSON->JSON content
+// operations only; rendering is backend/services/latex/render.js. The old
+// generateLatex() lived here — do not reintroduce anything like it.
+
+const rewriteBullet = async (bullet, roleContext, jobDescription, apiKey, req = null) => {
   const model = getModel(apiKey);
   const prompt = `
-    You are a LaTeX Resume Architect.
-    Convert the following JSON resume data into a professional, clean LaTeX resume code.
-    
-    Design Requirements:
-    1. Use a modern, clean, and professional layout (e.g., modified 'article' class).
-    2. **MULTI-PAGE SUPPORT**: Do NOT try to squeeze everything onto one page.
-    3. Use readable font sizes (10pt-12pt) and standard margins (0.5in - 0.75in).
-    4. Ensure ALL sections from the JSON are included. Do not drop content.
-    5. Ensure all special characters are escaped properly.
-    6. **CRITICAL: DO NOT use the 'fullpage' package. Use '\\usepackage[margin=0.5in]{geometry}' instead, as 'fullpage' is not installed on this system.**
-    7. **TEMPLATE STYLE: Please use the "${templateStyle}" style. If 'modern', make it sleek with sans-serif fonts. If 'compact', optimize spacing heavily.**
-    
-    Resume Data: ${JSON.stringify(resumeData)}
-    
-    Return ONLY the LaTeX code. Start with \\documentclass.
+    You are a resume writing coach. Rewrite the resume bullet point below.
+
+    RULES:
+    1. Produce exactly 3 alternative rewrites: one tighter, one more metric-driven, one more impact-focused.
+    2. Keep every rewrite truthful to the original — never invent metrics, tools, or scope that are not stated or clearly implied.
+    3. Strong action verb first, no first person, no trailing period unless the original had one.
+    4. Return ONLY valid JSON: { "rewrites": ["...", "...", "..."] }. No markdown.
+
+    Role context: ${roleContext || 'not specified'}
+    ${jobDescription ? `Target job description (optimize keyword relevance): ${jobDescription}` : ''}
+
+    Bullet: ${bullet}
   `;
-  
+
   let tracked = false;
   try {
     const result = await model.generateContent(prompt);
-    if (req) { await trackUsage(req, 'latex-generator', result); tracked = true; }
+    if (req) { await trackUsage(req, 'bullet-rewrite', result); tracked = true; }
     const response = await result.response;
-    return response.text().replace(/```latex/g, '').replace(/```/g, '');
+    const text = response.text().replace(/```json/g, '').replace(/```/g, '');
+    const parsed = JSON.parse(text);
+    return Array.isArray(parsed.rewrites) ? parsed.rewrites.slice(0, 3).map(String) : [];
   } catch (error) {
-    console.error("Gemini LaTeX Error:", error);
+    console.error("Gemini Rewrite Error:", error);
     if (req && !tracked) await refundReservation(req).catch(() => {});
-    throw new Error("Failed to generate LaTeX");
+    throw new Error("Failed to rewrite bullet");
+  }
+};
+
+const suggestTitles = async (role, jobDescription, apiKey, req = null) => {
+  const model = getModel(apiKey);
+  const prompt = `
+    You are a resume coach. Suggest job title variants for the candidate's role
+    that better match the target job description.
+
+    HONESTY GUARDRAIL: suggest only truthful variants of the SAME role — you may
+    modernize wording or align vocabulary with the JD, but NEVER inflate
+    seniority, scope, or responsibilities.
+
+    Return ONLY valid JSON: { "titles": ["...", "..."] } with 3-5 titles. No markdown.
+
+    Candidate's actual role: ${JSON.stringify(role)}
+    Target job description: ${jobDescription}
+  `;
+
+  let tracked = false;
+  try {
+    const result = await model.generateContent(prompt);
+    if (req) { await trackUsage(req, 'title-suggest', result); tracked = true; }
+    const response = await result.response;
+    const text = response.text().replace(/```json/g, '').replace(/```/g, '');
+    const parsed = JSON.parse(text);
+    return Array.isArray(parsed.titles) ? parsed.titles.slice(0, 5).map(String) : [];
+  } catch (error) {
+    console.error("Gemini Titles Error:", error);
+    if (req && !tracked) await refundReservation(req).catch(() => {});
+    throw new Error("Failed to suggest titles");
+  }
+};
+
+// The "Work Experience Assistant": with no answer, asks ONE follow-up
+// question to extract scale/outcome/tools; with the user's answer, drafts a
+// STAR-style bullet from it.
+const bulletCoach = async ({ bullet, roleContext, answer }, apiKey, req = null) => {
+  const model = getModel(apiKey);
+  const prompt = answer
+    ? `
+    You are a resume coach. The candidate had this weak bullet: ${JSON.stringify(bullet)}
+    (role: ${roleContext || 'not specified'}).
+    You asked for more detail and they answered: ${JSON.stringify(answer)}
+
+    Draft ONE strong STAR-style resume bullet using only facts from the bullet
+    and their answer. Never invent metrics. Return ONLY valid JSON:
+    { "bullet": "..." }. No markdown.
+  `
+    : `
+    You are a resume coach. This bullet is thin: ${JSON.stringify(bullet)}
+    (role: ${roleContext || 'not specified'}).
+
+    Ask ONE short follow-up question that would extract the most valuable
+    missing detail (scale, measurable outcome, or tools used). Return ONLY
+    valid JSON: { "question": "..." }. No markdown.
+  `;
+
+  let tracked = false;
+  try {
+    const result = await model.generateContent(prompt);
+    if (req) { await trackUsage(req, 'bullet-coach', result); tracked = true; }
+    const response = await result.response;
+    const text = response.text().replace(/```json/g, '').replace(/```/g, '');
+    return JSON.parse(text);
+  } catch (error) {
+    console.error("Gemini Coach Error:", error);
+    if (req && !tracked) await refundReservation(req).catch(() => {});
+    throw new Error("Failed to coach bullet");
   }
 };
 
@@ -331,7 +403,9 @@ const generateLinkedInContent = async (masterData, apiKey, req = null) => {
 module.exports = {
   parseResumeData,
   tailorResume,
-  generateLatex,
+  rewriteBullet,
+  suggestTitles,
+  bulletCoach,
   getRecommendations,
   generateCoverLetter,
   generateInterviewQuestions,

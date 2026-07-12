@@ -10,7 +10,7 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
 const Resume = require('../models/Resume');
-const { DEFAULT_DESIGN } = require('../../shared/resume');
+const { DEFAULT_DESIGN } = require('../shared/resume');
 
 const run = async () => {
   await mongoose.connect(process.env.MONGO_URI);

@@ -1,6 +1,12 @@
-// Single source of truth for the resume IR shared by frontend and backend.
-// Backend: require('../shared/resume'). Frontend: import from '@shared/resume'
-// (path alias in tsconfig.json; types in shared/resume.d.ts).
+// CANONICAL definition of the resume IR: section keys, template ids, design
+// tokens and their validation. The backend is the enforcement point —
+// validateDesign() runs on every write and every render.
+//
+// The frontend keeps a typed mirror in frontend/lib/resumeSchema.ts (it
+// can't import this file because Railway deploys backend/ and Vercel deploys
+// frontend/ as isolated roots — see DEPLOY.md). If you change anything here,
+// update that file too. The server clamps everything regardless, so a stale
+// mirror degrades UX, never correctness.
 //
 // A resume is { content, design, templateId, mode }. LaTeX is a pure
 // deterministic function of the first three — see backend/services/latex/.

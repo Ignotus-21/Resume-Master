@@ -11,12 +11,12 @@ const MAX_PDF_SIZE = 20 * 1024 * 1024; // 20MB safety cap on the compiled output
 
 // Tectonic (like any LaTeX engine) doesn't sandbox filesystem reads — these
 // primitives can pull an arbitrary local file's content into the compiled
-// PDF (\input{/etc/passwd}-style). This endpoint takes raw user-supplied
-// LaTeX with no auth requirement (guests can use it too, by design), so
-// block the file-inclusion commands outright rather than trying to sandbox
-// the compiler itself. Deliberately excludes \includegraphics, which is
-// used legitimately in resumes and can't be abused the same way (it must
-// decode as a valid image, not arbitrary bytes rendered as text).
+// PDF (\input{/etc/passwd}-style). Raw user-supplied LaTeX now additionally
+// requires auth at the route level (see middleware/compile.js), but the
+// source-level block stays as defense in depth. Deliberately excludes
+// \includegraphics, which is used legitimately in resumes and can't be
+// abused the same way (it must decode as a valid image, not arbitrary bytes
+// rendered as text).
 // (?![a-zA-Z]) rather than \b: \openin/\read are always followed directly by
 // a stream number with no separator (\openin0=...), which \b would reject
 // (no boundary between two word chars). The negative lookahead still rejects
@@ -41,15 +41,25 @@ if (!fs.existsSync(TEMP_DIR)) {
   fs.mkdirSync(TEMP_DIR, { recursive: true });
 }
 
+// Real page count from the compiled PDF (not an estimate): count page
+// objects, falling back to the page-tree /Count. Object streams could hide
+// these in a compressed PDF, but Tectonic's xdvipdfmx output keeps page
+// dictionaries visible.
+const countPdfPages = (pdfBuffer) => {
+  const s = pdfBuffer.toString('latin1');
+  const pageObjects = s.match(/\/Type\s*\/Page[^s]/g);
+  if (pageObjects && pageObjects.length > 0) return pageObjects.length;
+  let max = 0;
+  const re = /\/Count\s+(\d+)/g;
+  let m;
+  while ((m = re.exec(s)) !== null) max = Math.max(max, Number(m[1]));
+  return max || 1;
+};
+
 const compileLatex = async (latexCode) => {
   if (typeof latexCode !== 'string' || latexCode.length === 0) {
     return { success: false, error: 'LaTeX code is required' };
   }
-
-  // Auto-sanitize packages Tectonic doesn't bundle/support
-  latexCode = latexCode
-    .replace(/\\usepackage\{fullpage\}/g, '\\usepackage[margin=0.5in]{geometry}')
-    .replace(/\\usepackage\[.*?\]\{fullpage\}/g, '\\usepackage[margin=0.5in]{geometry}');
 
   if (latexCode.length > MAX_LATEX_LENGTH) {
     return { success: false, error: 'LaTeX source exceeds maximum allowed size' };
@@ -120,7 +130,7 @@ const compileLatex = async (latexCode) => {
       }
       const pdfBuffer = await fs.promises.readFile(pdfPath);
       await cleanup(workDir);
-      return { success: true, pdf: pdfBuffer };
+      return { success: true, pdf: pdfBuffer, pages: countPdfPages(pdfBuffer) };
     } else {
         // Read log for errors
         let log = '';
@@ -132,9 +142,17 @@ const compileLatex = async (latexCode) => {
         // parseLatexErrors would fall back to a generic message — surface the
         // actual execFile error instead when there's nothing else to go on.
         if (!log && execError) {
-          return { success: false, log: execError };
+          return { success: false, log: execError, errors: [] };
         }
-        return { success: false, log: parseLatexErrors(log) };
+        const errors = parseLatexErrors(log);
+        return {
+          success: false,
+          errors,
+          // Legacy string form so older clients / error panes keep working.
+          log: errors.length
+            ? errors.map((e) => `${e.severity === 'error' ? '!' : '⚠'} ${e.line ? `l.${e.line} ` : ''}${e.message}${e.context ? `\n  ${e.context}` : ''}`).join('\n')
+            : 'Unknown LaTeX Compilation Error (Check logs)',
+        };
     }
 
   } catch (error) {
@@ -151,17 +169,63 @@ const cleanup = async (dir) => {
     }
 }
 
+// Structured TeX log parsing so the UI can render Overleaf-style badge
+// counts and editor gutter markers.
+// Returns [{ line: number|null, severity: 'error'|'warning', message, context }].
 const parseLatexErrors = (log) => {
-    // Simple parser to extract relevant error lines
-    const lines = log.split('\n');
-    const errors = [];
+    const lines = String(log || '').split('\n');
+    const results = [];
+
     for (let i = 0; i < lines.length; i++) {
-        if (lines[i].startsWith('! ')) {
-            errors.push(lines[i]);
-            if (lines[i+1]) errors.push(lines[i+1]); // Context
+        const line = lines[i];
+
+        // "! Undefined control sequence." followed (within a few lines) by
+        // "l.42 \foo" + the source context after the line number.
+        if (line.startsWith('! ')) {
+            const entry = { line: null, severity: 'error', message: line.slice(2).trim(), context: '' };
+            for (let j = i + 1; j < Math.min(i + 12, lines.length); j++) {
+                const m = lines[j].match(/^l\.(\d+)\s?(.*)$/);
+                if (m) {
+                    entry.line = Number(m[1]);
+                    entry.context = (m[2] + (lines[j + 1] || '').trim()).trim();
+                    break;
+                }
+            }
+            results.push(entry);
+            continue;
+        }
+
+        // "Overfull \hbox (15.3pt too wide) in paragraph at lines 100--102"
+        let m = line.match(/^(Overfull|Underfull) \\[hv]box \(([^)]*)\).* at lines? (\d+)/);
+        if (m) {
+            results.push({
+                line: Number(m[3]),
+                severity: 'warning',
+                message: `${m[1]} box (${m[2]})`,
+                context: '',
+            });
+            continue;
+        }
+
+        // "LaTeX Warning: Reference `x' undefined on input line 12."
+        m = line.match(/^(?:LaTeX|Package \S+) Warning: (.*)$/);
+        if (m) {
+            let message = m[1].trim();
+            // Warnings wrap across lines; pull in the continuation if the
+            // line number is on the next one.
+            if (!/on input line \d+/.test(message) && lines[i + 1] && /^\s{2,}/.test(lines[i + 1])) {
+                message += ' ' + lines[i + 1].trim();
+            }
+            const lineMatch = message.match(/on input line (\d+)/);
+            results.push({
+                line: lineMatch ? Number(lineMatch[1]) : null,
+                severity: 'warning',
+                message,
+                context: '',
+            });
         }
     }
-    return errors.length > 0 ? errors.join('\n') : "Unknown LaTeX Compilation Error (Check logs)";
+    return results;
 };
 
-module.exports = { compileLatex };
+module.exports = { compileLatex, parseLatexErrors, countPdfPages };

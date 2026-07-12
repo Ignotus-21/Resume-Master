@@ -33,8 +33,16 @@ COPY . .
 # user, then drop privileges — the process should not run as root. Tectonic
 # caches downloaded packages under $HOME/.cache, so that needs to be writable
 # by `node` too.
-RUN mkdir -p uploads temp_latex && chown -R node:node /app \
-    && mkdir -p /home/node/.cache && chown -R node:node /home/node
+#
+# warmTectonicCache.js pre-bakes the Tectonic package cache into the image by
+# compiling the fixture profile through every template / font / extra-package
+# variant. Without this, the first compile on a cold container fetches LaTeX
+# packages over the network at request time (slow, flaky, 30s-timeout-bound).
+# It also doubles as a build-time smoke test: if a template stops compiling,
+# the image build fails.
+RUN mkdir -p uploads temp_latex /home/node/.cache \
+    && HOME=/home/node node scripts/warmTectonicCache.js \
+    && chown -R node:node /app /home/node
 
 ENV NODE_ENV=production
 EXPOSE 5000

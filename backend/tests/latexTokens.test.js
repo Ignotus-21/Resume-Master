@@ -1,5 +1,5 @@
 const tokens = require('../services/latex/tokens');
-const { DEFAULT_DESIGN, validateDesign, FONTS } = require('../../shared/resume');
+const { DEFAULT_DESIGN, validateDesign, FONTS } = require('../shared/resume');
 
 const design = (overrides = {}) => validateDesign({ ...DEFAULT_DESIGN, ...overrides });
 

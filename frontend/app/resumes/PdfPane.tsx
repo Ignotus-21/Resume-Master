@@ -106,9 +106,19 @@ export const PdfPane = forwardRef<PdfPaneHandle, PdfPaneProps>(function PdfPane(
     setRenderedOnce(true);
   }, [effectiveScale]);
 
-  // Load a new PDF whenever pdfData changes.
+  // Load a new PDF whenever pdfData changes. A null pdfData (e.g. switching
+  // documents) clears the previous document's pages instead of leaving them
+  // on screen.
   useEffect(() => {
-    if (!pdfData) return;
+    if (!pdfData) {
+      renderIdRef.current++;
+      docRef.current = null;
+      pagesRef.current?.replaceChildren();
+      setRenderedOnce(false);
+      setPageCount(0);
+      setCurrentPage(1);
+      return;
+    }
     let cancelled = false;
     (async () => {
       const pdfjs = await loadPdfjs();

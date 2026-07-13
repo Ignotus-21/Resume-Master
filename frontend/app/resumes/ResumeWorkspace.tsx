@@ -5,7 +5,7 @@ import { saveAs } from 'file-saver';
 import {
   Code2, Eye, Download, Loader2, Palette, LayoutGrid, BarChart3,
   Copy, Trash2, RefreshCw, PanelLeftClose, PanelLeftOpen, FileText, Pencil,
-  Check, CloudOff,
+  Check, CloudOff, GitCompareArrows,
 } from 'lucide-react';
 import type { AutosaveState } from '@/lib/autosave';
 import { useToast } from '@/components/ui/Toast';
@@ -15,7 +15,8 @@ import { PdfPane, PdfPaneHandle } from './PdfPane';
 import { VisualEditor } from './VisualEditor';
 import { DesignPanel } from './DesignPanel';
 import { TemplateGallery } from './TemplateGallery';
-import { FeedbackPanel } from './FeedbackPanel';
+import { MatchPanel } from '@/components/resume/MatchPanel';
+import { VersionDiffModal } from './VersionDiff';
 import { generateDocx } from './generateDocx';
 import type { useWorkspace } from './useWorkspace';
 import type { SectionKey, TemplateId } from '@/lib/resumeSchema';
@@ -32,11 +33,11 @@ const RIGHT_WIDTH_KEY = 'rm.rightPaneWidth';
 export function ResumeWorkspace({ ws }: { ws: Workspace }) {
   const { showToast } = useToast();
   const {
-    resumes, doc, selectResume, patchDoc, setContent, setDesign, setTemplateId, setLatexSource,
+    resumes, jobs, doc, selectResume, patchDoc, setContent, setDesign, setTemplateId, setLatexSource,
     pdfData, pages, tex, compileErrors, compileLog, isCompiling,
     autoCompile, setAutoCompile, compile,
-    save, eject, revert, duplicate, remove, getFeedback,
-    recommendations, analyzing, saveState, generating,
+    save, eject, revert, duplicate, remove,
+    saveState, generating,
   } = ws;
 
   const [view, setView] = useState<'visual' | 'code'>('visual');
@@ -45,6 +46,7 @@ export function ResumeWorkspace({ ws }: { ws: Workspace }) {
   const [showEject, setShowEject] = useState(false);
   const [showRevert, setShowRevert] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
+  const [compareTarget, setCompareTarget] = useState<string | null>(null);
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [editingTitle, setEditingTitle] = useState(false);
   const [rightWidth, setRightWidth] = useState(46); // % of the main area
@@ -232,7 +234,7 @@ export function ResumeWorkspace({ ws }: { ws: Workspace }) {
         <button onClick={() => setSidePanel(sidePanel === 'templates' ? null : 'templates')} disabled={isLatexMode} className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-sm ${sidePanel === 'templates' ? 'bg-[#1a73e8] text-white' : 'text-[#5f6368] hover:text-[#202124]'} disabled:opacity-40`} title="Template gallery">
           <LayoutGrid className="h-4 w-4" /> Templates
         </button>
-        <button onClick={() => { setSidePanel(sidePanel === 'feedback' ? null : 'feedback'); if (sidePanel !== 'feedback' && !recommendations) getFeedback(); }} className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-sm ${sidePanel === 'feedback' ? 'bg-[#1a73e8] text-white' : 'text-[#5f6368] hover:text-[#202124]'}`} title="JD match analysis">
+        <button onClick={() => setSidePanel(sidePanel === 'feedback' ? null : 'feedback')} className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-sm ${sidePanel === 'feedback' ? 'bg-[#1a73e8] text-white' : 'text-[#5f6368] hover:text-[#202124]'}`} title="JD match analysis">
           <BarChart3 className="h-4 w-4" /> Match
         </button>
 
@@ -309,6 +311,11 @@ export function ResumeWorkspace({ ws }: { ws: Workspace }) {
                     {r.versionName}
                     {r.parentResumeId && <span className="ml-1 text-[9px] opacity-60">↳ fork</span>}
                   </button>
+                  {r._id !== doc._id && (
+                    <button onClick={() => setCompareTarget(r._id)} className="opacity-0 group-hover:opacity-100 p-0.5 hover:text-[#202124]" title="Compare with the open version">
+                      <GitCompareArrows className="h-3 w-3" />
+                    </button>
+                  )}
                   <button onClick={() => duplicate(r._id)} className="opacity-0 group-hover:opacity-100 p-0.5 hover:text-[#202124]" title="Duplicate">
                     <Copy className="h-3 w-3" />
                   </button>
@@ -376,7 +383,11 @@ export function ResumeWorkspace({ ws }: { ws: Workspace }) {
                   onPick={(t) => { setTemplateId(t); setSidePanel(null); }}
                 />
               )}
-              {sidePanel === 'feedback' && <FeedbackPanel analyzing={analyzing} recommendations={recommendations} />}
+              {sidePanel === 'feedback' && (
+                <div className="p-4">
+                  <MatchPanel jobs={jobs} defaultJobId={(doc.job as any)?._id} autoRun />
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -397,6 +408,7 @@ export function ResumeWorkspace({ ws }: { ws: Workspace }) {
         onConfirm={() => { setShowRevert(false); revert(); }}
         onCancel={() => setShowRevert(false)}
       />
+      <VersionDiffModal targetId={compareTarget} currentDoc={doc} onClose={() => setCompareTarget(null)} />
       <ConfirmModal
         open={pendingDelete !== null}
         title="Delete resume"

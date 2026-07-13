@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { apiFetch, apiJson } from '@/lib/api';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Users, Server, Activity, UserX, Settings, LayoutDashboard, BarChart3, Bot, FileText, CheckCircle, Briefcase, ShieldAlert } from 'lucide-react';
+import { Users, Server, Activity, UserX, Settings, LayoutDashboard, BarChart3, Bot, FileText, CheckCircle, Briefcase, ShieldAlert, Zap } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/components/ui/Toast';
@@ -68,6 +68,7 @@ export default function AdminDashboard() {
   const { showToast } = useToast();
   
   const [stats, setStats] = useState<any>(null);
+  const [compileStats, setCompileStats] = useState<any>(null);
   const [breakdown, setBreakdown] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -89,11 +90,15 @@ export default function AdminDashboard() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [statsData, breakdownData] = await Promise.all([
+      const [statsData, breakdownData, compileData] = await Promise.all([
         apiFetch('/api/admin/stats'),
-        apiFetch('/api/admin/token-breakdown')
+        apiFetch('/api/admin/token-breakdown'),
+        // Optional signal — an older backend without the endpoint shouldn't
+        // take down the whole dashboard.
+        apiFetch('/api/admin/compile-stats').catch(() => null),
       ]);
       setStats(statsData);
+      setCompileStats(compileData);
       setBreakdown(breakdownData);
       setDefaultTokens((breakdownData.config?.defaultTokenLimit || 15000).toString());
       setGuestTokens((breakdownData.config?.guestTokenLimit || 5000).toString());
@@ -173,6 +178,39 @@ export default function AdminDashboard() {
             <p className="text-xs text-[#5f6368] mt-2">Unique guest IPs, all time</p>
           </Card>
         </div>
+
+        {compileStats && (
+          <Card className="p-6 shadow-sm">
+            <h2 className="text-lg font-bold text-[#202124] mb-1 flex items-center gap-2">
+              <Zap className="w-5 h-5 text-[#f9ab00]" /> Compile Cache
+            </h2>
+            <p className="text-xs text-[#5f6368] mb-4">Hit rate of the LaTeX compile cache, since the last backend restart.</p>
+            {compileStats.sampleCount === 0 ? (
+              <div className="text-sm text-[#5f6368] italic">No compiles since restart.</div>
+            ) : (
+              <>
+                <div className="flex items-end gap-8">
+                  <div>
+                    <p className="text-3xl font-extrabold text-[#202124]">{(compileStats.hitRate * 100).toFixed(1)}%</p>
+                    <p className="text-xs text-[#5f6368] mt-1 uppercase tracking-wider">Hit rate</p>
+                  </div>
+                  <div>
+                    <p className="text-3xl font-extrabold text-[#1e8e3e]">{compileStats.hits.toLocaleString()}</p>
+                    <p className="text-xs text-[#5f6368] mt-1 uppercase tracking-wider">Hits</p>
+                  </div>
+                  <div>
+                    <p className="text-3xl font-extrabold text-[#d93025]">{compileStats.misses.toLocaleString()}</p>
+                    <p className="text-xs text-[#5f6368] mt-1 uppercase tracking-wider">Misses (real compiles)</p>
+                  </div>
+                </div>
+                <div className="flex h-2 rounded-full overflow-hidden bg-[#dadce0] mt-4" title={`${compileStats.hits} hits / ${compileStats.misses} misses`}>
+                  <div className="h-full bg-[#1e8e3e]" style={{ width: `${compileStats.hitRate * 100}%` }} />
+                  <div className="h-full bg-[#d93025]" style={{ width: `${(1 - compileStats.hitRate) * 100}%` }} />
+                </div>
+              </>
+            )}
+          </Card>
+        )}
 
         <Card className="p-6 shadow-sm">
           <h2 className="text-lg font-bold text-[#202124] mb-6 flex items-center gap-2">

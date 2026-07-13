@@ -115,7 +115,7 @@ const customSectionBlock = (section, design, opts) => {
     item.description ? `${escapeLatex(item.description)}\\\\` : '',
     bullets(item.bullets),
   ].filter(Boolean).join('\n')).join(`\n${entryGap}\n\n`);
-  return `\\section{${opts.headingText(escapeLatex(section.title || 'Additional'))}}\n${items}`;
+  return `${tokens.SECTION_GUARD}\n\\section{${opts.headingText(escapeLatex(section.title || 'Additional'))}}\n${items}`;
 };
 
 const header = (content, design, opts) => {
@@ -162,6 +162,7 @@ const renderBase = (content, design, opts) => {
     // for outline bookmarks anyway.
     '\\usepackage[hidelinks,bookmarks=false]{hyperref}',
     '\\pagestyle{empty}',
+    tokens.pageBreakPreamble(),
     '\\setlength{\\parindent}{0pt}',
     `\\titleformat{\\section}{${accent}${opts.headingFormat}}{}{0em}{}${rule}`,
     `\\titlespacing*{\\section}{0pt}{${spacing.before}}{${spacing.after}}`,
@@ -178,7 +179,7 @@ const renderBase = (content, design, opts) => {
     }
     const body = bodies[key]();
     if (!body) return '';
-    return `\\section{${opts.headingText(escapeLatex(sectionTitle(key, design)))}}\n${body}`;
+    return `${tokens.SECTION_GUARD}\n\\section{${opts.headingText(escapeLatex(sectionTitle(key, design)))}}\n${body}`;
   }).filter(Boolean).join('\n\n');
 
   const body = design.columns === 2

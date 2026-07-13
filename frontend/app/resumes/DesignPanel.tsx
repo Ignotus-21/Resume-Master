@@ -115,9 +115,9 @@ export function DesignPanel({ design, setDesign }: {
       <div className={rowCls}>
         <span className={labelCls}>Links</span>
         <select className={selectCls} value={design.links} onChange={(e) => setDesign({ links: e.target.value as DesignTokens['links'] })}>
-          {/* fontawesome5 crashes Tectonic 0.16.9 on every platform (see
-              plan/BACKLOG.md) — icons stays selectable per the M2.5 decision
-              but is labeled so users aren't surprised by a failed compile. */}
+          {/* fontawesome5 crashes Tectonic 0.16.9 on every platform — icons
+              stays selectable per the M2.5 decision but is labeled so users
+              aren't surprised by a failed compile. */}
           {LINK_STYLES.map((s) => <option key={s} value={s}>{s === 'icons' ? 'icons (experimental — may fail to compile)' : s}</option>)}
         </select>
       </div>

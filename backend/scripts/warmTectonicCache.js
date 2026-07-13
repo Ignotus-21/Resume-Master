@@ -29,7 +29,7 @@ const variants = [
   // abort, no TeX error) on BOTH Windows and Linux — confirmed by the
   // docker-build CI job failing at exactly this variant on ubuntu-latest.
   // Until that's fixed the icons link style cannot compile anywhere; it is
-  // labeled experimental in the Design panel. See plan/BACKLOG.md.
+  // labeled experimental in the Design panel.
   { templateId: 'sheets', design: { columns: 2, headerStyle: 'two-column' } }, // multicol, tabularx
   { templateId: 'sheets', design: { fontSize: 10.5 } }, // fontsize
 ];

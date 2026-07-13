@@ -14,7 +14,7 @@ const { render, TEMPLATES } = require('../services/latex/render');
 const { validateDesign } = require('../shared/resume');
 const { compileLatex } = require('../services/latexService');
 const compileCache = require('../services/compileCache');
-const { special } = require('../tests/fixtures/profile');
+const { special } = require('../shared/fixtureProfile');
 
 // The special fixture already carries R&D, 100%, $1.2M, #1, C++, C#, Node_JS,
 // {braces}, ~, ^, backslash in every section. Add the exact strings the proof

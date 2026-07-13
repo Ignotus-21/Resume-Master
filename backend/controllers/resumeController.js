@@ -192,49 +192,77 @@ const updateResume = async (req, res) => {
     if (!resume) return res.status(404).json({ message: 'Resume not found' });
 
     // Concurrent-edit detection (same resume open in two tabs/sessions).
-    // baseUpdatedAt is the updatedAt the client loaded; if the stored doc has
-    // moved past it, someone else wrote in between. Last-write-wins is the
-    // accepted v1 behavior — this save still applies — but the response
-    // carries conflict:true so the client can warn instead of clobbering
-    // silently. Clients that don't send baseUpdatedAt are unaffected.
-    let conflict = false;
-    if (typeof baseUpdatedAt === 'string' && baseUpdatedAt) {
-      const base = Date.parse(baseUpdatedAt);
-      conflict =
-        Number.isFinite(base) &&
-        resume.updatedAt instanceof Date &&
-        resume.updatedAt.getTime() > base;
-    }
+    // baseUpdatedAt is the updatedAt the client loaded. When present, the
+    // write is applied atomically: the Mongo filter itself requires
+    // updatedAt to still equal baseUpdatedAt, so a stale save (or one of two
+    // racing concurrent saves) is rejected with 409 *before* any mutation,
+    // instead of being applied and merely flagged after the fact. Clients
+    // that omit baseUpdatedAt keep the old unconditional last-write-wins save.
+    const hasBase = typeof baseUpdatedAt === 'string' && baseUpdatedAt;
+    const baseTime = hasBase ? Date.parse(baseUpdatedAt) : NaN;
+    const atomicGuard = hasBase && Number.isFinite(baseTime);
 
-    if (typeof versionName === 'string' && versionName.trim()) resume.versionName = versionName;
-    if (content && typeof content === 'object') resume.content = content;
-    if (design && typeof design === 'object') resume.design = validateDesign(design);
-    if (templateId) resume.templateId = safeTemplateId(templateId);
+    const $set = {};
+    const $unset = {};
+    if (typeof versionName === 'string' && versionName.trim()) $set.versionName = versionName;
+    if (content && typeof content === 'object') $set.content = content;
+    if (design && typeof design === 'object') $set.design = validateDesign(design);
+    if (templateId) $set.templateId = safeTemplateId(templateId);
 
     if (mode === 'latex' && resume.mode !== 'latex') {
       // EJECT: freeze the current render (or the client-provided source) as
       // the document's truth. One-way door — visual editing and AI
-      // re-tailoring are disabled until revert.
-      resume.mode = 'latex';
-      resume.latexSource =
+      // re-tailoring are disabled until revert. The eject request commonly
+      // carries content/design/templateId alongside mode:'latex' in the same
+      // call (see useWorkspace.ts eject()), so render from the values this
+      // same request just set — not the doc's pre-update fields — or the
+      // frozen LaTeX would silently miss the change that triggered the eject.
+      $set.mode = 'latex';
+      $set.latexSource =
         typeof latexSource === 'string' && latexSource.trim()
           ? latexSource
-          : render(resume.content || {}, validateDesign(resume.design), resume.templateId);
+          : render(
+              $set.content !== undefined ? $set.content : (resume.content || {}),
+              $set.design !== undefined ? $set.design : validateDesign(resume.design),
+              $set.templateId !== undefined ? $set.templateId : resume.templateId
+            );
     } else if (mode === 'structured' && resume.mode === 'latex') {
       // REVERT: back to content/design as truth; hand edits are discarded
       // (the client shows the explicit warning).
-      resume.mode = 'structured';
-      resume.latexSource = undefined;
+      $set.mode = 'structured';
+      $unset.latexSource = 1;
     } else if (typeof latexSource === 'string' && resume.mode === 'latex') {
       // Saving hand edits on an already-ejected doc.
-      resume.latexSource = latexSource;
+      $set.latexSource = latexSource;
     }
 
-    await resume.save();
-    await resume.populate('job');
-    const payload = withLatex(resume);
-    if (conflict) payload.conflict = true;
-    res.json(payload);
+    let saved;
+    if (atomicGuard) {
+      // Always keep $set as a top-level operator key, even when empty: an
+      // update document with NO top-level keys (or none starting with `$`)
+      // is a MongoDB *replacement* document, not a no-op — findOneAndUpdate
+      // would silently wipe the matched resume down to just its _id.
+      const update = { $set };
+      if (Object.keys($unset).length) update.$unset = $unset;
+      saved = await Resume.findOneAndUpdate(
+        { _id: resume._id, owner: req.identity, updatedAt: new Date(baseTime) },
+        update,
+        { new: true, runValidators: true }
+      );
+      if (!saved) {
+        return res.status(409).json({
+          message: 'This resume was changed elsewhere since you loaded it. Reload to see the latest version before saving again.',
+          conflict: true,
+        });
+      }
+    } else {
+      Object.assign(resume, $set);
+      if ($unset.latexSource) resume.latexSource = undefined;
+      saved = await resume.save();
+    }
+
+    await saved.populate('job');
+    res.json(withLatex(saved));
   } catch (error) {
     console.error('Resume error:', error);
     res.status(500).json({ message: 'Something went wrong' });

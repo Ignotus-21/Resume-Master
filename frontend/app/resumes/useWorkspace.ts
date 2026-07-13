@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { apiFetch, apiJson } from '@/lib/api';
+import { apiFetch, apiJson, ApiError } from '@/lib/api';
 import { useToast } from '@/components/ui/Toast';
 import { createAutosaver, type Autosaver, type AutosaveState } from '@/lib/autosave';
 import type { ResumeDocument, ResumeContent, DesignTokens, TemplateId, CompileError } from '@/lib/resumeSchema';
@@ -237,13 +237,21 @@ export function useWorkspace(preSelectedJobId: string | null) {
       payload.design = d.design;
       payload.templateId = d.templateId;
     }
-    const updated: ResumeDocument & { conflict?: boolean } =
-      await apiJson(`/api/resumes/${d._id}`, 'PUT', payload);
-    if (updated.conflict) {
-      showToast(
-        'This resume was also edited in another tab or session — that version has been overwritten by this one.',
-        'info'
-      );
+    let updated: ResumeDocument;
+    try {
+      updated = await apiJson(`/api/resumes/${d._id}`, 'PUT', payload);
+    } catch (err) {
+      // The server rejects a save whose baseUpdatedAt no longer matches the
+      // stored doc (someone else saved first) with 409 instead of applying
+      // it — surface that distinctly so the user knows to reload rather than
+      // reading it as a generic network failure.
+      if (err instanceof ApiError && err.status === 409) {
+        showToast(
+          'This resume was changed in another tab or session. Reload the page to see the latest version before saving again.',
+          'error'
+        );
+      }
+      throw err;
     }
     // Merge only server-authoritative fields. Replacing the whole doc would
     // clobber keystrokes typed while this request was in flight; those edits

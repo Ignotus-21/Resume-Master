@@ -121,6 +121,36 @@ const tailorResume = async (masterData, jobDescription, apiKey, req = null) => {
   });
 };
 
+// Paste-a-JD fast path: same tailoring as tailorResume, but the response also
+// carries the job's role/company so the caller can create the Job record
+// without a second Gemini call. Returns { job: { role, company }, resume }.
+const tailorResumeWithJobMeta = async (masterData, jobDescription, apiKey, req = null) => {
+  const prompt = `
+    You are an ATS Resume Optimizer.
+    I have a Master Resume Data (JSON) and a Job Description.
+
+    CRITICAL INSTRUCTIONS:
+    1. **INCLUDE ALL SECTIONS**: You MUST include 'skills', 'certificates', 'achievements', 'projects', 'education', 'experience' if present in the master data.
+    2. **DO NOT DROP SKILLS**: Include ALL technical skills from the master profile. Do not filter them out.
+    3. **DO NOT DROP CERTIFICATES**: Include all certificates.
+    4. **Tailor Descriptions**: Rewrite bullet points in 'experience' and 'projects' to highlight keywords from the Job Description.
+    5. **Name the job**: In 'job', report the job title and company name stated in the Job Description. Use "" for the company if it is never named; never invent one.
+
+    Master Resume: ${JSON.stringify(masterData)}
+
+    Job Description: ${jobDescription}
+  `;
+
+  return generateJson({
+    apiKey,
+    req,
+    service: 'resume-tailor',
+    call: GEMINI_CALLS.resumeContentWithJobMeta,
+    label: 'resume tailor with job meta',
+    parts: [{ text: prompt }],
+  });
+};
+
 // v2 invariant: Gemini NEVER emits LaTeX. It does JSON->JSON content
 // operations only; rendering is backend/services/latex/render.js. The old
 // generateLatex() lived here — do not reintroduce anything like it.
@@ -333,6 +363,7 @@ const generateLinkedInContent = async (masterData, apiKey, req = null) => {
 module.exports = {
   parseResumeData,
   tailorResume,
+  tailorResumeWithJobMeta,
   rewriteBullet,
   suggestTitles,
   bulletCoach,

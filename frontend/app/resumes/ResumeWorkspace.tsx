@@ -36,7 +36,7 @@ export function ResumeWorkspace({ ws }: { ws: Workspace }) {
     pdfData, pages, tex, compileErrors, compileLog, isCompiling,
     autoCompile, setAutoCompile, compile,
     save, eject, revert, duplicate, remove, getFeedback,
-    recommendations, analyzing, saveState,
+    recommendations, analyzing, saveState, generating,
   } = ws;
 
   const [view, setView] = useState<'visual' | 'code'>('visual');
@@ -132,6 +132,13 @@ export function ResumeWorkspace({ ws }: { ws: Workspace }) {
   const trimEstimate = pages && pages > 1 && bulletCount > 0
     ? Math.max(1, Math.ceil((bulletCount * (pages - 1)) / pages / 2))
     : 0;
+
+  if (!doc && generating) {
+    // Generation takes a few seconds (one Gemini call). First impressions
+    // matter most right here, so show the shape of the workspace that is
+    // about to appear — not a blank spinner page.
+    return <WorkspaceSkeleton />;
+  }
 
   if (!doc) {
     // Without this list an existing resume is unreachable after a tab close —
@@ -397,6 +404,49 @@ export function ResumeWorkspace({ ws }: { ws: Workspace }) {
         onConfirm={() => { if (pendingDelete) remove(pendingDelete); setPendingDelete(null); }}
         onCancel={() => setPendingDelete(null)}
       />
+    </div>
+  );
+}
+
+// The three-pane workspace, as pulsing placeholders, while the tailored
+// content is being generated. Mirrors the real layout (left rail, center
+// editor, right PDF page) so the transition to the loaded workspace is a
+// fill-in, not a layout jump.
+function WorkspaceSkeleton() {
+  const line = (w: string) => <div className={`h-3 rounded bg-[#e8eaed] animate-pulse ${w}`} />;
+  return (
+    <div className="flex flex-col flex-1 min-h-0 border border-[#dadce0] rounded-xl overflow-hidden bg-white">
+      <div className="flex items-center gap-2 px-3 py-2.5 bg-[#f8f9fa] border-b border-[#dadce0]">
+        <div className="h-6 w-40 rounded-lg bg-[#e8eaed] animate-pulse" />
+        <div className="h-6 w-28 rounded-lg bg-[#e8eaed] animate-pulse" />
+        <div className="flex-1" />
+        <span className="flex items-center gap-2 text-sm font-medium text-[#1a73e8]">
+          <Loader2 className="h-4 w-4 animate-spin" /> Tailoring your resume…
+        </span>
+      </div>
+      <div className="flex flex-1 min-h-0">
+        <div className="w-56 shrink-0 border-r border-[#dadce0] p-4 space-y-3 bg-[#fbfbfc]">
+          {line('w-3/4')}{line('w-1/2')}{line('w-2/3')}{line('w-1/2')}{line('w-3/5')}
+        </div>
+        <div className="flex-1 p-8 space-y-4">
+          <div className="h-6 w-1/3 rounded bg-[#e8eaed] animate-pulse" />
+          {line('w-full')}{line('w-5/6')}{line('w-2/3')}
+          <div className="h-5 w-1/4 rounded bg-[#e8eaed] animate-pulse mt-6" />
+          {line('w-full')}{line('w-4/5')}{line('w-3/4')}
+        </div>
+        <div className="w-[46%] shrink-0 border-l border-[#dadce0] bg-[#e8eaed] p-6 flex flex-col items-center">
+          <div className="w-full max-w-md aspect-[8.5/11] bg-white shadow-md rounded-sm p-8 space-y-3">
+            <div className="h-5 w-1/2 mx-auto rounded bg-[#f1f3f4] animate-pulse" />
+            <div className="h-3 w-2/3 mx-auto rounded bg-[#f1f3f4] animate-pulse" />
+            <div className="pt-4 space-y-2.5">
+              {['w-full', 'w-11/12', 'w-full', 'w-4/5', 'w-full', 'w-5/6', 'w-3/4'].map((w, i) => (
+                <div key={i} className={`h-2.5 rounded bg-[#f1f3f4] animate-pulse ${w}`} />
+              ))}
+            </div>
+          </div>
+          <p className="text-xs text-[#5f6368] mt-4">The preview compiles as soon as your content is ready.</p>
+        </div>
+      </div>
     </div>
   );
 }

@@ -36,11 +36,10 @@ jobs:
           }
 
   # Builds the backend image on real Linux. The image build runs
-  # scripts/warmTectonicCache.js, which compiles every template / font /
-  # extra-package variant with real Tectonic — including fontawesome5
-  # (links:'icons'), which hard-crashes the Windows Tectonic 0.16.9 build.
-  # A green run here is the evidence that the crash is Windows-only; a red
-  # run means the icons variant is broken on the deploy platform too.
+  # scripts/warmTectonicCache.js, which compiles every template / font / selected
+  # extra-package variants with real Tectonic. NOTE: the known-crashing
+  # fontawesome5 variant (links:'icons') is intentionally excluded for now (see
+  # plan/BACKLOG.md), so this job validates template/font health but not icons.
   # Skipped on pull_request events (a full docker build with 15 Tectonic
   # compiles is slow) — runs on branch pushes and on demand via
   # workflow_dispatch.

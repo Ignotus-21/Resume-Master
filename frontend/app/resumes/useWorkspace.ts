@@ -82,6 +82,23 @@ export function useWorkspace(preSelectedJobId: string | null) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Master Profile snapshot: the entry screens branch on whether it has any
+  // content yet (import onboarding vs. straight to generate).
+  const [profile, setProfile] = useState<any>(null);
+  const [profileLoaded, setProfileLoaded] = useState(false);
+  const refreshProfile = useCallback(async () => {
+    try {
+      setProfile(await apiFetch('/api/master'));
+    } catch {
+      // Non-fatal: entry screens just behave as if the profile were empty.
+    } finally {
+      setProfileLoaded(true);
+    }
+  }, []);
+  useEffect(() => {
+    refreshProfile();
+  }, [refreshProfile]);
+
   useEffect(() => {
     fetchResumes(selectedJobId);
     fetchJobs();
@@ -350,26 +367,38 @@ export function useWorkspace(preSelectedJobId: string | null) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectResume]);
 
-  const generate = useCallback(async (templateId: string) => {
-    if (!selectedJobId) {
-      showToast('Select a job first', 'info');
-      return;
-    }
+  // Three entry paths, mirroring the backend: a saved job, a pasted JD (the
+  // Job record is created server-side, behind the scenes), or neither — an
+  // instant untailored base resume from the Master Profile (no AI call).
+  const generate = useCallback(async (
+    templateId: string,
+    source: { jobId?: string; jdText?: string } = {}
+  ) => {
     setGenerating(true);
     try {
       const data: ResumeDocument = await apiJson('/api/resumes/generate', 'POST', {
-        jobId: selectedJobId,
+        ...(source.jobId ? { jobId: source.jobId } : {}),
+        ...(source.jdText ? { jdText: source.jdText } : {}),
         templateId,
       });
       setResumes((prev) => [data, ...prev]);
       await selectResume(data);
+      if (source.jdText) {
+        // The backend created a Job from the pasted JD — pick up its name.
+        fetchJobs();
+        const job: any = data.job;
+        if (job?.role) showToast(`Added "${job.role}${job.company ? ` at ${job.company}` : ''}" to your job tracker.`, 'success');
+      }
+      return data;
     } catch (error: any) {
       console.error('Error generating resume:', error);
       showToast(error.message || 'Failed to generate. Ensure Gemini Key is set.', 'error');
+      return null;
+    } finally {
+      setGenerating(false);
     }
-    setGenerating(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedJobId, selectResume]);
+  }, [selectResume, fetchJobs]);
 
   const getFeedback = useCallback(async () => {
     if (!doc?.job) {
@@ -400,6 +429,7 @@ export function useWorkspace(preSelectedJobId: string | null) {
 
   return {
     resumes, jobs,
+    profile, profileLoaded, refreshProfile,
     selectedJobId, setSelectedJobId,
     generating, analyzing, saving, dirty, saveState,
     recommendations,

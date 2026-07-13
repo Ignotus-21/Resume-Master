@@ -107,6 +107,8 @@ beforeEach(() => {
 const CALL_TABLE = [
   ['parseResumeData', () => gemini.parseResumeData('resume text'), validResumeContent()],
   ['tailorResume', () => gemini.tailorResume({}, 'JD'), validResumeContent()],
+  ['tailorResumeWithJobMeta', () => gemini.tailorResumeWithJobMeta({}, 'JD'),
+    { job: { role: 'Engineer', company: 'Acme' }, resume: validResumeContent() }],
   ['rewriteBullet', () => gemini.rewriteBullet('Did stuff', 'SWE', 'JD'), { rewrites: ['a', 'b', 'c'] }],
   ['suggestTitles', () => gemini.suggestTitles('Engineer', 'JD'), { titles: ['a', 'b', 'c'] }],
   ['bulletCoach (question)', () => gemini.bulletCoach({ bullet: 'Did stuff' }), { question: 'How many?' }],
@@ -206,6 +208,35 @@ describe('parseResumeData / tailorResume (resume content schema)', () => {
     const data = await gemini.parseResumeData('text');
     expect(data.user.name).toBe('Ada Lovelace');
     expect(data.experience).toHaveLength(1);
+  });
+});
+
+describe('tailorResumeWithJobMeta (paste-a-JD fast path)', () => {
+  it('returns both the job meta and the tailored resume', async () => {
+    respondWith({ job: { role: 'Engineer', company: 'Acme' }, resume: validResumeContent() });
+    const data = await gemini.tailorResumeWithJobMeta({}, 'JD');
+    expect(data.job).toEqual({ role: 'Engineer', company: 'Acme' });
+    expect(data.resume.user.name).toBe('Ada Lovelace');
+  });
+
+  it('rejects a response with an empty job role', async () => {
+    respondWith({ job: { role: '  ', company: 'Acme' }, resume: validResumeContent() });
+    await expectAiBadResponse(gemini.tailorResumeWithJobMeta({}, 'JD'), /job\.role/);
+  });
+
+  it('rejects a bare resume payload missing the job wrapper', async () => {
+    respondWith(validResumeContent());
+    await expectAiBadResponse(gemini.tailorResumeWithJobMeta({}, 'JD'), /missing required property/);
+  });
+
+  it('rejects empty tailored content even when the job meta is fine', async () => {
+    const content = validResumeContent();
+    content.user.name = '';
+    content.experience = [];
+    content.education = [];
+    content.skills = { languages: [], frameworks: [], tools: [], other: [] };
+    respondWith({ job: { role: 'Engineer', company: 'Acme' }, resume: content });
+    await expectAiBadResponse(gemini.tailorResumeWithJobMeta({}, 'JD'), /empty/);
   });
 });
 

@@ -157,6 +157,20 @@ const GEMINI_CALLS = {
     schema: RESUME_CONTENT_SCHEMA,
     check: checkResumeContent,
   },
+  // Paste-a-JD fast path: one call both tailors the resume AND names the job,
+  // so the backend can create the Job record without a second round-trip.
+  resumeContentWithJobMeta: {
+    schema: obj({
+      job: obj({
+        role: str('Job title from the job description, e.g. "Senior Backend Engineer"'),
+        company: str('Hiring company name, "" if the description never names it'),
+      }),
+      resume: RESUME_CONTENT_SCHEMA,
+    }),
+    check: (d) =>
+      checkResumeContent(d.resume) ||
+      (nonEmpty(d.job.role) ? null : 'job.role must be a non-empty string'),
+  },
   rewriteBullet: {
     schema: obj({
       rewrites: arr(str(), {

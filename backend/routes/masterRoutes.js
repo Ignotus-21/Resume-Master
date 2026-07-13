@@ -9,12 +9,17 @@ const multer = require('multer');
 const UPLOAD_DIR = path.join(__dirname, '..', 'uploads');
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
+const ACCEPTED_UPLOAD_MIMETYPES = [
+  'application/pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+];
+
 const upload = multer({
   dest: UPLOAD_DIR,
   limits: { fileSize: 5 * 1024 * 1024, files: 1 },
   fileFilter: (req, file, cb) => {
-    if (file.mimetype !== 'application/pdf') {
-      return cb(new Error('Only PDF files are allowed'));
+    if (!ACCEPTED_UPLOAD_MIMETYPES.includes(file.mimetype)) {
+      return cb(new Error('Only PDF and DOCX files are allowed'));
     }
     cb(null, true);
   },

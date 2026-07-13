@@ -1,12 +1,12 @@
 const Resume = require('../models/Resume');
 const MasterProfile = require('../models/MasterProfile');
 const Job = require('../models/Job');
-const { tailorResume, getRecommendations } = require('../services/geminiService');
+const { tailorResume, tailorResumeWithJobMeta, getRecommendations } = require('../services/geminiService');
 const { compileLatex } = require('../services/latexService');
 const { render } = require('../services/latex/render');
 const compileCache = require('../services/compileCache');
 const { enforceGeminiQuota } = require('../utils/geminiGate');
-const { validateDesign, TEMPLATE_IDS, DEFAULT_DESIGN } = require('../shared/resume');
+const { validateDesign, TEMPLATE_IDS, DEFAULT_DESIGN, SECTION_KEYS } = require('../shared/resume');
 const { respondError } = require('../utils/aiError');
 
 // LaTeX is never a stored truth for structured resumes — it's derived here
@@ -30,45 +30,116 @@ const withLatex = (resumeDoc) => {
 const safeTemplateId = (templateId) =>
   TEMPLATE_IDS.includes(templateId) ? templateId : 'sheets';
 
+const MAX_JD_TEXT_LENGTH = 20000;
+
+// MasterProfile document -> ResumeContent: user + every IR section, with
+// Mongo bookkeeping (_id/__v/timestamps) stripped so the stored content is a
+// plain IR object, not a snapshot of subdocument internals.
+const stripMongoKeys = (value) => {
+  if (Array.isArray(value)) return value.map(stripMongoKeys);
+  if (value && typeof value === 'object' && !(value instanceof Date)) {
+    const out = {};
+    for (const [k, v] of Object.entries(value)) {
+      if (k === '_id' || k === '__v' || k === 'createdAt' || k === 'updatedAt') continue;
+      out[k] = stripMongoKeys(v);
+    }
+    return out;
+  }
+  return value;
+};
+
+const profileToContent = (profileDoc) => {
+  const profile = profileDoc.toObject ? profileDoc.toObject() : { ...profileDoc };
+  const content = { user: profile.user || {} };
+  for (const key of SECTION_KEYS) {
+    if (profile[key] !== undefined) content[key] = profile[key];
+  }
+  return stripMongoKeys(content);
+};
+
+const profileHasContent = (profileDoc) => {
+  const profile = profileDoc.toObject ? profileDoc.toObject() : profileDoc;
+  if (profile.user?.name?.trim()) return true;
+  return SECTION_KEYS.some((key) => {
+    const v = profile[key];
+    if (key === 'skills') return v && Object.values(v).some((list) => Array.isArray(list) && list.length > 0);
+    return Array.isArray(v) && v.length > 0;
+  });
+};
+
+// One endpoint, three entry paths:
+//  - jobId          -> tailor against that saved job (the original flow)
+//  - jdText only    -> tailor against the pasted JD; the Job record is created
+//                      here, behind the scenes, from the tailor call's job meta
+//  - neither        -> instant untailored "base" resume straight from the
+//                      MasterProfile: no Gemini call, no quota. This is what
+//                      the import-onboarding flow lands on.
 const createResumeForJob = async (req, res) => {
   const { jobId, jdText, templateId, design, parentResumeId } = req.body;
+
+  if (typeof jdText === 'string' && jdText.length > MAX_JD_TEXT_LENGTH) {
+    return res.status(400).json({ message: 'Job description is too long' });
+  }
 
   try {
     // 1. Get Master Profile
     const profile = await MasterProfile.findOne({ owner: req.identity });
-    if (!profile) return res.status(404).json({ message: 'Master Profile not found' });
-
-    // 2. Get Job Description
-    let jobDescription = jdText;
-    let jobTitle = 'Role';
-    let companyName = 'Company';
-
-    if (jobId) {
-      const job = await Job.findOne({ _id: jobId, owner: req.identity });
-      if (job) {
-        jobDescription = job.jdText || job.role + " at " + job.company;
-        jobTitle = job.role || 'Role';
-        companyName = job.company || 'Company';
-      }
+    if (!profile || !profileHasContent(profile)) {
+      return res.status(404).json({
+        message: 'Your Master Profile is empty. Import an existing resume or fill in your profile first.',
+      });
     }
 
-    if (!jobDescription) return res.status(400).json({ message: 'Job Description is required' });
-
-    const quotaRejection = await enforceGeminiQuota(req);
-    if (quotaRejection) return res.status(quotaRejection.status).json(quotaRejection.body);
-
-    // 3. Tailor content — Gemini's ONLY job here is JSON -> JSON. LaTeX is
-    // rendered deterministically from the result and never LLM-authored.
-    const content = await tailorResume(profile, jobDescription, req.geminiApiKey, req);
-
-    // 4. Save
     const userName = profile.user?.name?.split(' ')[0] || 'Resume';
     const uniqueCode = Math.random().toString(36).substring(2, 6).toUpperCase();
-    const versionName = `${userName}_${companyName}_${jobTitle}_${uniqueCode}`.replace(/[^a-zA-Z0-9_]/g, '_');
+    const buildVersionName = (companyName, jobTitle) =>
+      `${userName}_${companyName}_${jobTitle}_${uniqueCode}`.replace(/[^a-zA-Z0-9_]/g, '_');
+
+    let content;
+    let job = null;
+    let versionName;
+
+    if (jobId) {
+      const savedJob = await Job.findOne({ _id: jobId, owner: req.identity });
+      const jobDescription = savedJob
+        ? savedJob.jdText || savedJob.role + ' at ' + savedJob.company
+        : jdText;
+      if (!jobDescription) return res.status(400).json({ message: 'Job Description is required' });
+
+      const quotaRejection = await enforceGeminiQuota(req);
+      if (quotaRejection) return res.status(quotaRejection.status).json(quotaRejection.body);
+
+      // Tailor content — Gemini's ONLY job here is JSON -> JSON. LaTeX is
+      // rendered deterministically from the result and never LLM-authored.
+      content = await tailorResume(profile, jobDescription, req.geminiApiKey, req);
+      job = savedJob;
+      versionName = buildVersionName(savedJob?.company || 'Company', savedJob?.role || 'Role');
+    } else if (typeof jdText === 'string' && jdText.trim()) {
+      const quotaRejection = await enforceGeminiQuota(req);
+      if (quotaRejection) return res.status(quotaRejection.status).json(quotaRejection.body);
+
+      const data = await tailorResumeWithJobMeta(profile, jdText, req.geminiApiKey, req);
+      content = data.resume;
+
+      // The Job record exists so downstream features (JD match, cover
+      // letters, the tracker) work — the user never had to fill a job form.
+      job = await Job.create({
+        owner: req.identity,
+        role: data.job.role || 'Role',
+        company: data.job.company || 'Unknown Company',
+        jdText,
+        status: 'Wishlist',
+      });
+      versionName = buildVersionName(data.job.company || 'Unknown', data.job.role || 'Role');
+    } else {
+      // Base resume: the profile as-is, rendered deterministically. Instant.
+      content = profileToContent(profile);
+      versionName = buildVersionName('Base', 'Resume');
+    }
 
     const resume = new Resume({
       owner: req.identity,
-      job: jobId,
+      job: job?._id,
       content,
       design: validateDesign(design || DEFAULT_DESIGN),
       templateId: safeTemplateId(templateId),
@@ -78,6 +149,9 @@ const createResumeForJob = async (req, res) => {
     });
 
     await resume.save();
+    // The workspace reads doc.job.jdText (Match panel, bullet AI) — return it
+    // populated so a freshly generated resume behaves like a reloaded one.
+    if (job) resume.job = job;
 
     res.json(withLatex(resume));
 

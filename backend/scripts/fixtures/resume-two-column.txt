@@ -1,0 +1,50 @@
+CONTACT
+priya.raghavan@outlook.com
++91 98450 12233
+Bengaluru, India
+linkedin.com/in/priyaraghavan
+
+TECHNICAL SKILLS
+Python
+SQL
+Tableau
+dbt
+Snowflake
+Airflow
+
+CERTIFICATIONS
+Google Data Analytics
+Professional Certificate (2021)
+AWS Certified Cloud
+Practitioner (2022)
+
+LANGUAGES
+English (fluent)
+Hindi (native)
+Kannada (native)
+
+PRIYA RAGHAVAN
+Senior Data Analyst
+
+PROFILE
+Analytics professional with 6 years of experience turning messy
+operational data into decisions for logistics and e-commerce.
+
+WORK EXPERIENCE
+Senior Data Analyst
+Flipkart | Bengaluru
+Apr 2021 - Present
+• Own the seller-performance mart (dbt + Snowflake), 300+ models
+• Cut weekly business review prep from 2 days to 3 hours via
+automated Tableau pipelines
+• Partnered with ops to reduce delivery SLA breaches by 14%
+
+Data Analyst
+Delhivery | Gurugram
+Jun 2018 - Mar 2021
+• Built driver-allocation dashboards used across 40 hubs
+• A/B tested route heuristics, saving ~₹2.1 crore annually
+
+EDUCATION
+B.Tech, Industrial Engineering
+NIT Trichy, 2014 - 2018

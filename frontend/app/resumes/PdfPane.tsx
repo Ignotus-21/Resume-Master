@@ -231,9 +231,27 @@ export const PdfPane = forwardRef<PdfPaneHandle, PdfPaneProps>(function PdfPane(
         ) : (
           <div ref={containerRef} onScroll={handleScroll} className="h-full overflow-auto bg-[#e8eaed] p-4">
             {!renderedOnce && (
-              <div className="flex items-center justify-center h-full text-[#5f6368]">
-                {isCompiling ? 'Compiling preview…' : 'Preview will appear here'}
-              </div>
+              isCompiling ? (
+                // First compile of this document: a page-shaped skeleton, so
+                // the wait reads as "your document is coming" rather than a
+                // blank pane.
+                <div className="flex flex-col items-center pt-6">
+                  <div className="w-full max-w-md aspect-[8.5/11] bg-white shadow-md p-8 space-y-3">
+                    <div className="h-5 w-1/2 mx-auto rounded bg-[#f1f3f4] animate-pulse" />
+                    <div className="h-3 w-2/3 mx-auto rounded bg-[#f1f3f4] animate-pulse" />
+                    <div className="pt-4 space-y-2.5">
+                      {['w-full', 'w-11/12', 'w-full', 'w-4/5', 'w-full', 'w-5/6', 'w-3/4', 'w-full', 'w-2/3'].map((w, i) => (
+                        <div key={i} className={`h-2.5 rounded bg-[#f1f3f4] animate-pulse ${w}`} />
+                      ))}
+                    </div>
+                  </div>
+                  <p className="text-xs text-[#5f6368] mt-3">Compiling preview…</p>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-full text-[#5f6368]">
+                  Preview will appear here
+                </div>
+              )
             )}
             <div ref={pagesRef} />
             {compileError && pdfData && (

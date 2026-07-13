@@ -65,4 +65,26 @@ describe('POST /api/master/upload-resume', () => {
       .attach('resume', realPdf, { filename: 'resume.pdf', contentType: 'application/pdf' });
     expect(res.status).toBe(200);
   });
+
+  const DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+
+  it('accepts a genuine DOCX (M9: multiple import formats)', async () => {
+    // fixtures/minimal.docx is a real minimal OOXML package (built with
+    // jszip; Compress-Archive is unusable — it writes backslash entry names).
+    const realDocx = require('fs').readFileSync(require('path').join(__dirname, 'fixtures', 'minimal.docx'));
+    const res = await request(app)
+      .post('/api/master/upload-resume')
+      .attach('resume', realDocx, { filename: 'resume.docx', contentType: DOCX_MIME });
+    expect(res.status).toBe(200);
+    expect(res.body.user.name).toBe('Test');
+  });
+
+  it('rejects a DOCX-labelled file that is not really a ZIP container (magic bytes)', async () => {
+    const fakeDocx = Buffer.from('plain text pretending to be a docx');
+    const res = await request(app)
+      .post('/api/master/upload-resume')
+      .attach('resume', fakeDocx, { filename: 'resume.docx', contentType: DOCX_MIME });
+    expect(res.status).toBe(400);
+    expect(res.body.message).toMatch(/not a valid DOCX/i);
+  });
 });

@@ -103,18 +103,40 @@ const ingestRawText = async (req, res) => {
   }
 };
 
+const DOCX_MIMETYPE = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+
 const uploadResume = async (req, res) => {
   if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
 
   try {
     const dataBuffer = fs.readFileSync(req.file.path);
 
-    // Verify the file is actually a PDF (magic bytes), not just claimed via
-    // Content-Type/extension, before forwarding it to Gemini.
-    const isPdf = dataBuffer.slice(0, 5).toString('ascii') === '%PDF-';
-    if (!isPdf) {
+    // Verify the file really is what it claims (magic bytes), not just the
+    // Content-Type/extension, before spending an AI call on it. A .docx is a
+    // ZIP container, so it starts with PK\x03\x04.
+    const isDocx = req.file.mimetype === DOCX_MIMETYPE;
+    const magicOk = isDocx
+      ? dataBuffer.slice(0, 4).equals(Buffer.from([0x50, 0x4b, 0x03, 0x04]))
+      : dataBuffer.slice(0, 5).toString('ascii') === '%PDF-';
+    if (!magicOk) {
       fs.unlinkSync(req.file.path);
-      return res.status(400).json({ message: 'Uploaded file is not a valid PDF' });
+      return res.status(400).json({ message: `Uploaded file is not a valid ${isDocx ? 'DOCX' : 'PDF'}` });
+    }
+
+    // Extract plain text locally instead of sending the raw file to Gemini.
+    // Runs BEFORE the quota gate so an unreadable file never reserves quota.
+    let text;
+    if (isDocx) {
+      const mammoth = require('mammoth');
+      text = (await mammoth.extractRawText({ buffer: dataBuffer })).value;
+    } else {
+      text = (await pdfParse(dataBuffer)).text;
+    }
+    if (!text || !text.trim()) {
+      fs.unlinkSync(req.file.path);
+      return res.status(400).json({
+        message: 'No readable text found in that file. If it is a scanned image, try a text-based export instead.',
+      });
     }
 
     const quotaRejection = await enforceGeminiQuota(req);
@@ -123,9 +145,7 @@ const uploadResume = async (req, res) => {
       return res.status(quotaRejection.status).json(quotaRejection.body);
     }
 
-    // Extract text using pdf-parse instead of sending the buffer directly
-    const pdfData = await pdfParse(dataBuffer);
-    const parsedData = await parseResumeData(pdfData.text, req.geminiApiKey, req);
+    const parsedData = await parseResumeData(text, req.geminiApiKey, req);
 
     // Clean up uploaded file
     fs.unlinkSync(req.file.path);

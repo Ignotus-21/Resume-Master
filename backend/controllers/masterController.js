@@ -13,6 +13,13 @@ const ALLOWED_PROFILE_FIELDS = [
   'customSections', 'rawText',
 ];
 
+// Matches the JD/resume-text caps used elsewhere (resumeController.js,
+// aiController.js) so extracted/pasted resume text can't blow past what
+// those endpoints allow — without this, a highly-compressible DOCX (bounded
+// only by multer's 5MB upload limit, not by its decompressed text size) or a
+// large pasted-text body could balloon the Gemini prompt.
+const MAX_TEXT_LENGTH = 20000;
+
 const pickProfileFields = (body) => {
   const picked = {};
   for (const field of ALLOWED_PROFILE_FIELDS) {
@@ -64,6 +71,9 @@ const updateProfile = async (req, res) => {
 const ingestRawText = async (req, res) => {
   const { text } = req.body;
   if (!text) return res.status(400).json({ message: 'No text provided' });
+  if (typeof text !== 'string' || text.length > MAX_TEXT_LENGTH) {
+    return res.status(400).json({ message: `text exceeds maximum length of ${MAX_TEXT_LENGTH} characters` });
+  }
 
   try {
     const quotaRejection = await enforceGeminiQuota(req);
@@ -136,6 +146,12 @@ const uploadResume = async (req, res) => {
       fs.unlinkSync(req.file.path);
       return res.status(400).json({
         message: 'No readable text found in that file. If it is a scanned image, try a text-based export instead.',
+      });
+    }
+    if (text.length > MAX_TEXT_LENGTH) {
+      fs.unlinkSync(req.file.path);
+      return res.status(400).json({
+        message: `Extracted text exceeds the maximum length of ${MAX_TEXT_LENGTH} characters. Trim the document and try again.`,
       });
     }
 

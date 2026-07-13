@@ -1,0 +1,33 @@
+MARCUS CHEN
+marcus.chen@gmail.com | (415) 555-0192 | San Francisco, CA
+linkedin.com/in/marcuschen | github.com/mchen-dev
+
+EXPERIENCE
+
+Senior Software Engineer, Stripe — San Francisco, CA
+March 2022 – Present
+- Led migration of the payments reconciliation pipeline from batch to streaming, cutting settlement latency from 4 hours to 90 seconds
+- Mentored 4 junior engineers; two promoted within 18 months
+- Reduced API error rate 38% by introducing circuit breakers across 12 internal services
+
+Software Engineer II, Airbnb — San Francisco, CA
+July 2019 – February 2022
+- Built the host payout preferences service (Java, Kafka) handling 2M daily events
+- Shipped experimentation framework used by 40+ product teams
+
+EDUCATION
+
+University of California, Berkeley
+B.S. Electrical Engineering and Computer Science, 2015 – 2019
+GPA: 3.7/4.0
+
+SKILLS
+
+Languages: Java, Python, TypeScript, Go
+Frameworks: Spring Boot, React, Flink
+Tools: Kafka, Kubernetes, Terraform, Datadog
+
+PROJECTS
+
+Ledgerline (github.com/mchen-dev/ledgerline)
+Open-source double-entry accounting library in Go; 1.2k GitHub stars

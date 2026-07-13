@@ -318,11 +318,11 @@ export function ImportTab({
   return (
     <div className="space-y-8">
       <div className="bg-[#f8f9fa]/50 border border-[#dadce0] p-6 rounded-xl">
-         <h3 className="text-lg font-semibold text-[#202124] mb-2">Option 1: Upload PDF Resume</h3>
+         <h3 className="text-lg font-semibold text-[#202124] mb-2">Option 1: Upload Resume (PDF or DOCX)</h3>
          <p className="text-[#5f6368] text-sm mb-4">Upload your resume to extract data. You will be able to review and merge the extracted info.</p>
          <input
            type="file"
-           accept=".pdf"
+           accept=".pdf,.docx"
            onChange={onFileUpload}
            disabled={ingesting}
            className="block w-full text-sm text-[#5f6368]

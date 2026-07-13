@@ -1,63 +1,163 @@
 const Resume = require('../models/Resume');
 const MasterProfile = require('../models/MasterProfile');
 const Job = require('../models/Job');
-const { tailorResume, generateLatex, getRecommendations } = require('../services/geminiService');
+const { tailorResume, tailorResumeWithJobMeta, getRecommendations } = require('../services/geminiService');
 const { compileLatex } = require('../services/latexService');
+const { render } = require('../services/latex/render');
+const compileCache = require('../services/compileCache');
 const { enforceGeminiQuota } = require('../utils/geminiGate');
+const { validateDesign, TEMPLATE_IDS, DEFAULT_DESIGN, SECTION_KEYS } = require('../shared/resume');
+const { respondError } = require('../utils/aiError');
 
+// LaTeX is never a stored truth for structured resumes — it's derived here
+// on the way out. Ejected docs (mode 'latex') and unmigrated legacy rows
+// return their frozen source instead.
+const withLatex = (resumeDoc) => {
+  const obj = resumeDoc.toObject ? resumeDoc.toObject() : { ...resumeDoc };
+  if (obj.mode === 'latex' && obj.latexSource) {
+    obj.latex = obj.latexSource;
+  } else if (obj.content) {
+    obj.latex = render(obj.content, validateDesign(obj.design), obj.templateId);
+  } else if (obj.latexCode) {
+    // Pre-v2 row that scripts/migrateResumesV2.js hasn't touched yet.
+    obj.latex = obj.latexCode;
+    obj.mode = 'latex';
+    obj.latexSource = obj.latexCode;
+  }
+  return obj;
+};
+
+const safeTemplateId = (templateId) =>
+  TEMPLATE_IDS.includes(templateId) ? templateId : 'sheets';
+
+const MAX_JD_TEXT_LENGTH = 20000;
+
+// MasterProfile document -> ResumeContent: user + every IR section, with
+// Mongo bookkeeping (_id/__v/timestamps) stripped so the stored content is a
+// plain IR object, not a snapshot of subdocument internals.
+const stripMongoKeys = (value) => {
+  if (Array.isArray(value)) return value.map(stripMongoKeys);
+  if (value && typeof value === 'object' && !(value instanceof Date)) {
+    const out = {};
+    for (const [k, v] of Object.entries(value)) {
+      if (k === '_id' || k === '__v' || k === 'createdAt' || k === 'updatedAt') continue;
+      out[k] = stripMongoKeys(v);
+    }
+    return out;
+  }
+  return value;
+};
+
+const profileToContent = (profileDoc) => {
+  const profile = profileDoc.toObject ? profileDoc.toObject() : { ...profileDoc };
+  const content = { user: profile.user || {} };
+  for (const key of SECTION_KEYS) {
+    if (profile[key] !== undefined) content[key] = profile[key];
+  }
+  return stripMongoKeys(content);
+};
+
+const profileHasContent = (profileDoc) => {
+  const profile = profileDoc.toObject ? profileDoc.toObject() : profileDoc;
+  if (profile.user?.name?.trim()) return true;
+  return SECTION_KEYS.some((key) => {
+    const v = profile[key];
+    if (key === 'skills') return v && Object.values(v).some((list) => Array.isArray(list) && list.length > 0);
+    return Array.isArray(v) && v.length > 0;
+  });
+};
+
+// One endpoint, three entry paths:
+//  - jobId          -> tailor against that saved job (the original flow)
+//  - jdText only    -> tailor against the pasted JD; the Job record is created
+//                      here, behind the scenes, from the tailor call's job meta
+//  - neither        -> instant untailored "base" resume straight from the
+//                      MasterProfile: no Gemini call, no quota. This is what
+//                      the import-onboarding flow lands on.
 const createResumeForJob = async (req, res) => {
-  const { jobId, jdText } = req.body;
+  const { jobId, jdText, templateId, design, parentResumeId } = req.body;
+
+  if (typeof jdText === 'string' && jdText.length > MAX_JD_TEXT_LENGTH) {
+    return res.status(400).json({ message: 'Job description is too long' });
+  }
 
   try {
     // 1. Get Master Profile
     const profile = await MasterProfile.findOne({ owner: req.identity });
-    if (!profile) return res.status(404).json({ message: 'Master Profile not found' });
-
-    // 2. Get Job Description
-    let jobDescription = jdText;
-    let jobTitle = 'Role';
-    let companyName = 'Company';
-
-    if (jobId) {
-      const job = await Job.findOne({ _id: jobId, owner: req.identity });
-      if (job) {
-        jobDescription = job.jdText || job.role + " at " + job.company;
-        jobTitle = job.role || 'Role';
-        companyName = job.company || 'Company';
-      }
+    if (!profile || !profileHasContent(profile)) {
+      return res.status(404).json({
+        message: 'Your Master Profile is empty. Import an existing resume or fill in your profile first.',
+      });
     }
 
-    if (!jobDescription) return res.status(400).json({ message: 'Job Description is required' });
-
-    const quotaRejection = await enforceGeminiQuota(req);
-    if (quotaRejection) return res.status(quotaRejection.status).json(quotaRejection.body);
-
-    // 3. Tailor Resume
-    const tailoredData = await tailorResume(profile, jobDescription, req.geminiApiKey, req);
-
-    // 4. Generate LaTeX
-    const latexCode = await generateLatex(tailoredData, req.geminiApiKey, req);
-
-    // 5. Save
     const userName = profile.user?.name?.split(' ')[0] || 'Resume';
     const uniqueCode = Math.random().toString(36).substring(2, 6).toUpperCase();
-    const versionName = `${userName}_${companyName}_${jobTitle}_${uniqueCode}`.replace(/[^a-zA-Z0-9_]/g, '_');
+    const buildVersionName = (companyName, jobTitle) =>
+      `${userName}_${companyName}_${jobTitle}_${uniqueCode}`.replace(/[^a-zA-Z0-9_]/g, '_');
+
+    let content;
+    let job = null;
+    let versionName;
+
+    if (jobId) {
+      const savedJob = await Job.findOne({ _id: jobId, owner: req.identity });
+      const jobDescription = savedJob
+        ? savedJob.jdText || savedJob.role + ' at ' + savedJob.company
+        : jdText;
+      if (!jobDescription) return res.status(400).json({ message: 'Job Description is required' });
+
+      const quotaRejection = await enforceGeminiQuota(req);
+      if (quotaRejection) return res.status(quotaRejection.status).json(quotaRejection.body);
+
+      // Tailor content — Gemini's ONLY job here is JSON -> JSON. LaTeX is
+      // rendered deterministically from the result and never LLM-authored.
+      content = await tailorResume(profile, jobDescription, req.geminiApiKey, req);
+      job = savedJob;
+      versionName = buildVersionName(savedJob?.company || 'Company', savedJob?.role || 'Role');
+    } else if (typeof jdText === 'string' && jdText.trim()) {
+      const quotaRejection = await enforceGeminiQuota(req);
+      if (quotaRejection) return res.status(quotaRejection.status).json(quotaRejection.body);
+
+      const data = await tailorResumeWithJobMeta(profile, jdText, req.geminiApiKey, req);
+      content = data.resume;
+
+      // The Job record exists so downstream features (JD match, cover
+      // letters, the tracker) work — the user never had to fill a job form.
+      job = await Job.create({
+        owner: req.identity,
+        role: data.job.role || 'Role',
+        company: data.job.company || 'Unknown Company',
+        jdText,
+        status: 'Wishlist',
+      });
+      versionName = buildVersionName(data.job.company || 'Unknown', data.job.role || 'Role');
+    } else {
+      // Base resume: the profile as-is, rendered deterministically. Instant.
+      content = profileToContent(profile);
+      versionName = buildVersionName('Base', 'Resume');
+    }
 
     const resume = new Resume({
       owner: req.identity,
-      job: jobId,
-      latexCode,
-      tailoredData,
+      job: job?._id,
+      content,
+      design: validateDesign(design || DEFAULT_DESIGN),
+      templateId: safeTemplateId(templateId),
+      mode: 'structured',
       versionName,
+      parentResumeId: parentResumeId || undefined,
     });
 
     await resume.save();
+    // The workspace reads doc.job.jdText (Match panel, bullet AI) — return it
+    // populated so a freshly generated resume behaves like a reloaded one.
+    if (job) resume.job = job;
 
-    res.json(resume);
+    res.json(withLatex(resume));
 
   } catch (error) {
     console.error('Resume error:', error);
-    res.status(500).json({ message: 'Something went wrong' });
+    respondError(res, error);
   }
 };
 
@@ -77,7 +177,7 @@ const getResumeById = async (req, res) => {
   try {
     const resume = await Resume.findOne({ _id: req.params.id, owner: req.identity }).populate('job');
     if (!resume) return res.status(404).json({ message: 'Resume not found' });
-    res.json(resume);
+    res.json(withLatex(resume));
   } catch (error) {
     console.error('Resume error:', error);
     res.status(500).json({ message: 'Something went wrong' });
@@ -86,18 +186,107 @@ const getResumeById = async (req, res) => {
 
 const updateResume = async (req, res) => {
   try {
-    const { latexCode, versionName } = req.body;
-    const updateData = {};
-    if (latexCode) updateData.latexCode = latexCode;
-    if (versionName) updateData.versionName = versionName;
+    const { versionName, content, design, templateId, mode, latexSource, baseUpdatedAt } = req.body;
 
-    const resume = await Resume.findOneAndUpdate(
-      { _id: req.params.id, owner: req.identity },
-      updateData,
-      { new: true }
-    ).populate('job');
+    const resume = await Resume.findOne({ _id: req.params.id, owner: req.identity });
     if (!resume) return res.status(404).json({ message: 'Resume not found' });
-    res.json(resume);
+
+    // Concurrent-edit detection (same resume open in two tabs/sessions).
+    // baseUpdatedAt is the updatedAt the client loaded. When present, the
+    // write is applied atomically: the Mongo filter itself requires
+    // updatedAt to still equal baseUpdatedAt, so a stale save (or one of two
+    // racing concurrent saves) is rejected with 409 *before* any mutation,
+    // instead of being applied and merely flagged after the fact. Clients
+    // that omit baseUpdatedAt keep the old unconditional last-write-wins save.
+    const hasBase = typeof baseUpdatedAt === 'string' && baseUpdatedAt;
+    const baseTime = hasBase ? Date.parse(baseUpdatedAt) : NaN;
+    const atomicGuard = hasBase && Number.isFinite(baseTime);
+
+    const $set = {};
+    const $unset = {};
+    if (typeof versionName === 'string' && versionName.trim()) $set.versionName = versionName;
+    if (content && typeof content === 'object') $set.content = content;
+    if (design && typeof design === 'object') $set.design = validateDesign(design);
+    if (templateId) $set.templateId = safeTemplateId(templateId);
+
+    if (mode === 'latex' && resume.mode !== 'latex') {
+      // EJECT: freeze the current render (or the client-provided source) as
+      // the document's truth. One-way door — visual editing and AI
+      // re-tailoring are disabled until revert. The eject request commonly
+      // carries content/design/templateId alongside mode:'latex' in the same
+      // call (see useWorkspace.ts eject()), so render from the values this
+      // same request just set — not the doc's pre-update fields — or the
+      // frozen LaTeX would silently miss the change that triggered the eject.
+      $set.mode = 'latex';
+      $set.latexSource =
+        typeof latexSource === 'string' && latexSource.trim()
+          ? latexSource
+          : render(
+              $set.content !== undefined ? $set.content : (resume.content || {}),
+              $set.design !== undefined ? $set.design : validateDesign(resume.design),
+              $set.templateId !== undefined ? $set.templateId : resume.templateId
+            );
+    } else if (mode === 'structured' && resume.mode === 'latex') {
+      // REVERT: back to content/design as truth; hand edits are discarded
+      // (the client shows the explicit warning).
+      $set.mode = 'structured';
+      $unset.latexSource = 1;
+    } else if (typeof latexSource === 'string' && resume.mode === 'latex') {
+      // Saving hand edits on an already-ejected doc.
+      $set.latexSource = latexSource;
+    }
+
+    let saved;
+    if (atomicGuard) {
+      // Always keep $set as a top-level operator key, even when empty: an
+      // update document with NO top-level keys (or none starting with `$`)
+      // is a MongoDB *replacement* document, not a no-op — findOneAndUpdate
+      // would silently wipe the matched resume down to just its _id.
+      const update = { $set };
+      if (Object.keys($unset).length) update.$unset = $unset;
+      saved = await Resume.findOneAndUpdate(
+        { _id: resume._id, owner: req.identity, updatedAt: new Date(baseTime) },
+        update,
+        { new: true, runValidators: true }
+      );
+      if (!saved) {
+        return res.status(409).json({
+          message: 'This resume was changed elsewhere since you loaded it. Reload to see the latest version before saving again.',
+          conflict: true,
+        });
+      }
+    } else {
+      Object.assign(resume, $set);
+      if ($unset.latexSource) resume.latexSource = undefined;
+      saved = await resume.save();
+    }
+
+    await saved.populate('job');
+    res.json(withLatex(saved));
+  } catch (error) {
+    console.error('Resume error:', error);
+    res.status(500).json({ message: 'Something went wrong' });
+  }
+};
+
+const duplicateResume = async (req, res) => {
+  try {
+    const source = await Resume.findOne({ _id: req.params.id, owner: req.identity });
+    if (!source) return res.status(404).json({ message: 'Resume not found' });
+
+    const copy = new Resume({
+      owner: source.owner,
+      job: source.job,
+      content: source.content,
+      design: source.design,
+      templateId: source.templateId,
+      mode: source.mode,
+      latexSource: source.latexSource,
+      parentResumeId: source._id,
+      versionName: `${source.versionName || 'Resume'}_copy`,
+    });
+    await copy.save();
+    res.json(withLatex(copy));
   } catch (error) {
     console.error('Resume error:', error);
     res.status(500).json({ message: 'Something went wrong' });
@@ -136,23 +325,28 @@ const getResumeFeedback = async (req, res) => {
     res.json(recommendations);
   } catch (error) {
     console.error('Resume error:', error);
-    res.status(500).json({ message: 'Something went wrong' });
+    respondError(res, error);
   }
 };
 
+// Runs after middleware/compile.js prepareCompile (which resolved
+// req.compileTex, enforced auth for raw LaTeX, and answered cache hits) and
+// compileLimiter.
 const compileResume = async (req, res) => {
-  const { latexCode } = req.body;
-  if (!latexCode || typeof latexCode !== 'string') {
-    return res.status(400).json({ message: 'LaTeX code is required' });
-  }
-
   try {
-    const result = await compileLatex(latexCode);
+    const started = Date.now();
+    const result = await compileLatex(req.compileTex);
+    console.log(`[compile] cache miss hash=${req.compileHash.slice(0, 12)} success=${result.success} durationMs=${Date.now() - started}`);
     if (result.success) {
-      // Send PDF as base64 string
-      res.json({ success: true, pdf: result.pdf.toString('base64') });
+      const payload = { pdf: result.pdf.toString('base64'), pages: result.pages };
+      await compileCache.set(req.compileHash, payload);
+      res.json({
+        success: true,
+        ...payload,
+        ...(req.compileRendered ? { tex: req.compileTex } : {}),
+      });
     } else {
-      res.json({ success: false, log: result.log, error: result.error });
+      res.json({ success: false, errors: result.errors || [], log: result.log, error: result.error });
     }
   } catch (error) {
     console.error('Resume error:', error);
@@ -160,4 +354,4 @@ const compileResume = async (req, res) => {
   }
 };
 
-module.exports = { createResumeForJob, getResumes, getResumeById, updateResume, deleteResume, getResumeFeedback, compileResume };
+module.exports = { createResumeForJob, getResumes, getResumeById, updateResume, duplicateResume, deleteResume, getResumeFeedback, compileResume };

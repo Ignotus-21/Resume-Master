@@ -1,0 +1,30 @@
+Dr. Amara Okafor
+amara.okafor@proton.me · London, UK · +44 7700 900123
+
+MY STORY
+Computational biologist turned product leader. I spent a decade in the lab
+before moving to industry, and I now build ML-driven diagnostics tools.
+
+PROFESSIONAL JOURNEY
+
+VP of Product, HelixDx (London) — 2021 to now
+* Took two diagnostic ML products from research prototype to CE marking
+* Grew the product org from 3 to 19 people
+
+Principal Scientist, Wellcome Sanger Institute — 2016 to 2021
+* Led a genomics pipeline team of 8; published 14 peer-reviewed papers
+
+ACADEMIC CREDENTIALS
+PhD, Computational Biology — University of Cambridge (2016)
+MSci, Biochemistry — Imperial College London (2011)
+
+TOOLBOX
+Python, R, Nextflow, AWS, Snakemake, scikit-learn, product discovery, roadmapping
+
+SPEAKING ENGAGEMENTS
+- Keynote, BioTechX Europe 2024: "Diagnostics ML that regulators trust"
+- Panelist, London Genomics Week 2023
+
+DISTINCTIONS
+Crick Emerging Leader Prize, 2020
+Sanger Institute Impact Award, 2019

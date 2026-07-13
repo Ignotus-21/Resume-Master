@@ -56,6 +56,16 @@ const consumeQuota = async (req) => {
 
     const totalLimit = config.defaultTokenLimit + (user.extraTokens || 0);
 
+    if (user.isAdmin) {
+      // Admins have unlimited tokens. We still increment usedTokens to track their usage.
+      const reserved = await User.findOneAndUpdate(
+        { _id: req.user.id },
+        { $inc: { usedTokens: RESERVE_ESTIMATE } },
+        { new: true }
+      );
+      return { allowed: true, remaining: Infinity, isAdmin: true };
+    }
+
     // Atomically reserve the estimate as part of the same operation that
     // decides admission — the filter and the $inc run as one document-level
     // operation, so two concurrent requests can't both read "under limit"
@@ -163,6 +173,9 @@ const getQuotaStatus = async (req) => {
     if (!user) return { limit: 0, remaining: 0 };
     if (req.geminiApiKey) {
       return { limit: Infinity, remaining: Infinity, isByok: true };
+    }
+    if (user.isAdmin) {
+      return { limit: Infinity, remaining: Infinity, isAdmin: true };
     }
     const totalLimit = config.defaultTokenLimit + (user.extraTokens || 0);
     const used = user.usedTokens || 0;

@@ -1,0 +1,1361 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`render: snapshots (fixture profile x templates x design variants) compact / default 1`] = `
+"\\documentclass[letterpaper,11pt]{article}
+\\usepackage{ebgaramond}
+\\usepackage[margin=0.7in]{geometry}
+\\usepackage{setspace}
+\\setstretch{1}
+\\usepackage{titlesec}
+\\usepackage{enumitem}
+\\usepackage{xcolor}
+\\definecolor{accent}{HTML}{000000}
+\\usepackage[hidelinks,bookmarks=false]{hyperref}
+\\pagestyle{empty}
+\\usepackage{needspace}
+\\raggedbottom
+\\clubpenalty=10000
+\\widowpenalty=10000
+\\setlength{\\parindent}{0pt}
+\\titleformat{\\section}{\\normalsize\\bfseries}{}{0em}{}[\\color{accent}\\titlerule]
+\\titlespacing*{\\section}{0pt}{8pt}{4pt}
+\\setlist[itemize]{leftmargin=0.18in, itemsep=2pt, parsep=0pt, topsep=2pt, label=\\textbullet}
+\\begin{document}
+\\begin{center}
+{\\Large\\bfseries Ada Lovelace}\\\\[4pt]
+{\\small +1 555 010 0101 $|$ \\href{mailto:ada@example.com}{ada@example.com} $|$ \\href{https://linkedin.com/in/ada}{linkedin.com/in/ada} $|$ \\href{https://github.com/ada}{github.com/ada} $|$ \\href{https://ada.dev}{ada.dev} $|$ London, UK}
+\\end{center}
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Experience}}
+\\textbf{Senior Software Engineer} \\hfill Jan 2022 -- Present\\\\
+\\textit{Analytical Engines Ltd} \\hfill Remote\\\\
+\\begin{itemize}
+  \\item Led migration of a monolith to services, cutting deploy time by 80\\%
+  \\item Mentored 4 engineers; introduced code review practices
+\\end{itemize}
+\\vspace{4pt}
+
+\\textbf{Software Engineer} \\hfill Mar 2019 -- Dec 2021\\\\
+\\textit{Babbage \\& Co} \\hfill London\\\\
+\\begin{itemize}
+  \\item Built the first compiler
+\\end{itemize}
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Education}}
+\\textbf{University of London} \\hfill 2015 -- 2019\\\\
+BSc in Mathematics --- GPA: 3.9/4.0\\\\
+\\textit{Coursework:} Number Theory, Mechanics\\\\
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Projects}}
+\\textbf{Difference Engine} (\\href{https://github.com/ada/difference-engine}{link}) \\hfill \\textit{Brass, Steam}\\\\
+A mechanical calculator for polynomial functions.\\\\
+\\begin{itemize}
+  \\item Computed tables to 31 digits
+\\end{itemize}
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Technical Skills}}
+\\textbf{Languages:} Ada, Python, TypeScript\\\\
+\\textbf{Frameworks:} React, Express\\\\
+\\textbf{Tools:} Git, Docker\\\\
+\\textbf{Other:} Distributed systems\\\\
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Certifications}}
+\\textbf{AWS Solutions Architect} --- Amazon \\hfill Jun 2023\\\\
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Achievements}}
+\\textbf{First programmer} \\hfill 1843\\\\
+Wrote the first algorithm.\\\\
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Publications}}
+\\textbf{Notes on the Analytical Engine} \\hfill 1843\\\\
+Sketch of the engine.\\\\
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Volunteering}}
+\\textbf{Mentor}, Code Club \\hfill 2020 -- 2022\\\\
+Taught kids to code.\\\\
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Patents}}
+\\textbf{Loom control mechanism} (GB-0001) \\hfill 1842\\\\
+Punch card sequencing.\\\\
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Interests}}
+Chess, Horse racing\\\\
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Leadership}}
+\\textbf{Chair} --- Royal Society computing group \\hfill 1841\\\\
+Organized monthly colloquia.\\\\
+\\begin{itemize}
+  \\item Grew membership 3x
+\\end{itemize}
+\\end{document}
+"
+`;
+
+exports[`render: snapshots (fixture profile x templates x design variants) compact / dense 1`] = `
+"\\documentclass[letterpaper,10pt]{article}
+\\usepackage{newtxtext}
+\\usepackage[margin=0.4in]{geometry}
+\\usepackage{setspace}
+\\setstretch{0.9}
+\\usepackage{titlesec}
+\\usepackage{enumitem}
+\\usepackage{xcolor}
+\\definecolor{accent}{HTML}{000000}
+\\usepackage[hidelinks,bookmarks=false]{hyperref}
+\\pagestyle{empty}
+\\usepackage{needspace}
+\\raggedbottom
+\\clubpenalty=10000
+\\widowpenalty=10000
+\\setlength{\\parindent}{0pt}
+\\titleformat{\\section}{\\normalsize\\bfseries}{}{0em}{}
+\\titlespacing*{\\section}{0pt}{4pt}{2pt}
+\\setlist[itemize]{leftmargin=0.18in, itemsep=1pt, parsep=0pt, topsep=2pt, label=--}
+\\begin{document}
+{\\Large\\bfseries Ada Lovelace}\\\\[2pt]
+{\\small +1 555 010 0101 $|$ ada@example.com $|$ linkedin.com/in/ada $|$ github.com/ada $|$ ada.dev $|$ London, UK}\\\\[2pt]
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Experience}}
+\\textbf{Senior Software Engineer} \\hfill 2022 -- Present\\\\
+\\textit{Analytical Engines Ltd} \\hfill Remote\\\\
+\\begin{itemize}
+  \\item Led migration of a monolith to services, cutting deploy time by 80\\%
+  \\item Mentored 4 engineers; introduced code review practices
+\\end{itemize}
+\\vspace{4pt}
+
+\\textbf{Software Engineer} \\hfill 2019 -- 2021\\\\
+\\textit{Babbage \\& Co} \\hfill London\\\\
+\\begin{itemize}
+  \\item Built the first compiler
+\\end{itemize}
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Education}}
+\\textbf{University of London} \\hfill 2015 -- 2019\\\\
+BSc in Mathematics --- GPA: 3.9/4.0\\\\
+\\textit{Coursework:} Number Theory, Mechanics\\\\
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Projects}}
+\\textbf{Difference Engine} (link) \\hfill \\textit{Brass, Steam}\\\\
+A mechanical calculator for polynomial functions.\\\\
+\\begin{itemize}
+  \\item Computed tables to 31 digits
+\\end{itemize}
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Technical Skills}}
+\\textbf{Languages:} Ada, Python, TypeScript\\\\
+\\textbf{Frameworks:} React, Express\\\\
+\\textbf{Tools:} Git, Docker\\\\
+\\textbf{Other:} Distributed systems\\\\
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Certifications}}
+\\textbf{AWS Solutions Architect} --- Amazon \\hfill 2023\\\\
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Achievements}}
+\\textbf{First programmer} \\hfill 1843\\\\
+Wrote the first algorithm.\\\\
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Publications}}
+\\textbf{Notes on the Analytical Engine} \\hfill 1843\\\\
+Sketch of the engine.\\\\
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Volunteering}}
+\\textbf{Mentor}, Code Club \\hfill 2020 -- 2022\\\\
+Taught kids to code.\\\\
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Patents}}
+\\textbf{Loom control mechanism} (GB-0001) \\hfill 1842\\\\
+Punch card sequencing.\\\\
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Interests}}
+Chess, Horse racing\\\\
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Leadership}}
+\\textbf{Chair} --- Royal Society computing group \\hfill 1841\\\\
+Organized monthly colloquia.\\\\
+\\begin{itemize}
+  \\item Grew membership 3x
+\\end{itemize}
+\\end{document}
+"
+`;
+
+exports[`render: snapshots (fixture profile x templates x design variants) compact / styled 1`] = `
+"\\documentclass[letterpaper,12pt]{article}
+\\usepackage[sfdefault]{FiraSans}
+\\usepackage[margin=1in]{geometry}
+\\usepackage{setspace}
+\\setstretch{1.3}
+\\usepackage{titlesec}
+\\usepackage{enumitem}
+\\usepackage{xcolor}
+\\definecolor{accent}{HTML}{1A73E8}
+\\usepackage{tabularx}
+\\usepackage[hidelinks,bookmarks=false]{hyperref}
+\\pagestyle{empty}
+\\usepackage{needspace}
+\\raggedbottom
+\\clubpenalty=10000
+\\widowpenalty=10000
+\\setlength{\\parindent}{0pt}
+\\titleformat{\\section}{\\normalsize\\bfseries}{}{0em}{}[\\color{accent}\\titlerule]
+\\titlespacing*{\\section}{0pt}{14pt}{7pt}
+\\setlist[itemize]{leftmargin=0.18in, itemsep=4pt, parsep=0pt, topsep=2pt, label=\\rule{3pt}{3pt}}
+\\begin{document}
+\\begin{tabularx}{\\textwidth}{@{}X r@{}}
+{\\Large\\bfseries Ada Lovelace} & {\\small +1 555 010 0101 $|$ \\href{mailto:ada@example.com}{ada@example.com} $|$ \\href{https://linkedin.com/in/ada}{linkedin.com/in/ada} $|$ \\href{https://github.com/ada}{github.com/ada} $|$ \\href{https://ada.dev}{ada.dev} $|$ London, UK}\\\\
+\\end{tabularx}
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Education}}
+\\textbf{University of London} \\hfill 2015 -- 2019\\\\
+BSc in Mathematics --- GPA: 3.9/4.0\\\\
+\\textit{Coursework:} Number Theory, Mechanics\\\\
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Technical Skills}}
+\\textbf{Languages:} Ada, Python, TypeScript\\\\
+\\textbf{Frameworks:} React, Express\\\\
+\\textbf{Tools:} Git, Docker\\\\
+\\textbf{Other:} Distributed systems\\\\
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Work History}}
+\\textbf{Senior Software Engineer} \\hfill 01/2022 -- Present\\\\
+\\textit{Analytical Engines Ltd} \\hfill Remote\\\\
+\\begin{itemize}
+  \\item Led migration of a monolith to services, cutting deploy time by 80\\%
+  \\item Mentored 4 engineers; introduced code review practices
+\\end{itemize}
+\\vspace{4pt}
+
+\\textbf{Software Engineer} \\hfill 03/2019 -- 12/2021\\\\
+\\textit{Babbage \\& Co} \\hfill London\\\\
+\\begin{itemize}
+  \\item Built the first compiler
+\\end{itemize}
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Projects}}
+\\textbf{Difference Engine} (\\href{https://github.com/ada/difference-engine}{link}) \\hfill \\textit{Brass, Steam}\\\\
+A mechanical calculator for polynomial functions.\\\\
+\\begin{itemize}
+  \\item Computed tables to 31 digits
+\\end{itemize}
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Certifications}}
+\\textbf{AWS Solutions Architect} --- Amazon \\hfill 06/2023\\\\
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Achievements}}
+\\textbf{First programmer} \\hfill 1843\\\\
+Wrote the first algorithm.\\\\
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Publications}}
+\\textbf{Notes on the Analytical Engine} \\hfill 1843\\\\
+Sketch of the engine.\\\\
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Volunteering}}
+\\textbf{Mentor}, Code Club \\hfill 2020 -- 2022\\\\
+Taught kids to code.\\\\
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Patents}}
+\\textbf{Loom control mechanism} (GB-0001) \\hfill 1842\\\\
+Punch card sequencing.\\\\
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Leadership}}
+\\textbf{Chair} --- Royal Society computing group \\hfill 1841\\\\
+Organized monthly colloquia.\\\\
+\\begin{itemize}
+  \\item Grew membership 3x
+\\end{itemize}
+\\end{document}
+"
+`;
+
+exports[`render: snapshots (fixture profile x templates x design variants) jake / default 1`] = `
+"\\documentclass[letterpaper,11pt]{article}
+\\usepackage{ebgaramond}
+\\usepackage[margin=0.7in]{geometry}
+\\usepackage{setspace}
+\\setstretch{1}
+\\usepackage{titlesec}
+\\usepackage{enumitem}
+\\usepackage{xcolor}
+\\definecolor{accent}{HTML}{000000}
+\\usepackage{tabularx}
+\\usepackage[hidelinks]{hyperref}
+\\urlstyle{same}
+\\pagestyle{empty}
+\\usepackage{needspace}
+\\raggedbottom
+\\clubpenalty=10000
+\\widowpenalty=10000
+\\raggedright
+\\setlength{\\tabcolsep}{0in}
+\\titleformat{\\section}{\\vspace{-4pt}\\scshape\\raggedright\\large\\color{accent}}{}{0em}{}[\\color{accent}\\titlerule \\vspace{-5pt}]
+\\titlespacing*{\\section}{0pt}{8pt}{4pt}
+% Custom commands (Jake Gutierrez / sb2nov)
+\\newcommand{\\resumeItem}[1]{\\item\\small{#1 \\vspace{-2pt}}}
+\\newcommand{\\resumeSubheading}[4]{
+  \\vspace{-2pt}\\item
+    \\begin{tabular*}{0.97\\textwidth}[t]{l@{\\extracolsep{\\fill}}r}
+      \\textbf{#1} & #2 \\\\
+      \\textit{\\small#3} & \\textit{\\small #4} \\\\
+    \\end{tabular*}\\vspace{-7pt}
+}
+\\newcommand{\\resumeProjectHeading}[2]{
+    \\item
+    \\begin{tabular*}{0.97\\textwidth}{l@{\\extracolsep{\\fill}}r}
+      \\small#1 & #2 \\\\
+    \\end{tabular*}\\vspace{-7pt}
+}
+\\renewcommand\\labelitemii{$\\vcenter{\\hbox{\\tiny$\\bullet$}}$}
+\\newcommand{\\resumeSubHeadingListStart}{\\begin{itemize}[leftmargin=0.15in, label={}]}
+\\newcommand{\\resumeSubHeadingListEnd}{\\end{itemize}}
+\\newcommand{\\resumeItemListStart}{\\begin{itemize}[label=\\textbullet, itemsep=2pt]}
+\\newcommand{\\resumeItemListEnd}{\\end{itemize}\\vspace{-5pt}}
+
+\\begin{document}
+
+\\begin{center}
+    \\textbf{\\Huge \\scshape Ada Lovelace} \\\\ \\vspace{4pt}
+    \\small +1 555 010 0101 $|$ \\href{mailto:ada@example.com}{ada@example.com} $|$ \\href{https://linkedin.com/in/ada}{linkedin.com/in/ada} $|$ \\href{https://github.com/ada}{github.com/ada} $|$ \\href{https://ada.dev}{ada.dev} $|$ London, UK
+\\end{center}
+
+\\needspace{4\\baselineskip}
+\\section{Experience}
+  \\resumeSubHeadingListStart
+    \\resumeSubheading{Senior Software Engineer}{Jan 2022 -- Present}{Analytical Engines Ltd}{Remote}
+      \\resumeItemListStart
+        \\resumeItem{Led migration of a monolith to services, cutting deploy time by 80\\%}
+        \\resumeItem{Mentored 4 engineers; introduced code review practices}
+      \\resumeItemListEnd
+    \\resumeSubheading{Software Engineer}{Mar 2019 -- Dec 2021}{Babbage \\& Co}{London}
+      \\resumeItemListStart
+        \\resumeItem{Built the first compiler}
+      \\resumeItemListEnd
+  \\resumeSubHeadingListEnd
+
+\\needspace{4\\baselineskip}
+\\section{Education}
+  \\resumeSubHeadingListStart
+    \\resumeSubheading{University of London}{2015 -- 2019}{BSc in Mathematics --- GPA: 3.9/4.0}{}
+      \\resumeItemListStart
+        \\resumeItem{Relevant Coursework: Number Theory, Mechanics}
+      \\resumeItemListEnd
+  \\resumeSubHeadingListEnd
+
+\\needspace{4\\baselineskip}
+\\section{Projects}
+  \\resumeSubHeadingListStart
+    \\resumeProjectHeading{\\textbf{Difference Engine} $|$ \\href{https://github.com/ada/difference-engine}{link} $|$ \\emph{Brass, Steam}}{}
+      \\resumeItemListStart
+        \\resumeItem{A mechanical calculator for polynomial functions.}
+        \\resumeItem{Computed tables to 31 digits}
+      \\resumeItemListEnd
+  \\resumeSubHeadingListEnd
+
+\\needspace{4\\baselineskip}
+\\section{Technical Skills}
+ \\begin{itemize}[leftmargin=0.15in, label={}]
+    \\small{\\item{
+     \\textbf{Languages}{: Ada, Python, TypeScript} \\\\
+     \\textbf{Frameworks}{: React, Express} \\\\
+     \\textbf{Tools}{: Git, Docker} \\\\
+     \\textbf{Other}{: Distributed systems} \\\\
+    }}
+ \\end{itemize}
+
+\\needspace{4\\baselineskip}
+\\section{Certifications}
+  \\resumeSubHeadingListStart
+    \\resumeProjectHeading{\\textbf{AWS Solutions Architect} $|$ \\emph{Amazon}}{Jun 2023}
+  \\resumeSubHeadingListEnd
+
+\\needspace{4\\baselineskip}
+\\section{Achievements}
+  \\resumeSubHeadingListStart
+    \\resumeProjectHeading{\\textbf{First programmer}}{1843}
+      \\resumeItemListStart
+        \\resumeItem{Wrote the first algorithm.}
+      \\resumeItemListEnd
+  \\resumeSubHeadingListEnd
+
+\\needspace{4\\baselineskip}
+\\section{Publications}
+  \\resumeSubHeadingListStart
+    \\resumeProjectHeading{\\textbf{Notes on the Analytical Engine}}{1843}
+      \\resumeItemListStart
+        \\resumeItem{Sketch of the engine.}
+      \\resumeItemListEnd
+  \\resumeSubHeadingListEnd
+
+\\needspace{4\\baselineskip}
+\\section{Volunteering}
+  \\resumeSubHeadingListStart
+    \\resumeSubheading{Mentor}{2020 -- 2022}{Code Club}{}
+      \\resumeItemListStart
+        \\resumeItem{Taught kids to code.}
+      \\resumeItemListEnd
+  \\resumeSubHeadingListEnd
+
+\\needspace{4\\baselineskip}
+\\section{Patents}
+  \\resumeSubHeadingListStart
+    \\resumeProjectHeading{\\textbf{Loom control mechanism} $|$ GB-0001}{1842}
+      \\resumeItemListStart
+        \\resumeItem{Punch card sequencing.}
+      \\resumeItemListEnd
+  \\resumeSubHeadingListEnd
+
+\\needspace{4\\baselineskip}
+\\section{Interests}
+ \\begin{itemize}[leftmargin=0.15in, label={}]
+    \\small{\\item{Chess, Horse racing}}
+ \\end{itemize}
+
+\\needspace{4\\baselineskip}
+\\section{Leadership}
+  \\resumeSubHeadingListStart
+    \\resumeProjectHeading{\\textbf{Chair} $|$ \\emph{Royal Society computing group}}{1841}
+      \\resumeItemListStart
+        \\resumeItem{Organized monthly colloquia.}
+        \\resumeItem{Grew membership 3x}
+      \\resumeItemListEnd
+  \\resumeSubHeadingListEnd
+
+\\end{document}
+"
+`;
+
+exports[`render: snapshots (fixture profile x templates x design variants) jake / dense 1`] = `
+"\\documentclass[letterpaper,10pt]{article}
+\\usepackage{newtxtext}
+\\usepackage[margin=0.4in]{geometry}
+\\usepackage{setspace}
+\\setstretch{0.9}
+\\usepackage{titlesec}
+\\usepackage{enumitem}
+\\usepackage{xcolor}
+\\definecolor{accent}{HTML}{000000}
+\\usepackage{tabularx}
+\\usepackage[hidelinks]{hyperref}
+\\urlstyle{same}
+\\pagestyle{empty}
+\\usepackage{needspace}
+\\raggedbottom
+\\clubpenalty=10000
+\\widowpenalty=10000
+\\raggedright
+\\setlength{\\tabcolsep}{0in}
+\\titleformat{\\section}{\\vspace{-4pt}\\scshape\\raggedright\\large\\color{accent}}{}{0em}{}
+\\titlespacing*{\\section}{0pt}{4pt}{2pt}
+% Custom commands (Jake Gutierrez / sb2nov)
+\\newcommand{\\resumeItem}[1]{\\item\\small{#1 \\vspace{-2pt}}}
+\\newcommand{\\resumeSubheading}[4]{
+  \\vspace{-2pt}\\item
+    \\begin{tabular*}{0.97\\textwidth}[t]{l@{\\extracolsep{\\fill}}r}
+      \\textbf{#1} & #2 \\\\
+      \\textit{\\small#3} & \\textit{\\small #4} \\\\
+    \\end{tabular*}\\vspace{-7pt}
+}
+\\newcommand{\\resumeProjectHeading}[2]{
+    \\item
+    \\begin{tabular*}{0.97\\textwidth}{l@{\\extracolsep{\\fill}}r}
+      \\small#1 & #2 \\\\
+    \\end{tabular*}\\vspace{-7pt}
+}
+\\renewcommand\\labelitemii{$\\vcenter{\\hbox{\\tiny$\\bullet$}}$}
+\\newcommand{\\resumeSubHeadingListStart}{\\begin{itemize}[leftmargin=0.15in, label={}]}
+\\newcommand{\\resumeSubHeadingListEnd}{\\end{itemize}}
+\\newcommand{\\resumeItemListStart}{\\begin{itemize}[label=--, itemsep=1pt]}
+\\newcommand{\\resumeItemListEnd}{\\end{itemize}\\vspace{-5pt}}
+
+\\begin{document}
+
+\\textbf{\\Huge \\scshape Ada Lovelace} \\\\ \\vspace{2pt}
+\\small +1 555 010 0101 $|$ ada@example.com $|$ linkedin.com/in/ada $|$ github.com/ada $|$ ada.dev $|$ London, UK
+\\vspace{4pt}
+
+\\needspace{4\\baselineskip}
+\\section{Experience}
+  \\resumeSubHeadingListStart
+    \\resumeSubheading{Senior Software Engineer}{2022 -- Present}{Analytical Engines Ltd}{Remote}
+      \\resumeItemListStart
+        \\resumeItem{Led migration of a monolith to services, cutting deploy time by 80\\%}
+        \\resumeItem{Mentored 4 engineers; introduced code review practices}
+      \\resumeItemListEnd
+    \\resumeSubheading{Software Engineer}{2019 -- 2021}{Babbage \\& Co}{London}
+      \\resumeItemListStart
+        \\resumeItem{Built the first compiler}
+      \\resumeItemListEnd
+  \\resumeSubHeadingListEnd
+
+\\needspace{4\\baselineskip}
+\\section{Education}
+  \\resumeSubHeadingListStart
+    \\resumeSubheading{University of London}{2015 -- 2019}{BSc in Mathematics --- GPA: 3.9/4.0}{}
+      \\resumeItemListStart
+        \\resumeItem{Relevant Coursework: Number Theory, Mechanics}
+      \\resumeItemListEnd
+  \\resumeSubHeadingListEnd
+
+\\needspace{4\\baselineskip}
+\\section{Projects}
+  \\resumeSubHeadingListStart
+    \\resumeProjectHeading{\\textbf{Difference Engine} $|$ link $|$ \\emph{Brass, Steam}}{}
+      \\resumeItemListStart
+        \\resumeItem{A mechanical calculator for polynomial functions.}
+        \\resumeItem{Computed tables to 31 digits}
+      \\resumeItemListEnd
+  \\resumeSubHeadingListEnd
+
+\\needspace{4\\baselineskip}
+\\section{Technical Skills}
+ \\begin{itemize}[leftmargin=0.15in, label={}]
+    \\small{\\item{
+     \\textbf{Languages}{: Ada, Python, TypeScript} \\\\
+     \\textbf{Frameworks}{: React, Express} \\\\
+     \\textbf{Tools}{: Git, Docker} \\\\
+     \\textbf{Other}{: Distributed systems} \\\\
+    }}
+ \\end{itemize}
+
+\\needspace{4\\baselineskip}
+\\section{Certifications}
+  \\resumeSubHeadingListStart
+    \\resumeProjectHeading{\\textbf{AWS Solutions Architect} $|$ \\emph{Amazon}}{2023}
+  \\resumeSubHeadingListEnd
+
+\\needspace{4\\baselineskip}
+\\section{Achievements}
+  \\resumeSubHeadingListStart
+    \\resumeProjectHeading{\\textbf{First programmer}}{1843}
+      \\resumeItemListStart
+        \\resumeItem{Wrote the first algorithm.}
+      \\resumeItemListEnd
+  \\resumeSubHeadingListEnd
+
+\\needspace{4\\baselineskip}
+\\section{Publications}
+  \\resumeSubHeadingListStart
+    \\resumeProjectHeading{\\textbf{Notes on the Analytical Engine}}{1843}
+      \\resumeItemListStart
+        \\resumeItem{Sketch of the engine.}
+      \\resumeItemListEnd
+  \\resumeSubHeadingListEnd
+
+\\needspace{4\\baselineskip}
+\\section{Volunteering}
+  \\resumeSubHeadingListStart
+    \\resumeSubheading{Mentor}{2020 -- 2022}{Code Club}{}
+      \\resumeItemListStart
+        \\resumeItem{Taught kids to code.}
+      \\resumeItemListEnd
+  \\resumeSubHeadingListEnd
+
+\\needspace{4\\baselineskip}
+\\section{Patents}
+  \\resumeSubHeadingListStart
+    \\resumeProjectHeading{\\textbf{Loom control mechanism} $|$ GB-0001}{1842}
+      \\resumeItemListStart
+        \\resumeItem{Punch card sequencing.}
+      \\resumeItemListEnd
+  \\resumeSubHeadingListEnd
+
+\\needspace{4\\baselineskip}
+\\section{Interests}
+ \\begin{itemize}[leftmargin=0.15in, label={}]
+    \\small{\\item{Chess, Horse racing}}
+ \\end{itemize}
+
+\\needspace{4\\baselineskip}
+\\section{Leadership}
+  \\resumeSubHeadingListStart
+    \\resumeProjectHeading{\\textbf{Chair} $|$ \\emph{Royal Society computing group}}{1841}
+      \\resumeItemListStart
+        \\resumeItem{Organized monthly colloquia.}
+        \\resumeItem{Grew membership 3x}
+      \\resumeItemListEnd
+  \\resumeSubHeadingListEnd
+
+\\end{document}
+"
+`;
+
+exports[`render: snapshots (fixture profile x templates x design variants) jake / styled 1`] = `
+"\\documentclass[letterpaper,12pt]{article}
+\\usepackage[sfdefault]{FiraSans}
+\\usepackage[margin=1in]{geometry}
+\\usepackage{setspace}
+\\setstretch{1.3}
+\\usepackage{titlesec}
+\\usepackage{enumitem}
+\\usepackage{xcolor}
+\\definecolor{accent}{HTML}{1A73E8}
+\\usepackage{tabularx}
+\\usepackage[hidelinks]{hyperref}
+\\urlstyle{same}
+\\pagestyle{empty}
+\\usepackage{needspace}
+\\raggedbottom
+\\clubpenalty=10000
+\\widowpenalty=10000
+\\raggedright
+\\setlength{\\tabcolsep}{0in}
+\\titleformat{\\section}{\\vspace{-4pt}\\scshape\\raggedright\\large\\color{accent}}{}{0em}{}[\\color{accent}\\titlerule \\vspace{-5pt}]
+\\titlespacing*{\\section}{0pt}{14pt}{7pt}
+% Custom commands (Jake Gutierrez / sb2nov)
+\\newcommand{\\resumeItem}[1]{\\item\\small{#1 \\vspace{-2pt}}}
+\\newcommand{\\resumeSubheading}[4]{
+  \\vspace{-2pt}\\item
+    \\begin{tabular*}{0.97\\textwidth}[t]{l@{\\extracolsep{\\fill}}r}
+      \\textbf{#1} & #2 \\\\
+      \\textit{\\small#3} & \\textit{\\small #4} \\\\
+    \\end{tabular*}\\vspace{-7pt}
+}
+\\newcommand{\\resumeProjectHeading}[2]{
+    \\item
+    \\begin{tabular*}{0.97\\textwidth}{l@{\\extracolsep{\\fill}}r}
+      \\small#1 & #2 \\\\
+    \\end{tabular*}\\vspace{-7pt}
+}
+\\renewcommand\\labelitemii{$\\vcenter{\\hbox{\\tiny$\\bullet$}}$}
+\\newcommand{\\resumeSubHeadingListStart}{\\begin{itemize}[leftmargin=0.15in, label={}]}
+\\newcommand{\\resumeSubHeadingListEnd}{\\end{itemize}}
+\\newcommand{\\resumeItemListStart}{\\begin{itemize}[label=\\rule{3pt}{3pt}, itemsep=4pt]}
+\\newcommand{\\resumeItemListEnd}{\\end{itemize}\\vspace{-5pt}}
+
+\\begin{document}
+
+\\begin{tabular*}{\\textwidth}{l@{\\extracolsep{\\fill}}r}
+  \\textbf{\\Huge \\scshape Ada Lovelace} & \\small +1 555 010 0101 $|$ \\href{mailto:ada@example.com}{ada@example.com} $|$ \\href{https://linkedin.com/in/ada}{linkedin.com/in/ada} $|$ \\href{https://github.com/ada}{github.com/ada} $|$ \\href{https://ada.dev}{ada.dev} $|$ London, UK\\\\
+\\end{tabular*}
+
+\\needspace{4\\baselineskip}
+\\section{Education}
+  \\resumeSubHeadingListStart
+    \\resumeSubheading{University of London}{2015 -- 2019}{BSc in Mathematics --- GPA: 3.9/4.0}{}
+      \\resumeItemListStart
+        \\resumeItem{Relevant Coursework: Number Theory, Mechanics}
+      \\resumeItemListEnd
+  \\resumeSubHeadingListEnd
+
+\\needspace{4\\baselineskip}
+\\section{Technical Skills}
+ \\begin{itemize}[leftmargin=0.15in, label={}]
+    \\small{\\item{
+     \\textbf{Languages}{: Ada, Python, TypeScript} \\\\
+     \\textbf{Frameworks}{: React, Express} \\\\
+     \\textbf{Tools}{: Git, Docker} \\\\
+     \\textbf{Other}{: Distributed systems} \\\\
+    }}
+ \\end{itemize}
+
+\\needspace{4\\baselineskip}
+\\section{Work History}
+  \\resumeSubHeadingListStart
+    \\resumeSubheading{Senior Software Engineer}{01/2022 -- Present}{Analytical Engines Ltd}{Remote}
+      \\resumeItemListStart
+        \\resumeItem{Led migration of a monolith to services, cutting deploy time by 80\\%}
+        \\resumeItem{Mentored 4 engineers; introduced code review practices}
+      \\resumeItemListEnd
+    \\resumeSubheading{Software Engineer}{03/2019 -- 12/2021}{Babbage \\& Co}{London}
+      \\resumeItemListStart
+        \\resumeItem{Built the first compiler}
+      \\resumeItemListEnd
+  \\resumeSubHeadingListEnd
+
+\\needspace{4\\baselineskip}
+\\section{Projects}
+  \\resumeSubHeadingListStart
+    \\resumeProjectHeading{\\textbf{Difference Engine} $|$ \\href{https://github.com/ada/difference-engine}{link} $|$ \\emph{Brass, Steam}}{}
+      \\resumeItemListStart
+        \\resumeItem{A mechanical calculator for polynomial functions.}
+        \\resumeItem{Computed tables to 31 digits}
+      \\resumeItemListEnd
+  \\resumeSubHeadingListEnd
+
+\\needspace{4\\baselineskip}
+\\section{Certifications}
+  \\resumeSubHeadingListStart
+    \\resumeProjectHeading{\\textbf{AWS Solutions Architect} $|$ \\emph{Amazon}}{06/2023}
+  \\resumeSubHeadingListEnd
+
+\\needspace{4\\baselineskip}
+\\section{Achievements}
+  \\resumeSubHeadingListStart
+    \\resumeProjectHeading{\\textbf{First programmer}}{1843}
+      \\resumeItemListStart
+        \\resumeItem{Wrote the first algorithm.}
+      \\resumeItemListEnd
+  \\resumeSubHeadingListEnd
+
+\\needspace{4\\baselineskip}
+\\section{Publications}
+  \\resumeSubHeadingListStart
+    \\resumeProjectHeading{\\textbf{Notes on the Analytical Engine}}{1843}
+      \\resumeItemListStart
+        \\resumeItem{Sketch of the engine.}
+      \\resumeItemListEnd
+  \\resumeSubHeadingListEnd
+
+\\needspace{4\\baselineskip}
+\\section{Volunteering}
+  \\resumeSubHeadingListStart
+    \\resumeSubheading{Mentor}{2020 -- 2022}{Code Club}{}
+      \\resumeItemListStart
+        \\resumeItem{Taught kids to code.}
+      \\resumeItemListEnd
+  \\resumeSubHeadingListEnd
+
+\\needspace{4\\baselineskip}
+\\section{Patents}
+  \\resumeSubHeadingListStart
+    \\resumeProjectHeading{\\textbf{Loom control mechanism} $|$ GB-0001}{1842}
+      \\resumeItemListStart
+        \\resumeItem{Punch card sequencing.}
+      \\resumeItemListEnd
+  \\resumeSubHeadingListEnd
+
+\\needspace{4\\baselineskip}
+\\section{Leadership}
+  \\resumeSubHeadingListStart
+    \\resumeProjectHeading{\\textbf{Chair} $|$ \\emph{Royal Society computing group}}{1841}
+      \\resumeItemListStart
+        \\resumeItem{Organized monthly colloquia.}
+        \\resumeItem{Grew membership 3x}
+      \\resumeItemListEnd
+  \\resumeSubHeadingListEnd
+
+\\end{document}
+"
+`;
+
+exports[`render: snapshots (fixture profile x templates x design variants) modern / default 1`] = `
+"\\documentclass[letterpaper,11pt]{article}
+\\usepackage{ebgaramond}
+\\usepackage[margin=0.7in]{geometry}
+\\usepackage{setspace}
+\\setstretch{1}
+\\usepackage{titlesec}
+\\usepackage{enumitem}
+\\usepackage{xcolor}
+\\definecolor{accent}{HTML}{000000}
+\\usepackage[hidelinks,bookmarks=false]{hyperref}
+\\pagestyle{empty}
+\\usepackage{needspace}
+\\raggedbottom
+\\clubpenalty=10000
+\\widowpenalty=10000
+\\setlength{\\parindent}{0pt}
+\\titleformat{\\section}{\\Large\\bfseries}{}{0em}{}[\\color{accent}\\titlerule]
+\\titlespacing*{\\section}{0pt}{8pt}{4pt}
+\\setlist[itemize]{leftmargin=0.18in, itemsep=2pt, parsep=0pt, topsep=2pt, label=\\textbullet}
+\\begin{document}
+\\begin{center}
+{\\huge\\bfseries Ada Lovelace}\\\\[4pt]
+{\\small +1 555 010 0101 $|$ \\href{mailto:ada@example.com}{ada@example.com} $|$ \\href{https://linkedin.com/in/ada}{linkedin.com/in/ada} $|$ \\href{https://github.com/ada}{github.com/ada} $|$ \\href{https://ada.dev}{ada.dev} $|$ London, UK}
+\\end{center}
+
+\\needspace{4\\baselineskip}
+\\section{Experience}
+\\textbf{Senior Software Engineer} \\hfill Jan 2022 -- Present\\\\
+\\textit{Analytical Engines Ltd} \\hfill Remote\\\\
+\\begin{itemize}
+  \\item Led migration of a monolith to services, cutting deploy time by 80\\%
+  \\item Mentored 4 engineers; introduced code review practices
+\\end{itemize}
+\\vspace{4pt}
+
+\\textbf{Software Engineer} \\hfill Mar 2019 -- Dec 2021\\\\
+\\textit{Babbage \\& Co} \\hfill London\\\\
+\\begin{itemize}
+  \\item Built the first compiler
+\\end{itemize}
+
+\\needspace{4\\baselineskip}
+\\section{Education}
+\\textbf{University of London} \\hfill 2015 -- 2019\\\\
+BSc in Mathematics --- GPA: 3.9/4.0\\\\
+\\textit{Coursework:} Number Theory, Mechanics\\\\
+
+\\needspace{4\\baselineskip}
+\\section{Projects}
+\\textbf{Difference Engine} (\\href{https://github.com/ada/difference-engine}{link}) \\hfill \\textit{Brass, Steam}\\\\
+A mechanical calculator for polynomial functions.\\\\
+\\begin{itemize}
+  \\item Computed tables to 31 digits
+\\end{itemize}
+
+\\needspace{4\\baselineskip}
+\\section{Technical Skills}
+\\textbf{Languages:} Ada, Python, TypeScript\\\\
+\\textbf{Frameworks:} React, Express\\\\
+\\textbf{Tools:} Git, Docker\\\\
+\\textbf{Other:} Distributed systems\\\\
+
+\\needspace{4\\baselineskip}
+\\section{Certifications}
+\\textbf{AWS Solutions Architect} --- Amazon \\hfill Jun 2023\\\\
+
+\\needspace{4\\baselineskip}
+\\section{Achievements}
+\\textbf{First programmer} \\hfill 1843\\\\
+Wrote the first algorithm.\\\\
+
+\\needspace{4\\baselineskip}
+\\section{Publications}
+\\textbf{Notes on the Analytical Engine} \\hfill 1843\\\\
+Sketch of the engine.\\\\
+
+\\needspace{4\\baselineskip}
+\\section{Volunteering}
+\\textbf{Mentor}, Code Club \\hfill 2020 -- 2022\\\\
+Taught kids to code.\\\\
+
+\\needspace{4\\baselineskip}
+\\section{Patents}
+\\textbf{Loom control mechanism} (GB-0001) \\hfill 1842\\\\
+Punch card sequencing.\\\\
+
+\\needspace{4\\baselineskip}
+\\section{Interests}
+Chess, Horse racing\\\\
+
+\\needspace{4\\baselineskip}
+\\section{Leadership}
+\\textbf{Chair} --- Royal Society computing group \\hfill 1841\\\\
+Organized monthly colloquia.\\\\
+\\begin{itemize}
+  \\item Grew membership 3x
+\\end{itemize}
+\\end{document}
+"
+`;
+
+exports[`render: snapshots (fixture profile x templates x design variants) modern / dense 1`] = `
+"\\documentclass[letterpaper,10pt]{article}
+\\usepackage{newtxtext}
+\\usepackage[margin=0.4in]{geometry}
+\\usepackage{setspace}
+\\setstretch{0.9}
+\\usepackage{titlesec}
+\\usepackage{enumitem}
+\\usepackage{xcolor}
+\\definecolor{accent}{HTML}{000000}
+\\usepackage[hidelinks,bookmarks=false]{hyperref}
+\\pagestyle{empty}
+\\usepackage{needspace}
+\\raggedbottom
+\\clubpenalty=10000
+\\widowpenalty=10000
+\\setlength{\\parindent}{0pt}
+\\titleformat{\\section}{\\Large\\bfseries}{}{0em}{}
+\\titlespacing*{\\section}{0pt}{4pt}{2pt}
+\\setlist[itemize]{leftmargin=0.18in, itemsep=1pt, parsep=0pt, topsep=2pt, label=--}
+\\begin{document}
+{\\huge\\bfseries Ada Lovelace}\\\\[2pt]
+{\\small +1 555 010 0101 $|$ ada@example.com $|$ linkedin.com/in/ada $|$ github.com/ada $|$ ada.dev $|$ London, UK}\\\\[2pt]
+
+\\needspace{4\\baselineskip}
+\\section{Experience}
+\\textbf{Senior Software Engineer} \\hfill 2022 -- Present\\\\
+\\textit{Analytical Engines Ltd} \\hfill Remote\\\\
+\\begin{itemize}
+  \\item Led migration of a monolith to services, cutting deploy time by 80\\%
+  \\item Mentored 4 engineers; introduced code review practices
+\\end{itemize}
+\\vspace{4pt}
+
+\\textbf{Software Engineer} \\hfill 2019 -- 2021\\\\
+\\textit{Babbage \\& Co} \\hfill London\\\\
+\\begin{itemize}
+  \\item Built the first compiler
+\\end{itemize}
+
+\\needspace{4\\baselineskip}
+\\section{Education}
+\\textbf{University of London} \\hfill 2015 -- 2019\\\\
+BSc in Mathematics --- GPA: 3.9/4.0\\\\
+\\textit{Coursework:} Number Theory, Mechanics\\\\
+
+\\needspace{4\\baselineskip}
+\\section{Projects}
+\\textbf{Difference Engine} (link) \\hfill \\textit{Brass, Steam}\\\\
+A mechanical calculator for polynomial functions.\\\\
+\\begin{itemize}
+  \\item Computed tables to 31 digits
+\\end{itemize}
+
+\\needspace{4\\baselineskip}
+\\section{Technical Skills}
+\\textbf{Languages:} Ada, Python, TypeScript\\\\
+\\textbf{Frameworks:} React, Express\\\\
+\\textbf{Tools:} Git, Docker\\\\
+\\textbf{Other:} Distributed systems\\\\
+
+\\needspace{4\\baselineskip}
+\\section{Certifications}
+\\textbf{AWS Solutions Architect} --- Amazon \\hfill 2023\\\\
+
+\\needspace{4\\baselineskip}
+\\section{Achievements}
+\\textbf{First programmer} \\hfill 1843\\\\
+Wrote the first algorithm.\\\\
+
+\\needspace{4\\baselineskip}
+\\section{Publications}
+\\textbf{Notes on the Analytical Engine} \\hfill 1843\\\\
+Sketch of the engine.\\\\
+
+\\needspace{4\\baselineskip}
+\\section{Volunteering}
+\\textbf{Mentor}, Code Club \\hfill 2020 -- 2022\\\\
+Taught kids to code.\\\\
+
+\\needspace{4\\baselineskip}
+\\section{Patents}
+\\textbf{Loom control mechanism} (GB-0001) \\hfill 1842\\\\
+Punch card sequencing.\\\\
+
+\\needspace{4\\baselineskip}
+\\section{Interests}
+Chess, Horse racing\\\\
+
+\\needspace{4\\baselineskip}
+\\section{Leadership}
+\\textbf{Chair} --- Royal Society computing group \\hfill 1841\\\\
+Organized monthly colloquia.\\\\
+\\begin{itemize}
+  \\item Grew membership 3x
+\\end{itemize}
+\\end{document}
+"
+`;
+
+exports[`render: snapshots (fixture profile x templates x design variants) modern / styled 1`] = `
+"\\documentclass[letterpaper,12pt]{article}
+\\usepackage[sfdefault]{FiraSans}
+\\usepackage[margin=1in]{geometry}
+\\usepackage{setspace}
+\\setstretch{1.3}
+\\usepackage{titlesec}
+\\usepackage{enumitem}
+\\usepackage{xcolor}
+\\definecolor{accent}{HTML}{1A73E8}
+\\usepackage{tabularx}
+\\usepackage[hidelinks,bookmarks=false]{hyperref}
+\\pagestyle{empty}
+\\usepackage{needspace}
+\\raggedbottom
+\\clubpenalty=10000
+\\widowpenalty=10000
+\\setlength{\\parindent}{0pt}
+\\titleformat{\\section}{\\color{accent}\\Large\\bfseries}{}{0em}{}[\\color{accent}\\titlerule]
+\\titlespacing*{\\section}{0pt}{14pt}{7pt}
+\\setlist[itemize]{leftmargin=0.18in, itemsep=4pt, parsep=0pt, topsep=2pt, label=\\rule{3pt}{3pt}}
+\\begin{document}
+\\begin{tabularx}{\\textwidth}{@{}X r@{}}
+{\\huge\\bfseries Ada Lovelace} & {\\small +1 555 010 0101 $|$ \\href{mailto:ada@example.com}{ada@example.com} $|$ \\href{https://linkedin.com/in/ada}{linkedin.com/in/ada} $|$ \\href{https://github.com/ada}{github.com/ada} $|$ \\href{https://ada.dev}{ada.dev} $|$ London, UK}\\\\
+\\end{tabularx}
+
+\\needspace{4\\baselineskip}
+\\section{Education}
+\\textbf{University of London} \\hfill 2015 -- 2019\\\\
+BSc in Mathematics --- GPA: 3.9/4.0\\\\
+\\textit{Coursework:} Number Theory, Mechanics\\\\
+
+\\needspace{4\\baselineskip}
+\\section{Technical Skills}
+\\textbf{Languages:} Ada, Python, TypeScript\\\\
+\\textbf{Frameworks:} React, Express\\\\
+\\textbf{Tools:} Git, Docker\\\\
+\\textbf{Other:} Distributed systems\\\\
+
+\\needspace{4\\baselineskip}
+\\section{Work History}
+\\textbf{Senior Software Engineer} \\hfill 01/2022 -- Present\\\\
+\\textit{Analytical Engines Ltd} \\hfill Remote\\\\
+\\begin{itemize}
+  \\item Led migration of a monolith to services, cutting deploy time by 80\\%
+  \\item Mentored 4 engineers; introduced code review practices
+\\end{itemize}
+\\vspace{4pt}
+
+\\textbf{Software Engineer} \\hfill 03/2019 -- 12/2021\\\\
+\\textit{Babbage \\& Co} \\hfill London\\\\
+\\begin{itemize}
+  \\item Built the first compiler
+\\end{itemize}
+
+\\needspace{4\\baselineskip}
+\\section{Projects}
+\\textbf{Difference Engine} (\\href{https://github.com/ada/difference-engine}{link}) \\hfill \\textit{Brass, Steam}\\\\
+A mechanical calculator for polynomial functions.\\\\
+\\begin{itemize}
+  \\item Computed tables to 31 digits
+\\end{itemize}
+
+\\needspace{4\\baselineskip}
+\\section{Certifications}
+\\textbf{AWS Solutions Architect} --- Amazon \\hfill 06/2023\\\\
+
+\\needspace{4\\baselineskip}
+\\section{Achievements}
+\\textbf{First programmer} \\hfill 1843\\\\
+Wrote the first algorithm.\\\\
+
+\\needspace{4\\baselineskip}
+\\section{Publications}
+\\textbf{Notes on the Analytical Engine} \\hfill 1843\\\\
+Sketch of the engine.\\\\
+
+\\needspace{4\\baselineskip}
+\\section{Volunteering}
+\\textbf{Mentor}, Code Club \\hfill 2020 -- 2022\\\\
+Taught kids to code.\\\\
+
+\\needspace{4\\baselineskip}
+\\section{Patents}
+\\textbf{Loom control mechanism} (GB-0001) \\hfill 1842\\\\
+Punch card sequencing.\\\\
+
+\\needspace{4\\baselineskip}
+\\section{Leadership}
+\\textbf{Chair} --- Royal Society computing group \\hfill 1841\\\\
+Organized monthly colloquia.\\\\
+\\begin{itemize}
+  \\item Grew membership 3x
+\\end{itemize}
+\\end{document}
+"
+`;
+
+exports[`render: snapshots (fixture profile x templates x design variants) sheets / default 1`] = `
+"\\documentclass[letterpaper,11pt]{article}
+\\usepackage{ebgaramond}
+\\usepackage[margin=0.7in]{geometry}
+\\usepackage{setspace}
+\\setstretch{1}
+\\usepackage{titlesec}
+\\usepackage{enumitem}
+\\usepackage{xcolor}
+\\definecolor{accent}{HTML}{000000}
+\\usepackage[hidelinks,bookmarks=false]{hyperref}
+\\pagestyle{empty}
+\\usepackage{needspace}
+\\raggedbottom
+\\clubpenalty=10000
+\\widowpenalty=10000
+\\setlength{\\parindent}{0pt}
+\\titleformat{\\section}{\\large\\bfseries}{}{0em}{}[\\color{accent}\\titlerule]
+\\titlespacing*{\\section}{0pt}{8pt}{4pt}
+\\setlist[itemize]{leftmargin=0.18in, itemsep=2pt, parsep=0pt, topsep=2pt, label=\\textbullet}
+\\begin{document}
+\\begin{center}
+{\\LARGE\\bfseries Ada Lovelace}\\\\[4pt]
+{\\small +1 555 010 0101 $|$ \\href{mailto:ada@example.com}{ada@example.com} $|$ \\href{https://linkedin.com/in/ada}{linkedin.com/in/ada} $|$ \\href{https://github.com/ada}{github.com/ada} $|$ \\href{https://ada.dev}{ada.dev} $|$ London, UK}
+\\end{center}
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Experience}}
+\\textbf{Senior Software Engineer} \\hfill Jan 2022 -- Present\\\\
+\\textit{Analytical Engines Ltd} \\hfill Remote\\\\
+\\begin{itemize}
+  \\item Led migration of a monolith to services, cutting deploy time by 80\\%
+  \\item Mentored 4 engineers; introduced code review practices
+\\end{itemize}
+\\vspace{4pt}
+
+\\textbf{Software Engineer} \\hfill Mar 2019 -- Dec 2021\\\\
+\\textit{Babbage \\& Co} \\hfill London\\\\
+\\begin{itemize}
+  \\item Built the first compiler
+\\end{itemize}
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Education}}
+\\textbf{University of London} \\hfill 2015 -- 2019\\\\
+BSc in Mathematics --- GPA: 3.9/4.0\\\\
+\\textit{Coursework:} Number Theory, Mechanics\\\\
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Projects}}
+\\textbf{Difference Engine} (\\href{https://github.com/ada/difference-engine}{link}) \\hfill \\textit{Brass, Steam}\\\\
+A mechanical calculator for polynomial functions.\\\\
+\\begin{itemize}
+  \\item Computed tables to 31 digits
+\\end{itemize}
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Technical Skills}}
+\\textbf{Languages:} Ada, Python, TypeScript\\\\
+\\textbf{Frameworks:} React, Express\\\\
+\\textbf{Tools:} Git, Docker\\\\
+\\textbf{Other:} Distributed systems\\\\
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Certifications}}
+\\textbf{AWS Solutions Architect} --- Amazon \\hfill Jun 2023\\\\
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Achievements}}
+\\textbf{First programmer} \\hfill 1843\\\\
+Wrote the first algorithm.\\\\
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Publications}}
+\\textbf{Notes on the Analytical Engine} \\hfill 1843\\\\
+Sketch of the engine.\\\\
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Volunteering}}
+\\textbf{Mentor}, Code Club \\hfill 2020 -- 2022\\\\
+Taught kids to code.\\\\
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Patents}}
+\\textbf{Loom control mechanism} (GB-0001) \\hfill 1842\\\\
+Punch card sequencing.\\\\
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Interests}}
+Chess, Horse racing\\\\
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Leadership}}
+\\textbf{Chair} --- Royal Society computing group \\hfill 1841\\\\
+Organized monthly colloquia.\\\\
+\\begin{itemize}
+  \\item Grew membership 3x
+\\end{itemize}
+\\end{document}
+"
+`;
+
+exports[`render: snapshots (fixture profile x templates x design variants) sheets / dense 1`] = `
+"\\documentclass[letterpaper,10pt]{article}
+\\usepackage{newtxtext}
+\\usepackage[margin=0.4in]{geometry}
+\\usepackage{setspace}
+\\setstretch{0.9}
+\\usepackage{titlesec}
+\\usepackage{enumitem}
+\\usepackage{xcolor}
+\\definecolor{accent}{HTML}{000000}
+\\usepackage[hidelinks,bookmarks=false]{hyperref}
+\\pagestyle{empty}
+\\usepackage{needspace}
+\\raggedbottom
+\\clubpenalty=10000
+\\widowpenalty=10000
+\\setlength{\\parindent}{0pt}
+\\titleformat{\\section}{\\large\\bfseries}{}{0em}{}
+\\titlespacing*{\\section}{0pt}{4pt}{2pt}
+\\setlist[itemize]{leftmargin=0.18in, itemsep=1pt, parsep=0pt, topsep=2pt, label=--}
+\\begin{document}
+{\\LARGE\\bfseries Ada Lovelace}\\\\[2pt]
+{\\small +1 555 010 0101 $|$ ada@example.com $|$ linkedin.com/in/ada $|$ github.com/ada $|$ ada.dev $|$ London, UK}\\\\[2pt]
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Experience}}
+\\textbf{Senior Software Engineer} \\hfill 2022 -- Present\\\\
+\\textit{Analytical Engines Ltd} \\hfill Remote\\\\
+\\begin{itemize}
+  \\item Led migration of a monolith to services, cutting deploy time by 80\\%
+  \\item Mentored 4 engineers; introduced code review practices
+\\end{itemize}
+\\vspace{4pt}
+
+\\textbf{Software Engineer} \\hfill 2019 -- 2021\\\\
+\\textit{Babbage \\& Co} \\hfill London\\\\
+\\begin{itemize}
+  \\item Built the first compiler
+\\end{itemize}
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Education}}
+\\textbf{University of London} \\hfill 2015 -- 2019\\\\
+BSc in Mathematics --- GPA: 3.9/4.0\\\\
+\\textit{Coursework:} Number Theory, Mechanics\\\\
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Projects}}
+\\textbf{Difference Engine} (link) \\hfill \\textit{Brass, Steam}\\\\
+A mechanical calculator for polynomial functions.\\\\
+\\begin{itemize}
+  \\item Computed tables to 31 digits
+\\end{itemize}
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Technical Skills}}
+\\textbf{Languages:} Ada, Python, TypeScript\\\\
+\\textbf{Frameworks:} React, Express\\\\
+\\textbf{Tools:} Git, Docker\\\\
+\\textbf{Other:} Distributed systems\\\\
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Certifications}}
+\\textbf{AWS Solutions Architect} --- Amazon \\hfill 2023\\\\
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Achievements}}
+\\textbf{First programmer} \\hfill 1843\\\\
+Wrote the first algorithm.\\\\
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Publications}}
+\\textbf{Notes on the Analytical Engine} \\hfill 1843\\\\
+Sketch of the engine.\\\\
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Volunteering}}
+\\textbf{Mentor}, Code Club \\hfill 2020 -- 2022\\\\
+Taught kids to code.\\\\
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Patents}}
+\\textbf{Loom control mechanism} (GB-0001) \\hfill 1842\\\\
+Punch card sequencing.\\\\
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Interests}}
+Chess, Horse racing\\\\
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Leadership}}
+\\textbf{Chair} --- Royal Society computing group \\hfill 1841\\\\
+Organized monthly colloquia.\\\\
+\\begin{itemize}
+  \\item Grew membership 3x
+\\end{itemize}
+\\end{document}
+"
+`;
+
+exports[`render: snapshots (fixture profile x templates x design variants) sheets / styled 1`] = `
+"\\documentclass[letterpaper,12pt]{article}
+\\usepackage[sfdefault]{FiraSans}
+\\usepackage[margin=1in]{geometry}
+\\usepackage{setspace}
+\\setstretch{1.3}
+\\usepackage{titlesec}
+\\usepackage{enumitem}
+\\usepackage{xcolor}
+\\definecolor{accent}{HTML}{1A73E8}
+\\usepackage{tabularx}
+\\usepackage[hidelinks,bookmarks=false]{hyperref}
+\\pagestyle{empty}
+\\usepackage{needspace}
+\\raggedbottom
+\\clubpenalty=10000
+\\widowpenalty=10000
+\\setlength{\\parindent}{0pt}
+\\titleformat{\\section}{\\large\\bfseries}{}{0em}{}[\\color{accent}\\titlerule]
+\\titlespacing*{\\section}{0pt}{14pt}{7pt}
+\\setlist[itemize]{leftmargin=0.18in, itemsep=4pt, parsep=0pt, topsep=2pt, label=\\rule{3pt}{3pt}}
+\\begin{document}
+\\begin{tabularx}{\\textwidth}{@{}X r@{}}
+{\\LARGE\\bfseries Ada Lovelace} & {\\small +1 555 010 0101 $|$ \\href{mailto:ada@example.com}{ada@example.com} $|$ \\href{https://linkedin.com/in/ada}{linkedin.com/in/ada} $|$ \\href{https://github.com/ada}{github.com/ada} $|$ \\href{https://ada.dev}{ada.dev} $|$ London, UK}\\\\
+\\end{tabularx}
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Education}}
+\\textbf{University of London} \\hfill 2015 -- 2019\\\\
+BSc in Mathematics --- GPA: 3.9/4.0\\\\
+\\textit{Coursework:} Number Theory, Mechanics\\\\
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Technical Skills}}
+\\textbf{Languages:} Ada, Python, TypeScript\\\\
+\\textbf{Frameworks:} React, Express\\\\
+\\textbf{Tools:} Git, Docker\\\\
+\\textbf{Other:} Distributed systems\\\\
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Work History}}
+\\textbf{Senior Software Engineer} \\hfill 01/2022 -- Present\\\\
+\\textit{Analytical Engines Ltd} \\hfill Remote\\\\
+\\begin{itemize}
+  \\item Led migration of a monolith to services, cutting deploy time by 80\\%
+  \\item Mentored 4 engineers; introduced code review practices
+\\end{itemize}
+\\vspace{4pt}
+
+\\textbf{Software Engineer} \\hfill 03/2019 -- 12/2021\\\\
+\\textit{Babbage \\& Co} \\hfill London\\\\
+\\begin{itemize}
+  \\item Built the first compiler
+\\end{itemize}
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Projects}}
+\\textbf{Difference Engine} (\\href{https://github.com/ada/difference-engine}{link}) \\hfill \\textit{Brass, Steam}\\\\
+A mechanical calculator for polynomial functions.\\\\
+\\begin{itemize}
+  \\item Computed tables to 31 digits
+\\end{itemize}
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Certifications}}
+\\textbf{AWS Solutions Architect} --- Amazon \\hfill 06/2023\\\\
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Achievements}}
+\\textbf{First programmer} \\hfill 1843\\\\
+Wrote the first algorithm.\\\\
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Publications}}
+\\textbf{Notes on the Analytical Engine} \\hfill 1843\\\\
+Sketch of the engine.\\\\
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Volunteering}}
+\\textbf{Mentor}, Code Club \\hfill 2020 -- 2022\\\\
+Taught kids to code.\\\\
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Patents}}
+\\textbf{Loom control mechanism} (GB-0001) \\hfill 1842\\\\
+Punch card sequencing.\\\\
+
+\\needspace{4\\baselineskip}
+\\section{\\MakeUppercase{Leadership}}
+\\textbf{Chair} --- Royal Society computing group \\hfill 1841\\\\
+Organized monthly colloquia.\\\\
+\\begin{itemize}
+  \\item Grew membership 3x
+\\end{itemize}
+\\end{document}
+"
+`;

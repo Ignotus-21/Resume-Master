@@ -1,7 +1,9 @@
 const MasterProfile = require('../models/MasterProfile');
 const { parseResumeData } = require('../services/geminiService');
 const { enforceGeminiQuota } = require('../utils/geminiGate');
+const { respondError } = require('../utils/aiError');
 const fs = require('fs');
+const pdfParse = require('pdf-parse');
 
 // Fields a client is allowed to set on their own profile. Notably excludes
 // `owner` (and Mongo internals) so a caller can't reassign/orphan the record.
@@ -10,6 +12,13 @@ const ALLOWED_PROFILE_FIELDS = [
   'achievements', 'hobbies', 'publications', 'volunteering', 'patents',
   'customSections', 'rawText',
 ];
+
+// Matches the JD/resume-text caps used elsewhere (resumeController.js,
+// aiController.js) so extracted/pasted resume text can't blow past what
+// those endpoints allow — without this, a highly-compressible DOCX (bounded
+// only by multer's 5MB upload limit, not by its decompressed text size) or a
+// large pasted-text body could balloon the Gemini prompt.
+const MAX_TEXT_LENGTH = 20000;
 
 const pickProfileFields = (body) => {
   const picked = {};
@@ -62,6 +71,9 @@ const updateProfile = async (req, res) => {
 const ingestRawText = async (req, res) => {
   const { text } = req.body;
   if (!text) return res.status(400).json({ message: 'No text provided' });
+  if (typeof text !== 'string' || text.length > MAX_TEXT_LENGTH) {
+    return res.status(400).json({ message: `text exceeds maximum length of ${MAX_TEXT_LENGTH} characters` });
+  }
 
   try {
     const quotaRejection = await enforceGeminiQuota(req);
@@ -97,9 +109,11 @@ const ingestRawText = async (req, res) => {
     res.json(profile);
   } catch (error) {
     console.error('Ingest Text Error:', error);
-    res.status(500).json({ message: 'Failed to parse text' });
+    respondError(res, error, 'Failed to parse text');
   }
 };
+
+const DOCX_MIMETYPE = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
 const uploadResume = async (req, res) => {
   if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
@@ -107,12 +121,38 @@ const uploadResume = async (req, res) => {
   try {
     const dataBuffer = fs.readFileSync(req.file.path);
 
-    // Verify the file is actually a PDF (magic bytes), not just claimed via
-    // Content-Type/extension, before forwarding it to Gemini.
-    const isPdf = dataBuffer.slice(0, 5).toString('ascii') === '%PDF-';
-    if (!isPdf) {
+    // Verify the file really is what it claims (magic bytes), not just the
+    // Content-Type/extension, before spending an AI call on it. A .docx is a
+    // ZIP container, so it starts with PK\x03\x04.
+    const isDocx = req.file.mimetype === DOCX_MIMETYPE;
+    const magicOk = isDocx
+      ? dataBuffer.slice(0, 4).equals(Buffer.from([0x50, 0x4b, 0x03, 0x04]))
+      : dataBuffer.slice(0, 5).toString('ascii') === '%PDF-';
+    if (!magicOk) {
       fs.unlinkSync(req.file.path);
-      return res.status(400).json({ message: 'Uploaded file is not a valid PDF' });
+      return res.status(400).json({ message: `Uploaded file is not a valid ${isDocx ? 'DOCX' : 'PDF'}` });
+    }
+
+    // Extract plain text locally instead of sending the raw file to Gemini.
+    // Runs BEFORE the quota gate so an unreadable file never reserves quota.
+    let text;
+    if (isDocx) {
+      const mammoth = require('mammoth');
+      text = (await mammoth.extractRawText({ buffer: dataBuffer })).value;
+    } else {
+      text = (await pdfParse(dataBuffer)).text;
+    }
+    if (!text || !text.trim()) {
+      fs.unlinkSync(req.file.path);
+      return res.status(400).json({
+        message: 'No readable text found in that file. If it is a scanned image, try a text-based export instead.',
+      });
+    }
+    if (text.length > MAX_TEXT_LENGTH) {
+      fs.unlinkSync(req.file.path);
+      return res.status(400).json({
+        message: `Extracted text exceeds the maximum length of ${MAX_TEXT_LENGTH} characters. Trim the document and try again.`,
+      });
     }
 
     const quotaRejection = await enforceGeminiQuota(req);
@@ -121,8 +161,7 @@ const uploadResume = async (req, res) => {
       return res.status(quotaRejection.status).json(quotaRejection.body);
     }
 
-    // Send Buffer directly to Gemini (Multimodal)
-    const parsedData = await parseResumeData(dataBuffer, req.geminiApiKey, req);
+    const parsedData = await parseResumeData(text, req.geminiApiKey, req);
 
     // Clean up uploaded file
     fs.unlinkSync(req.file.path);
@@ -135,7 +174,7 @@ const uploadResume = async (req, res) => {
     if (req.file?.path && fs.existsSync(req.file.path)) {
       fs.unlinkSync(req.file.path);
     }
-    res.status(500).json({ message: 'Failed to process resume' });
+    respondError(res, error, 'Failed to process resume');
   }
 };
 

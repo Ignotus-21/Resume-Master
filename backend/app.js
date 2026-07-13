@@ -84,7 +84,9 @@ const createApp = () => {
   });
   app.use('/api/ai', aiLimiter);
   app.use('/api/resumes/generate', aiLimiter);
-  app.use('/api/resumes/compile', aiLimiter);
+  // /api/resumes/compile is NOT an AI route — it has its own compileLimiter
+  // (middleware/compile.js) with a budget sized for live editing; putting it
+  // behind aiLimiter used to lock users out of their own document mid-edit.
   app.use('/api/resumes/feedback', aiLimiter);
   app.use('/api/master/upload-resume', aiLimiter);
   app.use('/api/master/ingest', aiLimiter);

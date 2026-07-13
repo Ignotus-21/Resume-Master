@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { Sparkles, Plus, Trash2, ChevronUp, ChevronDown, Eye, EyeOff, Loader2, MessageCircleQuestion } from 'lucide-react';
+import { Sparkles, Plus, Trash2, GripVertical, Eye, EyeOff, Loader2, MessageCircleQuestion } from 'lucide-react';
 import { apiJson } from '@/lib/api';
 import { useToast } from '@/components/ui/Toast';
+import { DiffText } from '@/components/resume/DiffText';
 import type { ResumeContent, DesignTokens, SectionKey } from '@/lib/resumeSchema';
 import { sectionTitle, sectionHasContent, SECTION_KEYS } from '@/lib/resumeSchema';
 
@@ -23,6 +24,65 @@ interface VisualEditorProps {
 const inputCls =
   'w-full border border-[#dadce0] bg-white rounded-lg px-3 py-1.5 text-sm text-[#202124] outline-none focus:ring-2 focus:ring-[#1a73e8]/40';
 const labelCls = 'block text-xs font-medium text-[#5f6368] mb-1';
+
+// --- Drag-to-reorder (native HTML5 DnD, no dependency) ------------------------
+// Rows become draggable only while the grip handle is pressed, so text
+// selection inside the row's inputs/textareas keeps working normally.
+
+function useDragReorder(onMove: (from: number, to: number) => void) {
+  const [armed, setArmed] = useState<number | null>(null);
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [overIdx, setOverIdx] = useState<number | null>(null);
+
+  const reset = () => {
+    setArmed(null);
+    setDragIdx(null);
+    setOverIdx(null);
+  };
+
+  const rowProps = (i: number) => ({
+    draggable: armed === i,
+    onDragStart: (e: React.DragEvent) => {
+      e.dataTransfer.effectAllowed = 'move';
+      setDragIdx(i);
+    },
+    onDragOver: (e: React.DragEvent) => {
+      if (dragIdx === null) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      if (overIdx !== i) setOverIdx(i);
+    },
+    onDrop: (e: React.DragEvent) => {
+      e.preventDefault();
+      if (dragIdx !== null && dragIdx !== i) onMove(dragIdx, i);
+      reset();
+    },
+    onDragEnd: reset,
+  });
+
+  const handleProps = (i: number) => ({
+    onMouseDown: () => setArmed(i),
+    onMouseUp: () => setArmed(null),
+  });
+
+  /** Extra classes for row i: fade the dragged row, mark the drop target. */
+  const rowCls = (i: number) => {
+    if (dragIdx === null) return '';
+    if (i === dragIdx) return 'opacity-40';
+    if (i === overIdx) return 'ring-2 ring-[#1a73e8]/50 rounded-lg';
+    return '';
+  };
+
+  return { rowProps, handleProps, rowCls, dragging: dragIdx !== null };
+}
+
+/** Move one element of an array from index `from` to index `to`. */
+const arrayMove = <T,>(arr: T[], from: number, to: number): T[] => {
+  const next = [...arr];
+  const [item] = next.splice(from, 1);
+  next.splice(to, 0, item);
+  return next;
+};
 
 // --- Per-bullet AI suggestions ----------------------------------------------
 
@@ -61,14 +121,14 @@ function BulletAI({ bullet, roleContext, jd, onAccept }: {
       </button>
       {open && rewrites.length > 0 && (
         <div className="absolute right-0 z-20 mt-1 w-80 bg-white border border-[#dadce0] rounded-xl shadow-xl p-2 space-y-1">
-          <div className="text-xs font-semibold text-[#5f6368] px-2 pt-1">Pick a rewrite</div>
+          <div className="text-xs font-semibold text-[#5f6368] px-2 pt-1">Pick a rewrite — changes highlighted</div>
           {rewrites.map((r, i) => (
             <button
               key={i}
               onClick={() => { onAccept(r); setOpen(false); }}
               className="block w-full text-left text-sm p-2 rounded-lg hover:bg-blue-50 text-[#202124]"
             >
-              {r}
+              <DiffText before={bullet} after={r} />
             </button>
           ))}
           <div className="flex justify-between px-2 pb-1">
@@ -154,8 +214,10 @@ function BulletCoach({ bullet, roleContext, onAccept }: {
       )}
       {state === 'drafted' && (
         <>
-          <div className="text-xs font-semibold text-[#5f6368]">Suggested bullet</div>
-          <div className="text-sm text-[#202124] bg-green-50 border border-green-200 rounded-lg p-2">{draft}</div>
+          <div className="text-xs font-semibold text-[#5f6368]">Suggested bullet — changes highlighted</div>
+          <div className="text-sm text-[#202124] bg-green-50 border border-green-200 rounded-lg p-2">
+            <DiffText before={bullet} after={draft} />
+          </div>
           <div className="flex justify-end gap-2">
             <button onClick={() => setState('asking')} className="text-xs text-[#5f6368] hover:underline">Back</button>
             <button onClick={() => { onAccept(draft); setState('idle'); }} className="text-xs font-semibold text-white bg-[#1e8e3e] px-3 py-1 rounded-lg">
@@ -213,21 +275,18 @@ function BulletList({ bullets, roleContext, jd, onChange }: {
   jd?: string;
   onChange: (next: string[]) => void;
 }) {
-  const move = (i: number, dir: -1 | 1) => {
-    const next = [...bullets];
-    const j = i + dir;
-    if (j < 0 || j >= next.length) return;
-    [next[i], next[j]] = [next[j], next[i]];
-    onChange(next);
-  };
+  const dnd = useDragReorder((from, to) => onChange(arrayMove(bullets, from, to)));
 
   return (
     <div className="space-y-1.5">
       {bullets.map((b, i) => (
-        <div key={i} className="flex items-start gap-1 group">
-          <div className="flex flex-col pt-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button onClick={() => move(i, -1)} className="text-[#5f6368] hover:text-[#202124]" title="Move up"><ChevronUp className="h-3 w-3" /></button>
-            <button onClick={() => move(i, 1)} className="text-[#5f6368] hover:text-[#202124]" title="Move down"><ChevronDown className="h-3 w-3" /></button>
+        <div key={i} className={`flex items-start gap-1 group ${dnd.rowCls(i)}`} {...dnd.rowProps(i)}>
+          <div
+            className={`pt-1.5 cursor-grab active:cursor-grabbing text-[#5f6368] hover:text-[#202124] transition-opacity ${dnd.dragging ? '' : 'opacity-0 group-hover:opacity-100'}`}
+            title="Drag to reorder"
+            {...dnd.handleProps(i)}
+          >
+            <GripVertical className="h-4 w-4" />
           </div>
           <textarea
             value={b}
@@ -278,14 +337,9 @@ export function VisualEditor({ content, design, setContent, setDesign, jd, onSec
       return copy;
     });
 
-  const moveSection = (key: SectionKey, dir: -1 | 1) => {
-    const order = [...design.sectionOrder];
-    const i = order.indexOf(key);
-    const j = i + dir;
-    if (i < 0 || j < 0 || j >= order.length) return;
-    [order[i], order[j]] = [order[j], order[i]];
-    setDesign({ sectionOrder: order });
-  };
+  const sectionDnd = useDragReorder((from, to) =>
+    setDesign({ sectionOrder: arrayMove(design.sectionOrder, from, to) })
+  );
 
   const toggleHidden = (key: SectionKey) => {
     const hidden = design.hiddenSections.includes(key)
@@ -590,16 +644,24 @@ export function VisualEditor({ content, design, setContent, setDesign, jd, onSec
       </div>
 
       {/* Sections, in render order */}
-      {design.sectionOrder.map((key) => {
+      {design.sectionOrder.map((key, idx) => {
         const hidden = design.hiddenSections.includes(key);
         const empty = !sectionHasContent(key, content);
         return (
           <div
             key={key}
             ref={(el) => onSectionRef?.(key, el)}
-            className={`border rounded-xl p-4 ${hidden ? 'border-dashed border-[#dadce0] opacity-60' : 'border-[#dadce0]'}`}
+            className={`border rounded-xl p-4 ${hidden ? 'border-dashed border-[#dadce0] opacity-60' : 'border-[#dadce0]'} ${sectionDnd.rowCls(idx)}`}
+            {...sectionDnd.rowProps(idx)}
           >
             <div className="flex items-center gap-2 mb-3">
+              <div
+                className="cursor-grab active:cursor-grabbing text-[#5f6368] hover:text-[#202124] -ml-1"
+                title="Drag to reorder sections"
+                {...sectionDnd.handleProps(idx)}
+              >
+                <GripVertical className="h-4 w-4" />
+              </div>
               <input
                 className="text-sm font-bold text-[#202124] bg-transparent outline-none border-b border-transparent focus:border-[#1a73e8] flex-1 min-w-0"
                 value={sectionTitle(key, design)}
@@ -608,8 +670,6 @@ export function VisualEditor({ content, design, setContent, setDesign, jd, onSec
                 disabled={key === 'customSections'}
               />
               {empty && !hidden && <span className="text-[10px] uppercase tracking-wide text-[#5f6368] bg-[#f1f3f4] rounded px-1.5 py-0.5">empty — not rendered</span>}
-              <button onClick={() => moveSection(key, -1)} className="p-1 text-[#5f6368] hover:text-[#202124]" title="Move section up"><ChevronUp className="h-4 w-4" /></button>
-              <button onClick={() => moveSection(key, 1)} className="p-1 text-[#5f6368] hover:text-[#202124]" title="Move section down"><ChevronDown className="h-4 w-4" /></button>
               <button onClick={() => toggleHidden(key)} className="p-1 text-[#5f6368] hover:text-[#202124]" title={hidden ? 'Show section' : 'Hide section'}>
                 {hidden ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>

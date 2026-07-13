@@ -24,8 +24,6 @@ export function useWorkspace(preSelectedJobId: string | null) {
   const [jobs, setJobs] = useState<any[]>([]);
   const [selectedJobId, setSelectedJobId] = useState(preSelectedJobId || '');
   const [generating, setGenerating] = useState(false);
-  const [analyzing, setAnalyzing] = useState(false);
-  const [recommendations, setRecommendations] = useState<any>(null);
   const [saving, setSaving] = useState(false);
 
   // The open document (editable working copy).
@@ -114,7 +112,6 @@ export function useWorkspace(preSelectedJobId: string | null) {
     // Persist any pending edits on the outgoing document before switching —
     // the autosaver still points at it until the new one loads.
     await autosaveRef.current?.flush().catch(() => {});
-    setRecommendations(null);
     setCompileErrors([]);
     setCompileLog(null);
     setPdfData(null);
@@ -400,21 +397,6 @@ export function useWorkspace(preSelectedJobId: string | null) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectResume, fetchJobs]);
 
-  const getFeedback = useCallback(async () => {
-    if (!doc?.job) {
-      showToast('This resume is not linked to a specific job to analyze.', 'info');
-      return;
-    }
-    setAnalyzing(true);
-    try {
-      setRecommendations(await apiJson('/api/resumes/feedback', 'POST', { jobId: (doc.job as any)._id }));
-    } catch (error: any) {
-      showToast(error.message || 'Failed to get feedback.', 'error');
-    }
-    setAnalyzing(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [doc]);
-
   const remove = useCallback(async (id: string) => {
     try {
       await apiFetch(`/api/resumes/${id}`, { method: 'DELETE' });
@@ -431,11 +413,10 @@ export function useWorkspace(preSelectedJobId: string | null) {
     resumes, jobs,
     profile, profileLoaded, refreshProfile,
     selectedJobId, setSelectedJobId,
-    generating, analyzing, saving, dirty, saveState,
-    recommendations,
+    generating, saving, dirty, saveState,
     doc, selectResume, patchDoc, setContent, setDesign, setTemplateId, setLatexSource,
     pdfData, pages, tex, compileErrors, compileLog, isCompiling,
     autoCompile, setAutoCompile, compile,
-    save, eject, revert, duplicate, generate, getFeedback, remove,
+    save, eject, revert, duplicate, generate, remove,
   };
 }

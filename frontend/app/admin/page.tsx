@@ -32,7 +32,7 @@ const SERVICE_LABELS: Record<string, { label: string, icon: any }> = {
 
 // barWidthPercent shrinks only the bar (not the legend) — the timeline uses
 // it to make bar lengths comparable across days.
-const ServiceBreakdownBars = ({ services, totalTokens, barWidthPercent = 100 }: { services: any, totalTokens: number, barWidthPercent?: number }) => {
+const ServiceBreakdownBars = ({ services, totalTokens, barWidthPercent = 100 }: { services: Record<string, number>, totalTokens: number, barWidthPercent?: number }) => {
   if (!services || Object.keys(services).length === 0 || totalTokens === 0) {
     return <div className="text-xs text-[#5f6368] italic">No service data</div>;
   }
@@ -41,7 +41,7 @@ const ServiceBreakdownBars = ({ services, totalTokens, barWidthPercent = 100 }: 
     <div className="w-full mt-2">
       <div className="flex h-2 rounded-full overflow-hidden bg-[#dadce0]" style={{ width: `${barWidthPercent}%` }}>
         {Object.entries(services).map(([service, amount]) => {
-          const width = Math.max(1, ((amount as number) / totalTokens) * 100);
+          const width = Math.max(1, (amount / totalTokens) * 100);
           return (
             <div 
               key={service}
@@ -56,7 +56,7 @@ const ServiceBreakdownBars = ({ services, totalTokens, barWidthPercent = 100 }: 
         {Object.entries(services).map(([service, amount]) => (
           <div key={service} className="flex items-center gap-1.5">
             <span className={`w-2 h-2 rounded-full ${SERVICE_COLORS[service] || 'bg-[#5f6368]'}`}></span>
-            <span className="font-medium">{SERVICE_LABELS[service]?.label || service}:</span> {(amount as number).toLocaleString()}
+            <span className="font-medium">{SERVICE_LABELS[service]?.label || service}:</span> {amount.toLocaleString()}
           </div>
         ))}
       </div>

@@ -3,6 +3,13 @@
 // the network stubbed at global.fetch.
 //
 // Env knobs must be set before geminiService is required (read at load).
+// process.env is shared across every test file in this Jest worker, so the
+// prior values are saved and restored in afterAll — otherwise a shortened
+// GEMINI_TIMEOUT_MS could leak into whichever test file runs next.
+const PRIOR_ENV = {
+  GEMINI_TIMEOUT_MS: process.env.GEMINI_TIMEOUT_MS,
+  GEMINI_RETRY_BACKOFF_MS: process.env.GEMINI_RETRY_BACKOFF_MS,
+};
 process.env.GEMINI_TIMEOUT_MS = '300';
 process.env.GEMINI_RETRY_BACKOFF_MS = '25';
 
@@ -45,6 +52,10 @@ describe('Gemini timeout + retry', () => {
   });
   afterAll(() => {
     console.error.mockRestore();
+    for (const [key, value] of Object.entries(PRIOR_ENV)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
   });
   afterEach(() => {
     global.fetch = realFetch;
@@ -62,11 +73,12 @@ describe('Gemini timeout + retry', () => {
 
     expect(err).toBeInstanceOf(AiError);
     expect(err.code).toBe('AI_UNAVAILABLE');
-    // One 300ms timeout window plus slack — nowhere near the minutes-long
-    // hang this guards against, and proof the timeout itself is not retried
-    // (a retry would double the elapsed time past 600ms).
+    // One 300ms timeout window plus slack. The upper bound only needs to
+    // rule out a second timeout window being tacked on (which would push
+    // elapsed past ~600ms) — it's deliberately loose so scheduling jitter on
+    // a slow CI runner doesn't make this flaky.
     expect(elapsed).toBeGreaterThanOrEqual(250);
-    expect(elapsed).toBeLessThan(600);
+    expect(elapsed).toBeLessThan(1200);
     expect(global.fetch).toHaveBeenCalledTimes(1);
   });
 

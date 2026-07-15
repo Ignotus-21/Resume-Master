@@ -89,8 +89,16 @@ const sendMessage = async (req, res) => {
     // Same per-attempt timeout + transient-failure retry as generateJson —
     // kept correct even while the chat routes are disabled (see aiRoutes.js)
     // so a future guarded reintroduction doesn't resurface the old
-    // hang-for-minutes behavior. The SDK resets its internal send chain on
-    // error, so retrying sendMessage doesn't double-append history.
+    // hang-for-minutes behavior. Retrying the same `chat` instance is safe
+    // ONLY because the installed @google/generative-ai (0.24.1, pinned
+    // ^0.24.1) resets ChatSession's internal _sendPromise chain in its catch
+    // handler ("Resets _sendPromise to avoid subsequent calls failing") and
+    // only pushes to _history on a *successful* response — so a failed
+    // attempt mutates neither, and the retry resends the identical request.
+    // Older/deprecated versions of this SDK lacked that reset (a failed
+    // sendMessage would wedge the session), so re-verify this before ever
+    // bumping past 0.x — build a fresh ChatSession per attempt instead if
+    // that guarantee ever changes.
     const result = await callGeminiWithRetry(() => chat.sendMessage(message, GEMINI_REQUEST_OPTIONS));
     await trackUsage(req, 'chatbot', result);
     tracked = true;

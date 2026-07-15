@@ -17,7 +17,10 @@ interface ToastContextValue {
 const ToastContext = createContext<ToastContextValue | null>(null);
 
 const VARIANT_STYLES: Record<ToastVariant, string> = {
-  success: 'border-emerald-500/40 bg-emerald-950/90 text-emerald-100',
+  // Success is black-on-light: the old emerald-100-on-emerald-950 text read
+  // as washed out. Black text on the dark bg would be illegible, so the bg
+  // goes light along with it (applies to every success toast app-wide).
+  success: 'border-emerald-500/40 bg-emerald-100/95 text-black',
   error: 'border-red-500/40 bg-red-950/90 text-red-100',
   info: 'border-blue-500/40 bg-blue-950/90 text-blue-100',
 };

@@ -7,7 +7,7 @@ import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/components/ui/Toast';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { GoogleSignInButton } from '@/components/GoogleSignInButton';
+import { GoogleSignInButton, googleSignInEnabled } from '@/components/GoogleSignInButton';
 
 export default function LoginPage() {
   const { login, loginWithGoogle } = useAuth();
@@ -49,13 +49,16 @@ export default function LoginPage() {
           <h1 className="text-2xl font-bold text-[#202124]">Log In</h1>
         </div>
 
-        <GoogleSignInButton onCredential={handleGoogle} />
-
-        <div className="flex items-center gap-3 my-6">
-          <div className="h-px bg-[#dadce0] flex-1" />
-          <span className="text-xs text-[#5f6368] uppercase font-medium">or</span>
-          <div className="h-px bg-[#dadce0] flex-1" />
-        </div>
+        {googleSignInEnabled && (
+          <>
+            <GoogleSignInButton onCredential={handleGoogle} />
+            <div className="flex items-center gap-3 my-6">
+              <div className="h-px bg-[#dadce0] flex-1" />
+              <span className="text-xs text-[#5f6368] uppercase font-medium">or</span>
+              <div className="h-px bg-[#dadce0] flex-1" />
+            </div>
+          </>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

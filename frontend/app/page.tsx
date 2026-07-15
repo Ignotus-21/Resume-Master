@@ -106,7 +106,7 @@ export default function Home() {
         <FeatureCard icon={MessagesSquare} title="Mock Interview" desc="Practice role-specific questions with instant AI feedback." link="/interview" accent="from-amber-500 to-orange-400" />
         <FeatureCard icon={Contact} title="LinkedIn Optimizer" desc="Turn your profile into a keyword-rich LinkedIn headline & About." link="/linkedin" accent="from-indigo-500 to-purple-400" />
         <FeatureCard icon={UploadCloud} title="Import from LinkedIn" desc="Upload your LinkedIn PDF export and we'll fill your profile." link="/profile" accent="from-sky-500 to-blue-400" />
-        <FeatureCard icon={Wand2} title="AI Chat Assistant" desc="Chat with Gemini to refine your content and get advice." link="/chat" accent="from-orange-500 to-red-400" />
+        <FeatureCard icon={Wand2} title="Bullet Coach" desc="Turn thin bullet points into strong, metric-driven ones with AI." link="/resumes" accent="from-orange-500 to-red-400" />
       </motion.div>
 
       {/* How it works */}

@@ -170,7 +170,9 @@ describe('every Gemini call requests structured JSON output', () => {
           responseMimeType: 'application/json',
           responseSchema: expect.objectContaining({ type: 'object' }),
         }),
-      })
+      }),
+      // Every call carries the per-request timeout (the AI-latency fix).
+      expect.objectContaining({ timeout: expect.any(Number) })
     );
   });
 

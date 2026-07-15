@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import {
-  FileText, LayoutDashboard, UserRound, MessageSquareText, Menu, X, Sparkles,
+  FileText, LayoutDashboard, UserRound, Menu, X, Sparkles,
   Settings, LogOut, LogIn, ChevronDown, Mail, Gauge, MessagesSquare, Contact, BarChart3,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
@@ -20,7 +20,8 @@ const TOOL_LINKS = [
   { href: '/interview', label: 'Mock Interview', icon: MessagesSquare },
   { href: '/linkedin', label: 'LinkedIn Optimizer', icon: Contact },
   { href: '/analytics', label: 'Analytics', icon: BarChart3 },
-  { href: '/chat', label: 'AI Chat', icon: MessageSquareText },
+  // '/chat' removed while the general-purpose chatbot is disabled (see
+  // backend/routes/aiRoutes.js) — don't link to a dead feature.
 ];
 
 const linkClass = (active: boolean) =>

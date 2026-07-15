@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { apiFetch, apiJson } from '@/lib/api';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Users, Server, Activity, UserX, Settings, LayoutDashboard, BarChart3, Bot, FileText, CheckCircle, Briefcase, ShieldAlert, Zap } from 'lucide-react';
+import { Users, Server, Activity, UserX, Settings, LayoutDashboard, BarChart3, Bot, FileText, CheckCircle, Briefcase, ShieldAlert, Zap, CalendarDays } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/components/ui/Toast';
@@ -30,14 +30,16 @@ const SERVICE_LABELS: Record<string, { label: string, icon: any }> = {
   other: { label: 'Other', icon: Server },
 };
 
-const ServiceBreakdownBars = ({ services, totalTokens }: { services: any, totalTokens: number }) => {
+// barWidthPercent shrinks only the bar (not the legend) — the timeline uses
+// it to make bar lengths comparable across days.
+const ServiceBreakdownBars = ({ services, totalTokens, barWidthPercent = 100 }: { services: any, totalTokens: number, barWidthPercent?: number }) => {
   if (!services || Object.keys(services).length === 0 || totalTokens === 0) {
     return <div className="text-xs text-[#5f6368] italic">No service data</div>;
   }
-  
+
   return (
     <div className="w-full mt-2">
-      <div className="flex h-2 rounded-full overflow-hidden bg-[#dadce0]">
+      <div className="flex h-2 rounded-full overflow-hidden bg-[#dadce0]" style={{ width: `${barWidthPercent}%` }}>
         {Object.entries(services).map(([service, amount]) => {
           const width = Math.max(1, ((amount as number) / totalTokens) * 100);
           return (
@@ -70,6 +72,7 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState<any>(null);
   const [compileStats, setCompileStats] = useState<any>(null);
   const [breakdown, setBreakdown] = useState<any>(null);
+  const [timeline, setTimeline] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   
@@ -90,16 +93,18 @@ export default function AdminDashboard() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [statsData, breakdownData, compileData] = await Promise.all([
+      const [statsData, breakdownData, compileData, timelineData] = await Promise.all([
         apiFetch('/api/admin/stats'),
         apiFetch('/api/admin/token-breakdown'),
-        // Optional signal — an older backend without the endpoint shouldn't
-        // take down the whole dashboard.
+        // Optional signals — an older backend without these endpoints
+        // shouldn't take down the whole dashboard.
         apiFetch('/api/admin/compile-stats').catch(() => null),
+        apiFetch('/api/admin/usage-timeline').catch(() => null),
       ]);
       setStats(statsData);
       setCompileStats(compileData);
       setBreakdown(breakdownData);
+      setTimeline(timelineData);
       setDefaultTokens((breakdownData.config?.defaultTokenLimit || 15000).toString());
       setGuestTokens((breakdownData.config?.guestTokenLimit || 5000).toString());
     } catch (err: any) {
@@ -175,7 +180,7 @@ export default function AdminDashboard() {
               <Server className="text-[#9333ea] h-5 w-5" />
             </div>
             <p className="text-3xl font-extrabold text-[#202124]">{stats.users.totalAnonymous}</p>
-            <p className="text-xs text-[#5f6368] mt-2">Unique guest IPs, all time</p>
+            <p className="text-xs text-[#5f6368] mt-2">Guest IPs that used AI, all time</p>
           </Card>
         </div>
 
@@ -288,6 +293,81 @@ export default function AdminDashboard() {
     );
   };
 
+  const renderTimeline = () => {
+    if (!timeline) {
+      return <div className="p-8 text-center text-[#5f6368]">Timeline data is unavailable (backend endpoint missing).</div>;
+    }
+    const days: any[] = timeline.days || [];
+    // Fixed, stable legend order: services in their SERVICE_LABELS order
+    // first, then anything unknown — a day dropping in or out of view must
+    // never repaint or reorder the survivors.
+    const seen = new Set<string>();
+    days.forEach((d) => Object.keys(d.services || {}).forEach((s) => seen.add(s)));
+    const allServices = [
+      ...Object.keys(SERVICE_LABELS).filter((s) => seen.has(s)),
+      ...[...seen].filter((s) => !(s in SERVICE_LABELS)),
+    ];
+    const maxDayTokens = Math.max(1, ...days.map((d) => d.totalTokens || 0));
+
+    return (
+      <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <Card className="shadow-sm">
+          <div className="p-6 border-b border-[#dadce0]">
+            <h2 className="text-lg font-bold text-[#202124] flex items-center gap-2">
+              <CalendarDays className="w-5 h-5 text-[#1a73e8]" /> Usage Timeline
+            </h2>
+            <p className="text-sm text-[#5f6368] mt-1">
+              Tokens consumed per day, split by service. Covers the last {timeline.windowDays || 90} days
+              (per-request records expire after 90 days).
+            </p>
+            {allServices.length > 0 && (
+              <div className="flex flex-wrap gap-4 mt-3 text-xs text-[#5f6368]">
+                {allServices.map((service) => (
+                  <div key={service} className="flex items-center gap-1.5">
+                    <span className={`w-2 h-2 rounded-full ${SERVICE_COLORS[service] || 'bg-[#5f6368]'}`}></span>
+                    {SERVICE_LABELS[service]?.label || service}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="divide-y divide-[#dadce0]">
+            {days.map((day) => {
+              const serviceTotals: Record<string, number> = {};
+              allServices.forEach((s) => {
+                if (day.services?.[s]) serviceTotals[s] = day.services[s].total;
+              });
+              return (
+                <div key={day.date} className="p-6 hover:bg-[#f8f9fa] transition-colors">
+                  <div className="flex flex-col md:flex-row md:items-baseline justify-between gap-1 mb-1">
+                    <span className="font-semibold text-[#202124]">
+                      {new Date(`${day.date}T00:00:00Z`).toLocaleDateString(undefined, {
+                        weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC',
+                      })}
+                    </span>
+                    <span className="text-sm text-[#5f6368]">
+                      <span className="font-bold text-[#202124]">{day.totalTokens.toLocaleString()}</span> tokens
+                      · {day.totalRequests.toLocaleString()} request{day.totalRequests === 1 ? '' : 's'}
+                    </span>
+                  </div>
+                  {/* Bar length is comparable across days: scaled to the busiest day. */}
+                  <ServiceBreakdownBars
+                    services={serviceTotals}
+                    totalTokens={day.totalTokens}
+                    barWidthPercent={Math.max(2, (day.totalTokens / maxDayTokens) * 100)}
+                  />
+                </div>
+              );
+            })}
+            {days.length === 0 && (
+              <div className="p-8 text-center text-[#5f6368]">No AI usage recorded in this window yet.</div>
+            )}
+          </div>
+        </Card>
+      </div>
+    );
+  };
+
   const renderRegisteredUsers = () => {
     if (!breakdown) return null;
     return (
@@ -372,10 +452,16 @@ export default function AdminDashboard() {
                 </div>
                 <div className="w-2/3">
                   <div className="flex justify-between text-sm mb-1">
-                    <span className="font-medium text-[#202124]">{g.usedTokens.toLocaleString()} tokens used</span>
+                    <span className="font-medium text-[#202124]">{g.usedTokens.toLocaleString()} tokens used this window</span>
                     <span className="text-[#5f6368]">Limit: {(breakdown.config?.guestTokenLimit ?? guestTokens).toLocaleString()}</span>
                   </div>
-                  <ServiceBreakdownBars services={g.services} totalTokens={g.usedTokens} />
+                  {/* Bar proportions come from the per-service records, so the
+                      total must be their sum — g.usedTokens is the current
+                      quota window only and would skew the widths. */}
+                  <ServiceBreakdownBars
+                    services={g.services}
+                    totalTokens={Object.values(g.services || {}).reduce((sum: number, v: any) => sum + v, 0)}
+                  />
                 </div>
               </div>
             ))}
@@ -388,16 +474,17 @@ export default function AdminDashboard() {
         <Card className="p-8 flex flex-col items-center justify-center text-center bg-[#f8f9fa] shadow-sm">
           <UserX className="w-12 h-12 text-[#5f6368] mb-4" />
           <h2 className="text-xl font-bold text-[#202124] mb-2">
-            Cumulative Inactive Anonymous Drain
+            Inactive Anonymous Drain (last 90 days)
           </h2>
           <p className="text-[#5f6368] mb-6 max-w-lg">
-            This represents the total token consumption of all guest users who are no longer active on the platform.
+            Tokens actually consumed by guests who are not currently active. Computed from
+            per-request usage records, which are retained for 90 days.
           </p>
           <div className="bg-white px-8 py-6 rounded-2xl border border-[#dadce0] shadow-sm">
             <p className="text-5xl font-extrabold text-[#d93025] mb-2">
               {breakdown.cumulativeInactiveGuests?.totalUsed?.toLocaleString() || 0}
             </p>
-            <p className="text-sm font-bold text-[#5f6368] uppercase tracking-wider">Total Tokens Consumed</p>
+            <p className="text-sm font-bold text-[#5f6368] uppercase tracking-wider">Tokens Consumed</p>
             <p className="text-xs text-[#5f6368] mt-4 pt-4 border-t border-[#dadce0]">
               Across {breakdown.cumulativeInactiveGuests?.count || 0} unique IP identities
             </p>
@@ -441,7 +528,13 @@ export default function AdminDashboard() {
             >
               <LayoutDashboard className="w-4 h-4" /> Overview & Config
             </button>
-            <button 
+            <button
+              onClick={() => setActiveTab('timeline')}
+              className={`inline-flex items-center justify-center gap-2 px-6 py-2 rounded-full text-sm transition-all font-semibold ${activeTab === 'timeline' ? 'bg-[#1a73e8] text-white shadow-md' : 'text-[#202124] border-2 border-[#dadce0] bg-white hover:bg-[#f1f3f4]'}`}
+            >
+              <CalendarDays className="w-4 h-4" /> Usage Timeline
+            </button>
+            <button
               onClick={() => setActiveTab('users')}
               className={`inline-flex items-center justify-center gap-2 px-6 py-2 rounded-full text-sm transition-all font-semibold ${activeTab === 'users' ? 'bg-[#1a73e8] text-white shadow-md' : 'text-[#202124] border-2 border-[#dadce0] bg-white hover:bg-[#f1f3f4]'}`}
             >
@@ -458,6 +551,7 @@ export default function AdminDashboard() {
           {/* Tab Content */}
           <div className="min-h-[500px]">
             {activeTab === 'overview' && renderOverview()}
+            {activeTab === 'timeline' && renderTimeline()}
             {activeTab === 'users' && renderRegisteredUsers()}
             {activeTab === 'guests' && renderGuests()}
           </div>

@@ -6,6 +6,48 @@ const { GEMINI_CALLS, parseAndValidate } = require('./geminiSchemas');
 
 const MODEL_NAME = process.env.GEMINI_MODEL || "gemini-3.5-flash";
 
+// Per-attempt cap on how long a single Gemini request may run. emailService
+// and turnstileService already bound their upstream calls this way; without
+// it a wedged Gemini request held the client's HTTP response open for 1-2
+// minutes until the client gave up (HTTP 499). The SDK turns this into an
+// AbortController deadline on its fetch.
+const GEMINI_TIMEOUT_MS = Number(process.env.GEMINI_TIMEOUT_MS) || 28000;
+const GEMINI_RETRY_BACKOFF_MS = Number(process.env.GEMINI_RETRY_BACKOFF_MS) || 1000;
+const GEMINI_REQUEST_OPTIONS = { timeout: GEMINI_TIMEOUT_MS };
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// Retry only failures a second attempt can plausibly fix: Google-side 503
+// ("high demand... usually temporary") and network-level failures (fetch
+// failed / ECONNRESET and friends). Everything else is not retried:
+//  - other HTTP statuses (400/safety/etc.) fail identically on retry and
+//    would just burn quota;
+//  - our own timeout abort — an attempt that already ran GEMINI_TIMEOUT_MS
+//    is unlikely to finish in another, and retrying it would double the
+//    worst-case wait the timeout exists to bound.
+const isRetryableGeminiError = (error) => {
+  if (!error) return false;
+  // GoogleGenerativeAIFetchError carries the upstream HTTP status.
+  if (typeof error.status === 'number') return error.status === 503;
+  const text = [
+    error.message,
+    error.cause && error.cause.message,
+    error.cause && error.cause.code,
+  ].filter(Boolean).join(' ');
+  if (/abort/i.test(text)) return false;
+  return /fetch failed|ECONNRESET|ECONNREFUSED|ETIMEDOUT|EPIPE|EAI_AGAIN|socket hang up|network/i.test(text);
+};
+
+const callGeminiWithRetry = async (attempt) => {
+  try {
+    return await attempt();
+  } catch (error) {
+    if (!isRetryableGeminiError(error)) throw error;
+    await sleep(GEMINI_RETRY_BACKOFF_MS);
+    return attempt();
+  }
+};
+
 let defaultClient = null;
 const getModel = (apiKey) => {
   if (apiKey) {
@@ -33,13 +75,13 @@ const generateJson = async ({ apiKey, req, service, call, label, parts }) => {
   const model = getModel(apiKey);
   let tracked = false;
   try {
-    const result = await model.generateContent({
+    const result = await callGeminiWithRetry(() => model.generateContent({
       contents: [{ role: 'user', parts }],
       generationConfig: {
         responseMimeType: 'application/json',
         responseSchema: call.schema,
       },
-    });
+    }, GEMINI_REQUEST_OPTIONS));
     const response = await result.response;
     const data = parseAndValidate(response.text(), call, label);
     if (req) { await trackUsage(req, service, result); tracked = true; }
@@ -361,6 +403,8 @@ const generateLinkedInContent = async (masterData, apiKey, req = null) => {
 };
 
 module.exports = {
+  GEMINI_REQUEST_OPTIONS,
+  callGeminiWithRetry,
   parseResumeData,
   tailorResume,
   tailorResumeWithJobMeta,

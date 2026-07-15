@@ -16,6 +16,11 @@ declare global {
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
+// Mirrors turnstileEnabled: pages that surround the button with extra chrome
+// (the "or" divider on login/signup) can skip that chrome entirely when
+// Google sign-in isn't configured, instead of showing an orphaned divider.
+export const googleSignInEnabled = Boolean(GOOGLE_CLIENT_ID);
+
 export function GoogleSignInButton({ onCredential }: { onCredential: (credential: string) => void }) {
   const containerRef = useRef<HTMLDivElement>(null);
   // Keep the latest callback in a ref so the init effect can run exactly once

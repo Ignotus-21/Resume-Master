@@ -2,7 +2,7 @@ const ChatSession = require('../models/ChatSession');
 const MasterProfile = require('../models/MasterProfile');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { enforceGeminiQuota } = require('../utils/geminiGate');
-const { generateLinkedInContent } = require('../services/geminiService');
+const { generateLinkedInContent, callGeminiWithRetry, GEMINI_REQUEST_OPTIONS } = require('../services/geminiService');
 const { trackUsage } = require('../utils/trackUsage');
 const { refundReservation } = require('../services/quotaService');
 const { respondError } = require('../utils/aiError');
@@ -86,7 +86,20 @@ const sendMessage = async (req, res) => {
       },
     });
 
-    const result = await chat.sendMessage(message);
+    // Same per-attempt timeout + transient-failure retry as generateJson —
+    // kept correct even while the chat routes are disabled (see aiRoutes.js)
+    // so a future guarded reintroduction doesn't resurface the old
+    // hang-for-minutes behavior. Retrying the same `chat` instance is safe
+    // ONLY because the installed @google/generative-ai (0.24.1, pinned
+    // ^0.24.1) resets ChatSession's internal _sendPromise chain in its catch
+    // handler ("Resets _sendPromise to avoid subsequent calls failing") and
+    // only pushes to _history on a *successful* response — so a failed
+    // attempt mutates neither, and the retry resends the identical request.
+    // Older/deprecated versions of this SDK lacked that reset (a failed
+    // sendMessage would wedge the session), so re-verify this before ever
+    // bumping past 0.x — build a fresh ChatSession per attempt instead if
+    // that guarantee ever changes.
+    const result = await callGeminiWithRetry(() => chat.sendMessage(message, GEMINI_REQUEST_OPTIONS));
     await trackUsage(req, 'chatbot', result);
     tracked = true;
 
@@ -194,10 +207,31 @@ const bulletCoachHandler = async (req, res) => {
   }
 };
 
+// The LinkedIn optimizer is only as good as its input: getProfile auto-creates
+// an empty MasterProfile on first visit, so "a profile exists" proves nothing.
+// Require at least one substantive section before spending quota — an empty
+// profile just makes Gemini fabricate a career.
+const profileHasContent = (profile) => {
+  if (!profile) return false;
+  const skills = profile.skills || {};
+  return Boolean(
+    (profile.experience && profile.experience.length) ||
+    (profile.education && profile.education.length) ||
+    (profile.projects && profile.projects.length) ||
+    ['languages', 'frameworks', 'tools', 'other'].some((k) => skills[k] && skills[k].length) ||
+    (profile.rawText && profile.rawText.trim())
+  );
+};
+
 const linkedinRewrite = async (req, res) => {
   try {
     const profile = await MasterProfile.findOne({ owner: req.identity });
-    if (!profile) return res.status(404).json({ message: 'Master Profile not found' });
+    if (!profileHasContent(profile)) {
+      return res.status(422).json({
+        code: 'PROFILE_EMPTY',
+        message: 'Your master profile is empty. Add your experience, education, or skills — or upload a resume — before generating LinkedIn content.',
+      });
+    }
 
     const quotaRejection = await enforceGeminiQuota(req);
     if (quotaRejection) return res.status(quotaRejection.status).json(quotaRejection.body);

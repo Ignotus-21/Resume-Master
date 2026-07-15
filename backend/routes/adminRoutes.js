@@ -66,6 +66,56 @@ router.get('/stats', adminAuth, async (req, res) => {
   }
 });
 
+// Per-day, per-service token usage for the admin timeline. Backed by the
+// per-request TokenUsage records, which TTL out after 90 days (see
+// models/TokenUsage.js) — so this is a rolling window, not all-time. Days
+// are UTC calendar days.
+router.get('/usage-timeline', adminAuth, async (req, res) => {
+  try {
+    const days = Math.min(Math.max(parseInt(req.query.days, 10) || 90, 1), 90);
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    const rows = await TokenUsage.aggregate([
+      { $match: { createdAt: { $gte: since } } },
+      {
+        $group: {
+          _id: {
+            day: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+            service: '$service',
+          },
+          inputTokens: { $sum: '$inputTokens' },
+          outputTokens: { $sum: '$outputTokens' },
+          requests: { $sum: 1 },
+        },
+      },
+      { $sort: { '_id.day': -1 } },
+    ]);
+
+    // Fold per-(day,service) rows into one entry per day, newest first.
+    const byDay = new Map();
+    for (const row of rows) {
+      const { day, service } = row._id;
+      if (!byDay.has(day)) {
+        byDay.set(day, { date: day, totalTokens: 0, totalRequests: 0, services: {} });
+      }
+      const entry = byDay.get(day);
+      const total = row.inputTokens + row.outputTokens;
+      entry.services[service || 'other'] = {
+        input: row.inputTokens,
+        output: row.outputTokens,
+        requests: row.requests,
+        total,
+      };
+      entry.totalTokens += total;
+      entry.totalRequests += row.requests;
+    }
+
+    res.json({ windowDays: days, days: [...byDay.values()] });
+  } catch (error) {
+    console.error('Usage timeline error:', error);
+    res.status(500).json({ message: 'Failed to fetch usage timeline' });
+  }
+});
+
 router.get('/token-breakdown', adminAuth, async (req, res) => {
   try {
     // Registered Users
@@ -77,12 +127,20 @@ router.get('/token-breakdown', adminAuth, async (req, res) => {
     
     const liveGuestIdentities = liveSessions.map(s => s.identity);
     const liveGuestsUsage = await ApiUsage.find({ identity: { $in: liveGuestIdentities } });
-    
-    // Cumulative Inactive Anonymous Users. Restrict to guest (`ip:`-prefixed)
-    // identities so any non-guest identity in this collection isn't mixed in.
-    const inactiveGuestUsage = await ApiUsage.aggregate([
+    const liveUsageByIdentity = new Map(liveGuestsUsage.map(u => [u.identity, u]));
+
+    // Cumulative inactive-guest consumption. ApiUsage.usedTokens is the WRONG
+    // source for this: it's the rolling-window quota counter, reset to 0
+    // every SHARED_GEMINI_RATE_WINDOW_HOURS by consumeQuota — summing it
+    // reports only the current window's leftovers, not what guests actually
+    // consumed. Sum the per-request TokenUsage records instead (real token
+    // counts). Those TTL out after 90 days, so this is "last 90 days", and
+    // the UI labels it that way. Restrict to guest (`ip:`-prefixed)
+    // identities so any non-guest identity isn't mixed in.
+    const inactiveGuestUsage = await TokenUsage.aggregate([
       { $match: { identity: { $regex: /^ip:/, $nin: liveGuestIdentities } } },
-      { $group: { _id: null, totalUsed: { $sum: "$usedTokens" }, count: { $sum: 1 } } }
+      { $group: { _id: "$identity", total: { $sum: { $add: ["$inputTokens", "$outputTokens"] } } } },
+      { $group: { _id: null, totalUsed: { $sum: "$total" }, count: { $sum: 1 } } }
     ]);
     
     // Fetch service breakdown per identity
@@ -122,10 +180,14 @@ router.get('/token-breakdown', adminAuth, async (req, res) => {
           services: services
         };
       }),
-      liveGuests: liveGuestsUsage.map(g => ({
-        identity: g.identity,
-        usedTokens: g.usedTokens || 0,
-        services: g.identity ? (usageMap[g.identity.toString()] || {}) : {}
+      // Build the live list from the live SESSIONS, not from ApiUsage rows —
+      // a guest who is live but hasn't spent AI tokens this window has no
+      // ApiUsage row and used to vanish here while still being counted in
+      // the "Live Guests" stat card.
+      liveGuests: liveGuestIdentities.map(identity => ({
+        identity,
+        usedTokens: liveUsageByIdentity.get(identity)?.usedTokens || 0,
+        services: usageMap[identity] || {}
       })),
       cumulativeInactiveGuests: inactiveGuestUsage[0] || { totalUsed: 0, count: 0 },
       config

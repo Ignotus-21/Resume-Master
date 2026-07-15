@@ -106,7 +106,7 @@ export default function Home() {
         <FeatureCard icon={MessagesSquare} title="Mock Interview" desc="Practice role-specific questions with instant AI feedback." link="/interview" accent="from-amber-500 to-orange-400" />
         <FeatureCard icon={Contact} title="LinkedIn Optimizer" desc="Turn your profile into a keyword-rich LinkedIn headline & About." link="/linkedin" accent="from-indigo-500 to-purple-400" />
         <FeatureCard icon={UploadCloud} title="Import from LinkedIn" desc="Upload your LinkedIn PDF export and we'll fill your profile." link="/profile" accent="from-sky-500 to-blue-400" />
-        <FeatureCard icon={Wand2} title="AI Chat Assistant" desc="Chat with Gemini to refine your content and get advice." link="/chat" accent="from-orange-500 to-red-400" />
+        <FeatureCard icon={Wand2} title="Bullet Coach" desc="Turn thin bullet points into strong, metric-driven ones with AI." link="/resumes" accent="from-orange-500 to-red-400" />
       </motion.div>
 
       {/* How it works */}
@@ -126,7 +126,7 @@ export default function Home() {
           <div className="hidden md:block absolute top-1/2 left-0 w-full h-px bg-gradient-to-r from-transparent via-[#dadce0] to-transparent -translate-y-1/2 z-0" />
           <Step icon={UploadCloud} step="1" title="Import your resume" desc="Upload a PDF or paste your existing resume — Gemini extracts your experience, skills, and projects into one master profile." />
           <Step icon={Wand2} step="2" title="Tailor it to the job" desc="Paste a job description and generate a rewritten, keyword-matched LaTeX resume in seconds, with an ATS match score and gap analysis." />
-          <Step icon={Download} step="3" title="Export and apply" desc="Download as PDF or DOCX, track the application's status, and iterate with the AI chat assistant as you go." />
+          <Step icon={Download} step="3" title="Export and apply" desc="Download as PDF or DOCX, track the application's status, and iterate as you go." />
         </div>
       </motion.div>
 

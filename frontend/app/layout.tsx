@@ -6,6 +6,7 @@ import { VerifyEmailBanner } from "@/components/VerifyEmailBanner";
 import { ToastProvider } from "@/components/ui/Toast";
 import { AuthProvider } from "@/lib/auth-context";
 import QuotaModal from "@/components/QuotaModal";
+import { Analytics } from "@vercel/analytics/next";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -32,6 +33,7 @@ export default function RootLayout({
             <QuotaModal />
           </AuthProvider>
         </ToastProvider>
+        <Analytics />
       </body>
     </html>
   );

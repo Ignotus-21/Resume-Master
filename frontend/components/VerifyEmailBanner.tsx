@@ -34,7 +34,7 @@ export function VerifyEmailBanner() {
           Verify your email to unlock AI features. We sent a link to {user.email}.
         </span>
         <div className="flex items-center gap-3">
-          <button onClick={resend} disabled={sending} className="font-semibold underline text-amber-900 hover:text-amber-700 disabled:opacity-60">
+          <button onClick={resend} disabled={sending} className="font-semibold underline text-amber-900 hover:text-amber-950 disabled:opacity-60">
             {sending ? 'Sending…' : 'Resend link'}
           </button>
           <button onClick={() => setDismissed(true)} className="text-amber-700 hover:text-amber-900" aria-label="Dismiss">✕</button>

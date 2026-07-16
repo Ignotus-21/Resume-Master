@@ -27,17 +27,17 @@ export function VerifyEmailBanner() {
   };
 
   return (
-    <div className="bg-amber-500/10 border-b border-amber-500/30 text-amber-200 no-print">
+    <div className="bg-amber-50 border-b border-amber-300 text-amber-900 no-print">
       <div className="container mx-auto px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 text-sm">
         <span className="flex items-center gap-2">
           <MailWarning className="h-4 w-4 shrink-0" />
           Verify your email to unlock AI features. We sent a link to {user.email}.
         </span>
         <div className="flex items-center gap-3">
-          <button onClick={resend} disabled={sending} className="font-semibold underline hover:text-amber-100 disabled:opacity-60">
+          <button onClick={resend} disabled={sending} className="font-semibold underline text-amber-900 hover:text-amber-950 disabled:opacity-60">
             {sending ? 'Sending…' : 'Resend link'}
           </button>
-          <button onClick={() => setDismissed(true)} className="text-amber-200/70 hover:text-amber-100" aria-label="Dismiss">✕</button>
+          <button onClick={() => setDismissed(true)} className="text-amber-700 hover:text-amber-900" aria-label="Dismiss">✕</button>
         </div>
       </div>
     </div>

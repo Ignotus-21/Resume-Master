@@ -82,16 +82,18 @@ export function ImportFlow({ onComplete }: { onComplete: () => Promise<void> | v
     });
   };
 
-  const confirm = async () => {
+  const confirm = async (overrides?: { excluded?: Record<string, Set<number>>; includeSkills?: boolean }) => {
     setSaving(true);
     try {
+      const activeExcluded = overrides?.excluded ?? excluded;
+      const activeIncludeSkills = overrides?.includeSkills ?? includeSkills;
       const profile: any = { user };
       for (const key of LIST_SECTIONS) {
         const items: any[] = parsed[key] || [];
-        profile[key] = items.filter((_, i) => !excluded[key]?.has(i));
+        profile[key] = items.filter((_, i) => !activeExcluded[key]?.has(i));
       }
       profile.hobbies = parsed.hobbies || [];
-      if (includeSkills && parsed.skills) profile.skills = parsed.skills;
+      if (activeIncludeSkills && parsed.skills) profile.skills = parsed.skills;
       await apiJson('/api/master', 'POST', profile);
       setParsed(null);
       await onComplete();
@@ -101,6 +103,10 @@ export function ImportFlow({ onComplete }: { onComplete: () => Promise<void> | v
       setSaving(false);
     }
   };
+
+  // Fast-path for users who don't want to review field-by-field: accept
+  // everything exactly as extracted, bypassing any per-item exclusions.
+  const acceptAll = () => confirm({ excluded: {}, includeSkills: true });
 
   const skillCount = parsed?.skills
     ? Object.values(parsed.skills).reduce((n: number, list: any) => n + (Array.isArray(list) ? list.length : 0), 0)
@@ -218,18 +224,23 @@ export function ImportFlow({ onComplete }: { onComplete: () => Promise<void> | v
             </div>
           )}
 
-          <div className="pt-4 mt-2 border-t border-[#dadce0] flex justify-end items-center gap-4">
-            <button onClick={() => setParsed(null)} className="px-4 py-2 text-sm text-[#5f6368] hover:text-[#202124]">
-              Cancel
+          <div className="pt-4 mt-2 border-t border-[#dadce0] flex justify-between items-center gap-4">
+            <button onClick={acceptAll} disabled={saving} className="text-sm text-[#1a73e8] font-medium hover:underline disabled:opacity-60">
+              Add &amp; accept all
             </button>
-            <button
-              onClick={confirm}
-              disabled={saving}
-              className="flex items-center gap-2 px-6 py-2 bg-[#1e8e3e] text-white rounded-lg font-semibold hover:bg-[#188038] disabled:opacity-60 shadow-lg transition"
-            >
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-              {saving ? 'Saving…' : 'Looks good — continue'}
-            </button>
+            <div className="flex items-center gap-4">
+              <button onClick={() => setParsed(null)} className="px-4 py-2 text-sm text-[#5f6368] hover:text-[#202124]">
+                Cancel
+              </button>
+              <button
+                onClick={() => confirm()}
+                disabled={saving}
+                className="flex items-center gap-2 px-6 py-2 bg-[#1e8e3e] text-white rounded-lg font-semibold hover:bg-[#188038] disabled:opacity-60 shadow-lg transition"
+              >
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                {saving ? 'Saving…' : 'Looks good — continue'}
+              </button>
+            </div>
           </div>
         </Modal>
       )}

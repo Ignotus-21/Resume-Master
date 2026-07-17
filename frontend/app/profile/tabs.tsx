@@ -319,7 +319,15 @@ export function ImportTab({
     <div className="space-y-8">
       <div className="bg-[#f8f9fa]/50 border border-[#dadce0] p-6 rounded-xl">
          <h3 className="text-lg font-semibold text-[#202124] mb-2">Option 1: Upload Resume (PDF or DOCX)</h3>
-         <p className="text-[#5f6368] text-sm mb-4">Upload your resume to extract data. You will be able to review and merge the extracted info.</p>
+         <p className="text-[#5f6368] text-sm mb-4">
+           Upload your resume (PDF or DOCX), or export your LinkedIn profile as a PDF and upload that instead.
+           Either way we&apos;ll extract your experience, education, and skills automatically, and you&apos;ll be
+           able to review and merge the results.
+         </p>
+         <ol className="text-[#5f6368] text-sm list-decimal list-inside space-y-1 mb-4">
+           <li>From LinkedIn: open your profile, click <span className="text-[#202124] font-medium">More</span> → <span className="text-[#202124] font-medium">Save to PDF</span></li>
+           <li>Upload the PDF (or your own DOCX/PDF resume) below</li>
+         </ol>
          <input
            type="file"
            accept=".pdf,.docx"
@@ -337,34 +345,10 @@ export function ImportTab({
          {ingesting && <p className="text-[#1a73e8] text-sm mt-2 animate-pulse">Processing file... Please wait...</p>}
       </div>
 
-      <div className="bg-[#f8f9fa]/50 border border-[#dadce0] p-6 rounded-xl">
-         <h3 className="text-lg font-semibold text-[#202124] mb-2">Option 2: Import from LinkedIn</h3>
-         <p className="text-[#5f6368] text-sm mb-3">Export your LinkedIn profile as a PDF, then upload it here — we&apos;ll extract your experience, education, and skills automatically.</p>
-         <ol className="text-[#5f6368] text-sm list-decimal list-inside space-y-1 mb-4">
-           <li>Open your LinkedIn profile</li>
-           <li>Click <span className="text-[#202124] font-medium">More</span> → <span className="text-[#202124] font-medium">Save to PDF</span></li>
-           <li>Upload the downloaded PDF below</li>
-         </ol>
-         <input
-           type="file"
-           accept=".pdf"
-           onChange={onFileUpload}
-           disabled={ingesting}
-           className="block w-full text-sm text-[#5f6368]
-             file:mr-4 file:py-2.5 file:px-6
-             file:rounded-lg file:border-0
-             file:text-sm file:font-semibold
-             file:bg-[#0a66c2] file:text-white
-             hover:file:bg-[#0958a8]
-             file:cursor-pointer cursor-pointer
-           "
-         />
-      </div>
-
       <div className="border-t border-[#dadce0] my-4"></div>
 
       <div>
-        <h3 className="text-lg font-semibold text-[#202124] mb-2">Option 3: Paste Text</h3>
+        <h3 className="text-lg font-semibold text-[#202124] mb-2">Option 2: Paste Text</h3>
         <textarea
           className="w-full h-64 border border-[#dadce0] rounded-xl p-4 bg-[#f8f9fa] text-[#202124] focus:ring-2 focus:ring-blue-500 outline-none"
           value={rawText}

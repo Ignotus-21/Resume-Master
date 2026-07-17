@@ -137,9 +137,11 @@ function DashboardPageInner() {
 
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto min-h-screen">
-      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-8">
         <div>
-          <h1 className="text-4xl font-extrabold text-[#202124] tracking-tight mb-2">Job Tracker</h1>
+          <h1 className="text-3xl font-bold text-[#202124] flex items-center gap-2">
+            <Briefcase className="h-7 w-7 text-[#1a73e8]" /> Job Tracker
+          </h1>
           <p className="text-[#5f6368]">Track your applications and generate tailored resumes.</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">

@@ -1,7 +1,8 @@
 'use client';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, Suspense } from 'react';
 import Link from 'next/link';
-import { Briefcase, ExternalLink, Plus, Trash2, Search, Pencil, X } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+import { Briefcase, ExternalLink, Plus, Trash2, Search, Pencil, X, BarChart3, List } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { apiFetch, apiJson } from '@/lib/api';
 import { useToast } from '@/components/ui/Toast';
@@ -10,6 +11,7 @@ import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { StatusBadgeClass } from '@/components/ui/Badge';
 import { ConfirmModal } from '@/components/ui/Modal';
+import { AnalyticsView } from '@/components/dashboard/AnalyticsView';
 
 const STATUSES = ['Wishlist', 'Applied', 'Interviewing', 'Offer', 'Rejected'];
 const EMPTY_FORM = { company: '', role: '', jdText: '', jobUrl: '' };
@@ -21,7 +23,16 @@ const SORTS: Record<string, (a: any, b: any) => number> = {
 };
 
 export default function DashboardPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-[#5f6368]">Loading…</div>}>
+      <DashboardPageInner />
+    </Suspense>
+  );
+}
+
+function DashboardPageInner() {
   const { showToast } = useToast();
+  const searchParams = useSearchParams();
   const [jobs, setJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -31,6 +42,7 @@ export default function DashboardPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'company'>('newest');
+  const [showAnalytics, setShowAnalytics] = useState(() => searchParams.get('view') === 'analytics');
 
   useEffect(() => {
     fetchJobs();
@@ -130,12 +142,28 @@ export default function DashboardPage() {
           <h1 className="text-4xl font-extrabold text-[#202124] tracking-tight mb-2">Job Tracker</h1>
           <p className="text-[#5f6368]">Track your applications and generate tailored resumes.</p>
         </div>
-        <Button onClick={() => (showForm ? closeForm() : openAddForm())}>
-          {showForm ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-          {showForm ? 'Cancel' : 'Add Job Application'}
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button
+            variant="secondary"
+            onClick={() => setShowAnalytics((v) => !v)}
+            aria-pressed={showAnalytics}
+          >
+            {showAnalytics ? <List className="h-4 w-4" /> : <BarChart3 className="h-4 w-4" />}
+            {showAnalytics ? 'View Jobs' : 'View Analytics'}
+          </Button>
+          {!showAnalytics && (
+            <Button onClick={() => (showForm ? closeForm() : openAddForm())}>
+              {showForm ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+              {showForm ? 'Cancel' : 'Add Job Application'}
+            </Button>
+          )}
+        </div>
       </div>
 
+      {showAnalytics ? (
+        <AnalyticsView jobs={jobs} />
+      ) : (
+      <>
       {!loading && jobs.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-6">
           {['All', ...STATUSES].map((status) => (
@@ -310,6 +338,8 @@ export default function DashboardPage() {
             ))}
           </AnimatePresence>
         </motion.div>
+      )}
+      </>
       )}
       <ConfirmModal
         open={pendingDeleteId !== null}

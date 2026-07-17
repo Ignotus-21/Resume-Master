@@ -26,7 +26,7 @@ const TOOL_LINKS = [
 ];
 
 const linkClass = (active: boolean) =>
-  `flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 font-medium ${
+  `flex items-center gap-2 px-3 py-2 rounded-full transition-all duration-300 font-medium whitespace-nowrap shrink-0 ${
     active ? 'bg-[#f1f3f4] text-[#202124] font-semibold' : 'text-[#5f6368] hover:text-[#202124] hover:bg-[#f8f9fa]'
   }`;
 
@@ -57,14 +57,14 @@ const Navbar = () => {
   return (
     <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-[#dadce0] no-print">
       <div className="container mx-auto flex justify-between items-center px-6 py-4">
-        <Link href="/" className="flex items-center gap-3 text-2xl font-bold tracking-tight text-[#202124] group">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 via-red-500 to-yellow-500 shadow-md group-hover:scale-105 transition-transform duration-300">
+        <Link href="/" className="flex items-center gap-3 text-2xl font-bold tracking-tight text-[#202124] group shrink-0 whitespace-nowrap">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 via-red-500 to-yellow-500 shadow-md group-hover:scale-105 transition-transform duration-300 shrink-0">
             <Sparkles className="h-5 w-5 text-white" />
           </span>
           Resume Master
         </Link>
 
-        <div className="hidden md:flex items-center gap-1 text-sm font-medium">
+        <div className="hidden lg:flex items-center gap-1 text-sm font-medium">
           {PRIMARY_LINKS.map(({ href, label, icon: Icon }) => (
             <Link key={href} href={href} className={linkClass(!!pathname?.startsWith(href))}>
               <Icon className="h-4 w-4" />
@@ -122,7 +122,7 @@ const Navbar = () => {
                   <LogIn className="h-4 w-4" />
                   Log In
                 </Link>
-                <Link href="/signup" className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#202124] text-white hover:bg-black transition font-medium shadow-[0_4px_14px_0_rgba(0,0,0,0.1)] hover:-translate-y-0.5">
+                <Link href="/signup" className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#202124] text-white hover:bg-black transition font-medium shadow-[0_4px_14px_0_rgba(0,0,0,0.1)] hover:-translate-y-0.5 whitespace-nowrap shrink-0">
                   Sign Up
                 </Link>
               </>
@@ -131,7 +131,7 @@ const Navbar = () => {
         </div>
 
         <button
-          className="md:hidden p-2 text-[#5f6368] hover:text-[#202124]"
+          className="lg:hidden p-2 text-[#5f6368] hover:text-[#202124]"
           onClick={() => setOpen((v) => !v)}
           aria-label="Toggle navigation menu"
           aria-expanded={open}
@@ -141,7 +141,7 @@ const Navbar = () => {
       </div>
 
       {open && (
-        <div className="md:hidden border-t border-[#dadce0] px-4 py-4 space-y-1 bg-white absolute w-full left-0 shadow-2xl">
+        <div className="lg:hidden border-t border-[#dadce0] px-4 py-4 space-y-1 bg-white absolute w-full left-0 shadow-2xl">
           {PRIMARY_LINKS.map(({ href, label, icon: Icon }) => (
             <Link
               key={href}

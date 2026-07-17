@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import {
   FileText, LayoutDashboard, UserRound, Menu, X, Sparkles,
-  Settings, LogOut, LogIn, ChevronDown, Mail, Gauge, MessagesSquare, Contact, BarChart3,
+  Settings, LogOut, LogIn, ChevronDown, Mail, Gauge, MessagesSquare, Contact,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 
@@ -19,7 +19,8 @@ const TOOL_LINKS = [
   { href: '/ats-checker', label: 'ATS Checker', icon: Gauge },
   { href: '/interview', label: 'Mock Interview', icon: MessagesSquare },
   { href: '/linkedin', label: 'LinkedIn Optimizer', icon: Contact },
-  { href: '/analytics', label: 'Analytics', icon: BarChart3 },
+  // Analytics moved into Job Tracker (/dashboard) — see AnalyticsView; no
+  // longer a separate destination here.
   // '/chat' removed while the general-purpose chatbot is disabled (see
   // backend/routes/aiRoutes.js) — don't link to a dead feature.
 ];

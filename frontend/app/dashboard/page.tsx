@@ -142,7 +142,7 @@ function DashboardPageInner() {
           <h1 className="text-4xl font-extrabold text-[#202124] tracking-tight mb-2">Job Tracker</h1>
           <p className="text-[#5f6368]">Track your applications and generate tailored resumes.</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <Button
             variant="secondary"
             onClick={() => setShowAnalytics((v) => !v)}

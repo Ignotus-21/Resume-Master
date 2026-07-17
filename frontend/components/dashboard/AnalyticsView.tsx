@@ -21,9 +21,9 @@ const STATUS_HEX: Record<string, string> = {
 function StatTile({ icon: Icon, label, value, hint }: { icon: any; label: string; value: string | number; hint?: string }) {
   return (
     <Card className="p-5">
-      <div className="flex items-center gap-2 text-[#5f6368] mb-2">
-        <Icon className="h-4 w-4" />
-        <span className="text-sm">{label}</span>
+      <div className="flex items-center gap-2 text-[#5f6368] mb-2 min-w-0">
+        <Icon className="h-4 w-4 shrink-0" />
+        <span className="text-sm whitespace-nowrap truncate">{label}</span>
       </div>
       <div className="text-3xl font-bold text-[#202124]">{value}</div>
       {hint && <div className="text-xs text-[#5f6368] mt-1">{hint}</div>}

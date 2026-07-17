@@ -31,7 +31,7 @@ export default function ProfilePage() {
   if (!profile) return <div className="p-8 text-center text-[#d93025]">Error loading profile. Ensure backend is running.</div>;
 
   return (
-    <div className="p-8 max-w-5xl mx-auto min-h-screen relative">
+    <div className="p-4 md:p-8 max-w-5xl mx-auto min-h-screen relative">
       {/* Import Review Modal */}
       {importPreview && (
         <ImportReviewModal
@@ -42,13 +42,13 @@ export default function ProfilePage() {
         />
       )}
 
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 mb-8">
         <div>
            <h1 className="text-3xl font-bold text-[#202124]">Master Profile</h1>
            <p className="text-[#5f6368]">Manage your central repository of career data.</p>
         </div>
         <div className="flex items-center gap-4">
-            <span className={`text-sm font-medium transition-colors duration-300 ${
+            <span className={`text-sm font-medium whitespace-nowrap transition-colors duration-300 ${
                 saveStatus === 'saving' ? 'text-[#1a73e8]' :
                 saveStatus === 'saved' ? 'text-[#1e8e3e]' : 'text-[#d93025]'
             }`}>

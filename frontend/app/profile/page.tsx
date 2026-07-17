@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { UserRound } from 'lucide-react';
 import { PageSpinner } from '@/components/ui/Spinner';
 import { useMasterProfile } from './useMasterProfile';
 import { ImportReviewModal } from './ImportReviewModal';
@@ -44,7 +45,9 @@ export default function ProfilePage() {
 
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 mb-8">
         <div>
-           <h1 className="text-3xl font-bold text-[#202124]">Master Profile</h1>
+           <h1 className="text-3xl font-bold text-[#202124] flex items-center gap-2">
+             <UserRound className="h-7 w-7 text-[#1a73e8]" /> Master Profile
+           </h1>
            <p className="text-[#5f6368]">Manage your central repository of career data.</p>
         </div>
         <div className="flex items-center gap-4">

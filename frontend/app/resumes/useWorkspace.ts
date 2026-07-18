@@ -309,7 +309,7 @@ export function useWorkspace(preSelectedJobId: string | null) {
     if (!saver) return null;
     const ok = await saver.flush();
     if (!ok) {
-      showToast('Save failed — your changes are kept in this tab and will be retried.', 'error');
+      showToast('Save failed, your changes are kept in this tab and will be retried.', 'error');
       return null;
     }
     return docRef.current;

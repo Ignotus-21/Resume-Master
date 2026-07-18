@@ -68,7 +68,7 @@ export function DesignPanel({ design, setDesign }: {
           <button
             onClick={() => setDesign({ accentColor: null })}
             className={`text-xs px-2 py-0.5 rounded border ${design.accentColor ? 'border-[#dadce0] text-[#5f6368] hover:text-[#202124]' : 'border-[#1a73e8] text-[#1a73e8] font-semibold'}`}
-            title="Pure black & white — the ATS-safest choice"
+            title="Pure black & white: the ATS-safest choice"
           >
             None (B/W)
           </button>
@@ -118,7 +118,7 @@ export function DesignPanel({ design, setDesign }: {
           {/* fontawesome5 crashes Tectonic 0.16.9 on every platform — icons
               stays selectable per the M2.5 decision but is labeled so users
               aren't surprised by a failed compile. */}
-          {LINK_STYLES.map((s) => <option key={s} value={s}>{s === 'icons' ? 'icons (experimental — may fail to compile)' : s}</option>)}
+          {LINK_STYLES.map((s) => <option key={s} value={s}>{s === 'icons' ? 'icons (experimental, may fail to compile)' : s}</option>)}
         </select>
       </div>
 
@@ -139,7 +139,7 @@ export function DesignPanel({ design, setDesign }: {
 
       {warnings.length > 0 && (
         <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg space-y-1.5">
-          <div className="text-xs font-semibold text-amber-900">ATS heads-up (your call — nothing is blocked)</div>
+          <div className="text-xs font-semibold text-amber-900">ATS heads-up (your call, nothing is blocked)</div>
           {warnings.map((w, i) => (
             <div key={i} className="text-xs text-amber-800">{w}</div>
           ))}

@@ -182,7 +182,7 @@ export function ResumeWorkspace({ ws }: { ws: Workspace }) {
             onClick={() => !isLatexMode && setView('visual')}
             disabled={isLatexMode}
             className={`flex items-center gap-1 px-3 py-1 rounded-md text-sm font-medium transition ${view === 'visual' ? 'bg-[#1a73e8] text-white' : 'text-[#5f6368] hover:text-[#202124] disabled:opacity-40'}`}
-            title={isLatexMode ? 'Ejected to LaTeX — visual editing disabled' : 'Visual editor'}
+            title={isLatexMode ? 'Ejected to LaTeX: visual editing disabled' : 'Visual editor'}
           >
             <Eye className="h-3.5 w-3.5" /> Visual
           </button>
@@ -211,7 +211,7 @@ export function ResumeWorkspace({ ws }: { ws: Workspace }) {
           <button
             onClick={() => setView('code')}
             className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold ${errorCount > 0 ? 'bg-[#d93025] text-white' : 'bg-amber-400 text-amber-950'}`}
-            title={compileLog || 'Compile issues — open Code view for line markers'}
+            title={compileLog || 'Compile issues: open Code view for line markers'}
           >
             {errorCount > 0 ? errorCount : warningCount}
           </button>
@@ -221,7 +221,7 @@ export function ResumeWorkspace({ ws }: { ws: Workspace }) {
         {pages !== null && (
           <span className="text-xs text-[#5f6368]" title="Real page count from the compiled PDF">
             {pages} page{pages === 1 ? '' : 's'}
-            {trimEstimate > 0 && ` — trim ~${trimEstimate} bullets to fit ${pages - 1}`}
+            {trimEstimate > 0 && ` (trim ~${trimEstimate} bullets to fit ${pages - 1})`}
           </span>
         )}
 
@@ -397,14 +397,14 @@ export function ResumeWorkspace({ ws }: { ws: Workspace }) {
       <ConfirmModal
         open={showEject}
         title="Eject to LaTeX?"
-        message="You'll be editing LaTeX directly. The visual editor and AI tailoring won't be available for this version. Your structured version is kept — you can revert anytime."
+        message="You'll be editing LaTeX directly. The visual editor and AI tailoring won't be available for this version. Your structured version is kept, so you can revert anytime."
         onConfirm={() => { setShowEject(false); eject(); }}
         onCancel={() => setShowEject(false)}
       />
       <ConfirmModal
         open={showRevert}
         title="Revert to structured?"
-        message="This restores the visual editor from your saved content and design — your hand-written LaTeX edits for this version will be discarded."
+        message="This restores the visual editor from your saved content and design. Your hand-written LaTeX edits for this version will be discarded."
         onConfirm={() => { setShowRevert(false); revert(); }}
         onCancel={() => setShowRevert(false)}
       />
@@ -472,9 +472,9 @@ function SaveStatus({ state, onSave }: { state: AutosaveState; onSave: () => voi
       <button
         onClick={onSave}
         className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-[#d93025] text-white hover:opacity-90"
-        title="Automatic saving failed repeatedly. Your changes are kept in this tab — click to retry."
+        title="Automatic saving failed repeatedly. Your changes are kept in this tab, click to retry."
       >
-        <CloudOff className="h-3.5 w-3.5" /> Save failed — retry
+        <CloudOff className="h-3.5 w-3.5" /> Save failed, retry
       </button>
     );
   }
@@ -482,7 +482,7 @@ function SaveStatus({ state, onSave }: { state: AutosaveState; onSave: () => voi
     saved: { label: 'Saved', cls: 'text-[#5f6368]', icon: <Check className="h-3.5 w-3.5 text-[#1e8e3e]" /> },
     pending: { label: 'Unsaved changes', cls: 'text-[#5f6368]', icon: <span className="h-2 w-2 rounded-full bg-[#f9ab00]" /> },
     saving: { label: 'Saving…', cls: 'text-[#5f6368]', icon: <Loader2 className="h-3.5 w-3.5 animate-spin" /> },
-    retrying: { label: 'Save failed — retrying…', cls: 'text-amber-700', icon: <Loader2 className="h-3.5 w-3.5 animate-spin" /> },
+    retrying: { label: 'Save failed, retrying…', cls: 'text-amber-700', icon: <Loader2 className="h-3.5 w-3.5 animate-spin" /> },
   }[state];
   return (
     <button

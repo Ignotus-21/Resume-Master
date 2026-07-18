@@ -89,7 +89,7 @@ function ResumesPageContent() {
               <Sparkles className="h-6 w-6 text-[#1a73e8]" /> Let&apos;s build your first resume
             </h2>
             <p className="text-sm text-[#5f6368] mb-6">
-              Start from the resume you already have — we&apos;ll pull out your experience,
+              Start from the resume you already have. We&apos;ll pull out your experience,
               education and skills, you check the result, and you&apos;re in the editor.
             </p>
             <ImportFlow onComplete={handleImportComplete} />
@@ -98,7 +98,7 @@ function ResumesPageContent() {
               <Link href="/profile" className="text-[#1a73e8] hover:underline">
                 Fill in your profile from scratch
               </Link>{' '}
-              — then come back here and paste a job description.
+              then come back here and paste a job description.
             </p>
           </div>
         </Card>
@@ -124,7 +124,7 @@ function ResumesPageContent() {
                     value={jdText}
                     onChange={(e) => setJdText(e.target.value)}
                     rows={doc ? 2 : 5}
-                    placeholder="Paste the job description here — we'll tailor your resume to it and add the job to your tracker automatically."
+                    placeholder="Paste the job description here. We'll tailor your resume to it and add the job to your tracker automatically."
                     className="w-full border border-[#dadce0] bg-[#f8f9fa] rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-purple-500 text-sm text-[#202124] custom-scrollbar resize-y"
                   />
                 </div>
@@ -143,7 +143,7 @@ function ResumesPageContent() {
                   </select>
                   {jobs.length === 0 && (
                     <p className="text-xs text-[#5f6368] mt-1">
-                      No saved jobs yet — <Link href="/dashboard" className="text-[#1a73e8] hover:underline">add one in the tracker</Link>, or just paste a description.
+                      No saved jobs yet. <Link href="/dashboard" className="text-[#1a73e8] hover:underline">Add one in the tracker</Link>, or just paste a description.
                     </p>
                   )}
                 </div>

@@ -63,7 +63,7 @@ export function VersionDiffModal({
     const sections = contentDiff(target.content, currentDoc.content);
     body = sections.length === 0 ? (
       <p className="text-sm text-[#5f6368]">
-        No content differences — the two versions may still differ in design or template.
+        No content differences. The two versions may still differ in design or template.
       </p>
     ) : (
       <div className="space-y-5 max-h-[60vh] overflow-y-auto pr-1">

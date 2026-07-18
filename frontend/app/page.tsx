@@ -45,25 +45,16 @@ export default function Home() {
           transition={{ duration: 0.8, ease: "easeOut" }}
           className="relative z-10 text-center max-w-3xl mx-auto"
         >
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
-            className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#1a73e8] bg-blue-50 border border-blue-100 rounded-full px-5 py-2 mb-8"
-          >
-            <SparklesIcon className="w-4 h-4" /> Powered by Gemini AI
-          </motion.div>
-          
           <h1 className="text-5xl md:text-7xl font-extrabold text-[#202124] leading-tight mb-8 tracking-tight">
             Master your career with <br className="hidden md:block"/>
             <span className="bg-gradient-to-r from-[#1a73e8] via-[#ea4335] to-[#f9ab00] bg-clip-text text-transparent animate-gradient-x">
-              the next-gen platform.
+              an AI-powered platform.
             </span>
           </h1>
-          
+
           <p className="text-lg md:text-xl text-[#5f6368] leading-relaxed mb-10 max-w-2xl mx-auto font-light">
-            Keep one master profile, track every application, and let AI tailor an ATS-optimized 
-            LaTeX resume for each job in seconds — with real feedback on what&apos;s missing.
+            Keep one master profile, track every application, and let AI tailor an ATS-optimized
+            LaTeX resume for each job in seconds, with real feedback on what&apos;s missing.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -124,7 +115,7 @@ export default function Home() {
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
           <div className="hidden md:block absolute top-1/2 left-0 w-full h-px bg-gradient-to-r from-transparent via-[#dadce0] to-transparent -translate-y-1/2 z-0" />
-          <Step icon={UploadCloud} step="1" title="Import your resume" desc="Upload a PDF or paste your existing resume — Gemini extracts your experience, skills, and projects into one master profile." />
+          <Step icon={UploadCloud} step="1" title="Import your resume" desc="Upload a PDF or paste your existing resume, and Gemini extracts your experience, skills, and projects into one master profile." />
           <Step icon={Wand2} step="2" title="Tailor it to the job" desc="Paste a job description and generate a rewritten, keyword-matched LaTeX resume in seconds, with an ATS match score and gap analysis." />
           <Step icon={Download} step="3" title="Export and apply" desc="Download as PDF or DOCX, track the application's status, and iterate as you go." />
         </div>
@@ -145,7 +136,7 @@ export default function Home() {
           <h3 className="text-xl font-bold text-[#202124] mb-3">Free to try</h3>
           <p className="text-[#5f6368] text-sm leading-relaxed">
             Every account (and guest session) gets a shared pool of free AI requests, refreshed
-            every few hours — no card required.
+            every few hours, no card required.
           </p>
         </Card>
         <Card className="p-8 relative overflow-hidden group">
@@ -155,8 +146,8 @@ export default function Home() {
           </div>
           <h3 className="text-xl font-bold text-[#202124] mb-3 relative z-10">Unlimited with your own key</h3>
           <p className="text-[#5f6368] text-sm leading-relaxed relative z-10">
-            Sign up and add your own Gemini API key in Settings to remove the limit entirely —
-            it&apos;s encrypted at rest and only ever used for your requests.
+            Sign up and add your own Gemini API key in Settings to remove the limit entirely.
+            It&apos;s encrypted at rest and only ever used for your requests.
           </p>
         </Card>
       </motion.div>
@@ -197,11 +188,4 @@ const Step = ({ icon: Icon, step, title, desc }: { icon: LucideIcon; step: strin
     <h3 className="text-xl font-bold text-[#202124] mb-3">{title}</h3>
     <p className="text-[#5f6368] text-sm leading-relaxed font-light">{desc}</p>
   </Card>
-);
-
-const SparklesIcon = (props: any) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-    <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
-    <path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/>
-  </svg>
 );

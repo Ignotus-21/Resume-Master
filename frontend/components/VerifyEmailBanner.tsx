@@ -19,7 +19,7 @@ export function VerifyEmailBanner() {
     setSending(true);
     try {
       await apiFetch('/api/auth/resend-verification', { method: 'POST' });
-      showToast('Verification email sent — check your inbox', 'success');
+      showToast('Verification email sent, check your inbox', 'success');
     } catch (e) {
       showToast(e instanceof Error ? e.message : 'Could not resend verification', 'error');
     }

@@ -256,7 +256,7 @@ export const PdfPane = forwardRef<PdfPaneHandle, PdfPaneProps>(function PdfPane(
             <div ref={pagesRef} />
             {compileError && pdfData && (
               <div className="mx-auto max-w-xl mt-2 p-3 bg-[#fce8e6] text-[#d93025] rounded-lg font-mono text-xs whitespace-pre-wrap">
-                Latest compile failed — showing last good preview.{'\n'}{compileError}
+                Latest compile failed, showing last good preview.{'\n'}{compileError}
               </div>
             )}
           </div>

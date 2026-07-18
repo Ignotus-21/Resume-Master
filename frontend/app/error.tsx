@@ -26,7 +26,7 @@ export default function RouteError({
       </div>
       <h1 className="text-xl font-bold text-[#202124]">Something went wrong</h1>
       <p className="text-sm text-[#5f6368] max-w-md">
-        An unexpected error occurred. Your data is safe — try again, or head
+        An unexpected error occurred. Your data is safe, try again, or head
         back to the dashboard.
       </p>
       <div className="flex gap-3 mt-2">

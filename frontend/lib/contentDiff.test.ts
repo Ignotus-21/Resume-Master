@@ -33,7 +33,7 @@ describe('contentDiff', () => {
     expect(diff[0].items).toEqual([
       expect.objectContaining({
         kind: 'changed',
-        label: 'Programmer — Analytical Engines',
+        label: 'Programmer at Analytical Engines',
         fields: [{ label: 'Start', before: 'Jan 1843', after: 'Feb 1843' }],
       }),
     ]);
@@ -74,7 +74,7 @@ describe('contentDiff', () => {
     const diff = contentDiff(beforeContent, after);
     const byKey = Object.fromEntries(diff.map((s) => [s.key, s]));
     expect(byKey.experience.items).toEqual([
-      expect.objectContaining({ kind: 'added', label: 'Fellow — Royal Society' }),
+      expect.objectContaining({ kind: 'added', label: 'Fellow at Royal Society' }),
     ]);
     expect(byKey.education.items).toEqual([expect.objectContaining({ kind: 'added' })]);
     expect(byKey.projects.items).toEqual([

@@ -130,7 +130,7 @@ export function ImportFlow({ onComplete }: { onComplete: () => Promise<void> | v
           <div className="flex flex-col items-center gap-2 text-[#1a73e8]">
             <Loader2 className="h-8 w-8 animate-spin" />
             <span className="font-semibold">Reading your resume…</span>
-            <span className="text-xs text-[#5f6368]">Extracting your experience, education and skills — about 10 seconds.</span>
+            <span className="text-xs text-[#5f6368]">Extracting your experience, education and skills, about 10 seconds.</span>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-2">
@@ -238,7 +238,7 @@ export function ImportFlow({ onComplete }: { onComplete: () => Promise<void> | v
                 className="flex items-center gap-2 px-6 py-2 bg-[#1e8e3e] text-white rounded-lg font-semibold hover:bg-[#188038] disabled:opacity-60 shadow-lg transition"
               >
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                {saving ? 'Saving…' : 'Looks good — continue'}
+                {saving ? 'Saving…' : 'Looks good, continue'}
               </button>
             </div>
           </div>

@@ -61,10 +61,10 @@ export const DEFAULT_SECTION_TITLES: Record<SectionKey, string> = {
 export const TEMPLATE_IDS: TemplateId[] = ['sheets', 'jake', 'compact', 'modern'];
 
 export const TEMPLATE_LABELS: Record<TemplateId, string> = {
-  sheets: 'Sheets — single column, ATS-safest',
-  jake: "Jake's — the classic CS resume",
-  compact: 'Compact — dense, fits more',
-  modern: 'Modern — accent color, bolder headings',
+  sheets: 'Sheets: single column, ATS-safest',
+  jake: "Jake's: the classic CS resume",
+  compact: 'Compact: dense, fits more',
+  modern: 'Modern: accent color, bolder headings',
 };
 
 export const FONTS: DesignTokens['font'][] = [
@@ -190,13 +190,13 @@ export const sectionHasContent = (key: SectionKey, content?: ResumeContent): boo
 export const atsLint = (design: DesignTokens): string[] => {
   const warnings: string[] = [];
   if (design.columns === 2) {
-    warnings.push('Two-column layouts can scramble the reading order in older ATS parsers — single column is the safe bet.');
+    warnings.push('Two-column layouts can scramble the reading order in older ATS parsers; single column is the safe bet.');
   }
   if (design.showPhoto) {
-    warnings.push('Photos are ignored by ATS systems and can introduce bias screening — most US/UK recruiters advise against them.');
+    warnings.push('Photos are ignored by ATS systems and can introduce bias screening. Most US/UK recruiters advise against them.');
   }
   if (design.accentColor && design.accentColor !== '#000000') {
-    warnings.push('Accent color is fine for humans but adds nothing for ATS — pure black & white is the most conservative choice.');
+    warnings.push('Accent color is fine for humans but adds nothing for ATS; pure black & white is the most conservative choice.');
   }
   if (design.links === 'icons') {
     warnings.push('Icon glyphs next to links may extract as garbage characters in some ATS text parsers.');

@@ -69,7 +69,7 @@ export function TemplateGallery({ content, design, activeTemplate, onPick }: {
 
   return (
     <div className="p-4">
-      <h3 className="text-sm font-bold text-[#202124] mb-3">Templates — previewing your content</h3>
+      <h3 className="text-sm font-bold text-[#202124] mb-3">Templates: previewing your content</h3>
       <div className="grid grid-cols-2 gap-3">
         {TEMPLATE_IDS.map((templateId) => (
           <button

@@ -43,7 +43,7 @@ export default function SettingsPage() {
     setSaving(true);
     try {
       await apiJson('/api/auth/gemini-key', 'PUT', { apiKey });
-      showToast('API key saved — you now have unlimited AI requests.', 'success');
+      showToast('API key saved, you now have unlimited AI requests.', 'success');
       setApiKey('');
       await Promise.all([refresh(), fetchQuota()]);
     } catch (error: any) {
@@ -128,7 +128,7 @@ export default function SettingsPage() {
         {quota && (
           <div className="mb-4 text-sm rounded-lg border border-[#dadce0] bg-[#f8f9fa]/60 p-3">
             {quota.usingOwnKey ? (
-              <span className="text-[#1e8e3e] font-medium">Using your own key — unlimited AI requests.</span>
+              <span className="text-[#1e8e3e] font-medium">Using your own key: unlimited AI requests.</span>
             ) : (
               <span className="text-[#202124]">
                 {quota.remaining}/{quota.limit} free requests remaining this window

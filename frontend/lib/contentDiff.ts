@@ -96,14 +96,14 @@ const SECTION_SPECS: SectionSpec[] = [
   {
     key: 'experience',
     identity: (it) => `${str(it.company)}|${str(it.role)}`.toLowerCase(),
-    label: (it) => [str(it.role), str(it.company)].filter(Boolean).join(' — ') || 'Experience entry',
+    label: (it) => [str(it.role), str(it.company)].filter(Boolean).join(' at ') || 'Experience entry',
     fields: [['startDate', 'Start'], ['endDate', 'End'], ['location', 'Location'], ['isCurrent', 'Current']],
     bulletsProp: 'bulletPoints',
   },
   {
     key: 'education',
     identity: (it) => str(it.institution).toLowerCase(),
-    label: (it) => [str(it.degree), str(it.institution)].filter(Boolean).join(' — ') || 'Education entry',
+    label: (it) => [str(it.degree), str(it.institution)].filter(Boolean).join(' at ') || 'Education entry',
     fields: [['degree', 'Degree'], ['fieldOfStudy', 'Field'], ['startDate', 'Start'], ['endDate', 'End'], ['gpa', 'GPA'], ['coursework', 'Coursework']],
   },
   {
@@ -134,7 +134,7 @@ const SECTION_SPECS: SectionSpec[] = [
   {
     key: 'volunteering',
     identity: (it) => `${str(it.organization)}|${str(it.role)}`.toLowerCase(),
-    label: (it) => [str(it.role), str(it.organization)].filter(Boolean).join(' — ') || 'Volunteering entry',
+    label: (it) => [str(it.role), str(it.organization)].filter(Boolean).join(' at ') || 'Volunteering entry',
     fields: [['startDate', 'Start'], ['endDate', 'End'], ['description', 'Description']],
   },
   {

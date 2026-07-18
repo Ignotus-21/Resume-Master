@@ -229,7 +229,7 @@ const linkedinRewrite = async (req, res) => {
     if (!profileHasContent(profile)) {
       return res.status(422).json({
         code: 'PROFILE_EMPTY',
-        message: 'Your master profile is empty. Add your experience, education, or skills — or upload a resume — before generating LinkedIn content.',
+        message: 'Your master profile is empty. Add your experience, education, or skills (or upload a resume) before generating LinkedIn content.',
       });
     }
 

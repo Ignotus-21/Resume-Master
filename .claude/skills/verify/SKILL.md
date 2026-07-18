@@ -31,8 +31,8 @@ close-tab/reopen flows).
 - Open a resume: on /resumes the placeholder lists versions as
   `button[title="<versionName>"]`; same selector in the workspace's left rail.
 - The autosave chip lives in the top bar; find it by scanning button text for
-  'Saved' / 'Unsaved changes' / 'Saving…' / 'Save failed — retrying…' /
-  'Save failed — retry'.
+  'Saved' / 'Unsaved changes' / 'Saving…' / 'Save failed, retrying…' /
+  'Save failed, retry'.
 - Count network saves with `page.on('request')` filtering PUT `/api/resumes/`.
 - Backend PUT/GET evidence: morgan logs every request to the backend's stdout.
 

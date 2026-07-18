@@ -27,7 +27,7 @@ function ResetPasswordContent() {
     setSubmitting(true);
     try {
       await apiJson('/api/auth/reset-password', 'POST', { token, password });
-      showToast('Password updated — please log in', 'success');
+      showToast('Password updated, please log in', 'success');
       router.push('/login');
     } catch (e: any) {
       showToast(e.message || 'Failed to reset password', 'error');

@@ -121,7 +121,7 @@ function BulletAI({ bullet, roleContext, jd, onAccept }: {
       </button>
       {open && rewrites.length > 0 && (
         <div className="absolute right-0 z-20 mt-1 w-80 bg-white border border-[#dadce0] rounded-xl shadow-xl p-2 space-y-1">
-          <div className="text-xs font-semibold text-[#5f6368] px-2 pt-1">Pick a rewrite — changes highlighted</div>
+          <div className="text-xs font-semibold text-[#5f6368] px-2 pt-1">Pick a rewrite (changes highlighted)</div>
           {rewrites.map((r, i) => (
             <button
               key={i}
@@ -214,7 +214,7 @@ function BulletCoach({ bullet, roleContext, onAccept }: {
       )}
       {state === 'drafted' && (
         <>
-          <div className="text-xs font-semibold text-[#5f6368]">Suggested bullet — changes highlighted</div>
+          <div className="text-xs font-semibold text-[#5f6368]">Suggested bullet (changes highlighted)</div>
           <div className="text-sm text-[#202124] bg-green-50 border border-green-200 rounded-lg p-2">
             <DiffText before={bullet} after={draft} />
           </div>
@@ -669,7 +669,7 @@ export function VisualEditor({ content, design, setContent, setDesign, jd, onSec
                 title="Rename this section heading"
                 disabled={key === 'customSections'}
               />
-              {empty && !hidden && <span className="text-[10px] uppercase tracking-wide text-[#5f6368] bg-[#f1f3f4] rounded px-1.5 py-0.5">empty — not rendered</span>}
+              {empty && !hidden && <span className="text-[10px] uppercase tracking-wide text-[#5f6368] bg-[#f1f3f4] rounded px-1.5 py-0.5">empty, not rendered</span>}
               <button onClick={() => toggleHidden(key)} className="p-1 text-[#5f6368] hover:text-[#202124]" title={hidden ? 'Show section' : 'Hide section'}>
                 {hidden ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>

@@ -16,7 +16,7 @@ function CopyButton({ text }: { text: string }) {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {
-      showToast('Copy failed — your browser blocked clipboard access', 'error');
+      showToast('Copy failed, your browser blocked clipboard access', 'error');
     }
   };
   return (
@@ -91,8 +91,8 @@ export default function LinkedInPage() {
           <h2 className="text-xl font-bold text-[#202124] mb-2">We need to know you first</h2>
           <p className="text-[#5f6368] mb-6 max-w-md mx-auto">
             The optimizer writes your headline and About section from your master profile,
-            and yours is still empty. Add your experience, education, or skills — or upload
-            an existing resume — and come back.
+            and yours is still empty. Add your experience, education, or skills (or upload
+            an existing resume) and come back.
           </p>
           <div className="flex items-center justify-center gap-4 flex-wrap">
             <Link href="/profile">

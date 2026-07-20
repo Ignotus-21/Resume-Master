@@ -8,14 +8,17 @@ import { useAuth } from '@/lib/auth-context';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/components/ui/Toast';
 
+// Each service gets a visually distinct hue so the legend swatches and
+// stacked bars never collide. Keep these unique — do not reuse a color
+// across two services.
 const SERVICE_COLORS: Record<string, string> = {
   chatbot: 'bg-[#1a73e8]',
   'resume-parser': 'bg-[#1e8e3e]',
-  'resume-tailor': 'bg-[#1e8e3e]',
+  'resume-tailor': 'bg-[#12b5cb]',
   'latex-generator': 'bg-[#f9ab00]',
   'cover-letter': 'bg-[#9333ea]',
   'interview-prep': 'bg-[#e77c40]',
-  'linkedin-optimizer': 'bg-[#0f9d58]',
+  'linkedin-optimizer': 'bg-[#e52592]',
   other: 'bg-[#5f6368]',
 };
 

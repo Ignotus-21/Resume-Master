@@ -3,10 +3,12 @@ const request = require('supertest');
 jest.mock('../models/User');
 jest.mock('../models/ApiUsage');
 jest.mock('../models/AppConfig');
+jest.mock('../services/emailService');
 
 const User = require('../models/User');
 const ApiUsage = require('../models/ApiUsage');
 const AppConfig = require('../models/AppConfig');
+const emailService = require('../services/emailService');
 const { enforceGeminiQuota } = require('../utils/geminiGate');
 
 beforeEach(() => {
@@ -75,13 +77,55 @@ describe('POST /api/auth/verify-email', () => {
     expect(res.body.message).toMatch(/invalid or has expired/i);
   });
 
-  it('verifies a valid token and clears it', async () => {
-    const save = jest.fn().mockResolvedValue(true);
-    User.findOne.mockResolvedValue({ _id: 'u1', email: 'a@b.com', emailVerified: false, save });
+  it('verifies a valid token, leaving it valid for idempotent replays', async () => {
+    User.findOneAndUpdate.mockResolvedValue({ _id: 'u1', email: 'a@b.com', emailVerified: true });
     const res = await request(app).post('/api/auth/verify-email').send({ token: 'valid' });
     expect(res.status).toBe(200);
-    expect(save).toHaveBeenCalled();
+    expect(User.findOneAndUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({ emailVerified: false }),
+      { $set: { emailVerified: true } },
+      { new: true }
+    );
     expect(res.body.user.emailVerified).toBe(true);
+  });
+
+  it('sends the welcome email once on first verification, not on a repeat call with the same token', async () => {
+    // First call: the atomic false -> true update matches and claims the transition.
+    User.findOneAndUpdate.mockResolvedValueOnce({ _id: 'u1', email: 'a@b.com', name: 'Ada', emailVerified: true });
+
+    const first = await request(app).post('/api/auth/verify-email').send({ token: 'valid' });
+    expect(first.status).toBe(200);
+    expect(emailService.sendWelcomeEmail).toHaveBeenCalledTimes(1);
+    expect(emailService.sendWelcomeEmail).toHaveBeenCalledWith('a@b.com', 'Ada');
+
+    // Re-verifying with the same token: the user is already verified, so the
+    // atomic update (which requires emailVerified: false) matches nothing —
+    // mimicking two independent reads/documents rather than a shared mutable
+    // object — and the handler falls back to a plain findOne of the same user.
+    User.findOneAndUpdate.mockResolvedValueOnce(null);
+    User.findOne.mockResolvedValueOnce({ _id: 'u1', email: 'a@b.com', name: 'Ada', emailVerified: true });
+
+    const second = await request(app).post('/api/auth/verify-email').send({ token: 'valid' });
+    expect(second.status).toBe(200);
+    expect(emailService.sendWelcomeEmail).toHaveBeenCalledTimes(1);
+  });
+
+  it('sends exactly one welcome email when the same token is verified concurrently', async () => {
+    // Simulate two concurrent requests racing on the same atomic update: only
+    // one can match the emailVerified: false filter and claim the transition.
+    User.findOneAndUpdate
+      .mockResolvedValueOnce({ _id: 'u1', email: 'a@b.com', name: 'Ada', emailVerified: true })
+      .mockResolvedValueOnce(null);
+    User.findOne.mockResolvedValueOnce({ _id: 'u1', email: 'a@b.com', name: 'Ada', emailVerified: true });
+
+    const [first, second] = await Promise.all([
+      request(app).post('/api/auth/verify-email').send({ token: 'valid' }),
+      request(app).post('/api/auth/verify-email').send({ token: 'valid' }),
+    ]);
+
+    expect(first.status).toBe(200);
+    expect(second.status).toBe(200);
+    expect(emailService.sendWelcomeEmail).toHaveBeenCalledTimes(1);
   });
 });
 

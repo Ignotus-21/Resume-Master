@@ -6,6 +6,8 @@ import { Button } from './ui/Button';
 import { useToast } from './ui/Toast';
 import { apiJson, ApiError } from '@/lib/api';
 
+// Keep in sync with CONTACT_SUBJECTS in backend/controllers/supportController.js
+// — the API rejects any subject outside that allow-list with a 400.
 const SUBJECTS = ['More tokens', 'General', 'Bug report'] as const;
 
 export function ContactModal({ open, onClose }: { open: boolean; onClose: () => void }) {

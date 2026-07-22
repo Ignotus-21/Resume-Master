@@ -19,6 +19,11 @@ const escapeHtml = (value) =>
     "'": '&#39;',
   })[char]);
 
+// User-controlled values also land in the email *subject* line (not just the
+// HTML body). Strip CR/LF so they can't inject extra headers or otherwise
+// break the subject when passed to the email API.
+const stripNewlines = (value) => String(value).replace(/[\r\n]+/g, ' ');
+
 const send = async ({ to, subject, html }) => {
   if (!RESEND_API_KEY) {
     console.log(`[email:dev] To: ${to} | ${subject}\n${html}`);
@@ -97,7 +102,7 @@ const sendContactNotification = ({ fromEmail, subject, message, usage }) => {
   const safeMessage = escapeHtml(message).replace(/\r?\n/g, '<br>');
   return send({
     to: ADMIN_EMAIL,
-    subject: `[Contact] ${subject} — ${fromEmail}`,
+    subject: `[Contact] ${stripNewlines(subject)} — ${stripNewlines(fromEmail)}`,
     html: `
       <p><strong>From:</strong> ${escapeHtml(fromEmail)}</p>
       <p><strong>Subject:</strong> ${escapeHtml(subject)}</p>

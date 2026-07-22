@@ -1,6 +1,9 @@
 const { getQuotaStatus } = require('../services/quotaService');
 const { sendContactNotification } = require('../services/emailService');
 
+// Keep in sync with SUBJECTS in frontend/components/ContactModal.tsx — the
+// frontend <select> options must match this allow-list exactly, or a
+// selection here gets rejected with a 400 (surfaced to the user as a toast).
 const CONTACT_SUBJECTS = ['More tokens', 'General', 'Bug report'];
 const MESSAGE_MAX_LENGTH = 5000;
 

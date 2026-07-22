@@ -77,7 +77,7 @@ describe('POST /api/auth/verify-email', () => {
     expect(res.body.message).toMatch(/invalid or has expired/i);
   });
 
-  it('verifies a valid token and clears it', async () => {
+  it('verifies a valid token, leaving it valid for idempotent replays', async () => {
     User.findOneAndUpdate.mockResolvedValue({ _id: 'u1', email: 'a@b.com', emailVerified: true });
     const res = await request(app).post('/api/auth/verify-email').send({ token: 'valid' });
     expect(res.status).toBe(200);

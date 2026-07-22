@@ -15,6 +15,11 @@ const contactLimiter = rateLimit({
   legacyHeaders: false,
   store: rateLimitStore('contact'),
   passOnStoreError: true,
+  // Key by the authenticated user rather than the default IP: requireAuth
+  // runs before this limiter, so req.user is always set here. Per-user keys
+  // avoid unintentionally throttling multiple legitimate users behind the
+  // same NAT/shared IP.
+  keyGenerator: (req) => req.user.id,
 });
 
 router.post('/contact', requireAuth, contactLimiter, submitContact);

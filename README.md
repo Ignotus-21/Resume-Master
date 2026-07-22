@@ -1,7 +1,7 @@
 # Resume Master
 
 A full-stack app for managing a "master" career profile and generating tailored,
-ATS-optimized resumes as real LaTeX-compiled PDFs — with a visual editor, AI
+ATS-optimized resumes as real LaTeX-compiled PDFs with a visual editor, AI
 tailoring, and a job-application tracker, all built around a single Gemini
 integration.
 
@@ -93,7 +93,7 @@ cd frontend
 npm install
 npm run dev
 ```
-Open [http://localhost:3000](http://localhost:3000). By default `next.config.ts`
+Open [http://localhost:3000](http://localhost:3000). By default, `next.config.ts`
 proxies `/api/*` to `http://localhost:5000`; no frontend env vars are required
 for local dev (see `frontend/.env.example` for optional ones — Google OAuth,
 Turnstile CAPTCHA).

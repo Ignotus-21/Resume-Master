@@ -10,7 +10,7 @@ const ApiUsage = require('../models/ApiUsage');
 const { encrypt } = require('../utils/crypto');
 const { getQuotaStatus } = require('../services/quotaService');
 const { generateToken, hashToken } = require('../utils/tokens');
-const { sendVerificationEmail, sendPasswordResetEmail } = require('../services/emailService');
+const { sendVerificationEmail, sendPasswordResetEmail, sendWelcomeEmail } = require('../services/emailService');
 const { verifyTurnstile } = require('../services/turnstileService');
 const TokenUsage = require('../models/TokenUsage');
 
@@ -144,6 +144,7 @@ const verifyEmail = async (req, res) => {
     });
     if (!user) return res.status(400).json({ message: 'This verification link is invalid or has expired' });
 
+    const alreadyVerified = user.emailVerified;
     user.emailVerified = true;
     // Deliberately keep the token valid until it expires: email scanners
     // prefetching the link, double clicks, and React StrictMode's double
@@ -151,6 +152,17 @@ const verifyEmail = async (req, res) => {
     // the second call report failure after a successful verification.
     // Re-verifying is idempotent, so reuse grants nothing extra.
     await user.save();
+
+    // Only the false -> true transition is a real first verification; welcome
+    // email must not resend on every idempotent re-POST of the same token.
+    if (!alreadyVerified) {
+      try {
+        await sendWelcomeEmail(user.email, user.name);
+      } catch (err) {
+        console.error('Welcome email error:', err);
+      }
+    }
+
     res.json({ message: 'Email verified', user: publicUser(user) });
   } catch (error) {
     console.error('Auth error:', error);

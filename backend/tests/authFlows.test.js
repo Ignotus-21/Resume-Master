@@ -3,10 +3,12 @@ const request = require('supertest');
 jest.mock('../models/User');
 jest.mock('../models/ApiUsage');
 jest.mock('../models/AppConfig');
+jest.mock('../services/emailService');
 
 const User = require('../models/User');
 const ApiUsage = require('../models/ApiUsage');
 const AppConfig = require('../models/AppConfig');
+const emailService = require('../services/emailService');
 const { enforceGeminiQuota } = require('../utils/geminiGate');
 
 beforeEach(() => {
@@ -82,6 +84,22 @@ describe('POST /api/auth/verify-email', () => {
     expect(res.status).toBe(200);
     expect(save).toHaveBeenCalled();
     expect(res.body.user.emailVerified).toBe(true);
+  });
+
+  it('sends the welcome email once on first verification, not on a repeat call with the same token', async () => {
+    const user = { _id: 'u1', email: 'a@b.com', name: 'Ada', emailVerified: false, save: jest.fn().mockResolvedValue(true) };
+    User.findOne.mockResolvedValue(user);
+
+    const first = await request(app).post('/api/auth/verify-email').send({ token: 'valid' });
+    expect(first.status).toBe(200);
+    expect(emailService.sendWelcomeEmail).toHaveBeenCalledTimes(1);
+    expect(emailService.sendWelcomeEmail).toHaveBeenCalledWith('a@b.com', 'Ada');
+
+    // Re-verifying: the mocked user object is now emailVerified: true, mirroring
+    // the real re-fetch since the token is deliberately left valid until expiry.
+    const second = await request(app).post('/api/auth/verify-email').send({ token: 'valid' });
+    expect(second.status).toBe(200);
+    expect(emailService.sendWelcomeEmail).toHaveBeenCalledTimes(1);
   });
 });
 

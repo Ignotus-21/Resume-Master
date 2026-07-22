@@ -124,6 +124,7 @@ const createApp = () => {
   app.use('/api/interview', require('./routes/interviewRoutes'));
   app.use('/api/ai', require('./routes/aiRoutes'));
   app.use('/api/admin', require('./routes/adminRoutes'));
+  app.use('/api/support', require('./routes/supportRoutes'));
 
   // Central error handler (also catches the CORS rejection thrown above).
   app.use((err, req, res, next) => {

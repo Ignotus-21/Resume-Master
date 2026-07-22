@@ -6,6 +6,7 @@ import { VerifyEmailBanner } from "@/components/VerifyEmailBanner";
 import { ToastProvider } from "@/components/ui/Toast";
 import { AuthProvider } from "@/lib/auth-context";
 import QuotaModal from "@/components/QuotaModal";
+import Footer from "@/components/Footer";
 import { Analytics } from "@vercel/analytics/next";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -22,15 +23,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.className} antialiased selection:bg-blue-100`}>
+      <body className={`${inter.className} antialiased selection:bg-blue-100 flex min-h-screen flex-col`}>
         <ToastProvider>
           <AuthProvider>
             <Navbar />
             <VerifyEmailBanner />
-            <main className="container mx-auto p-4">
+            <main className="container mx-auto p-4 flex-1">
               {children}
             </main>
             <QuotaModal />
+            <Footer />
           </AuthProvider>
         </ToastProvider>
         <Analytics />

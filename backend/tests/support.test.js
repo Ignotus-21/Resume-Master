@@ -67,17 +67,31 @@ describe('POST /api/support/contact', () => {
   });
 
   it('rate-limits after exceeding the contact route ceiling', async () => {
-    let lastStatus;
+    // The route's rate limiter is instantiated once at module load and its
+    // in-memory counter persists across tests in this file (createApp() re-runs
+    // the app factory, not the route module). Reset modules so this test gets
+    // its own limiter starting from zero, otherwise the boundary below would
+    // shift by however many /contact requests earlier tests already made.
+    jest.resetModules();
+    const freshUser = require('../models/User');
+    const freshQuota = require('../services/quotaService');
+    const freshEmail = require('../services/emailService');
+    const freshApp = require('../app')();
+
+    const statuses = [];
     for (let i = 0; i < 11; i++) {
-      mockAuthLookups();
-      getQuotaStatus.mockResolvedValue({ limit: 15000, remaining: 12000, isByok: false });
-      sendContactNotification.mockResolvedValue({ delivered: true });
-      const res = await request(app)
+      freshUser.findById.mockReturnValueOnce({ select: () => ({ lean: async () => ({ tokenVersion: 0 }) }) });
+      freshUser.findById.mockReturnValueOnce({
+        select: async () => ({ geminiApiKeyEncrypted: null, emailVerified: true, passwordHash: 'h', googleId: null }),
+      });
+      freshQuota.getQuotaStatus.mockResolvedValue({ limit: 15000, remaining: 12000, isByok: false });
+      freshEmail.sendContactNotification.mockResolvedValue({ delivered: true });
+      const res = await request(freshApp)
         .post('/api/support/contact')
         .set('Cookie', `token=${sign()}`)
         .send({ subject: 'General', message: 'hi' });
-      lastStatus = res.status;
+      statuses.push(res.status);
     }
-    expect(lastStatus).toBe(429);
+    expect(statuses).toEqual([...Array(10).fill(200), 429]);
   }, 30000);
 });

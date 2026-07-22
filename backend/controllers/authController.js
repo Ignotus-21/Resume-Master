@@ -138,24 +138,33 @@ const verifyEmail = async (req, res) => {
     return res.status(400).json({ message: 'Verification token is required' });
   }
   try {
-    const user = await User.findOne({
+    const filter = {
       emailVerifyTokenHash: hashToken(token),
       emailVerifyExpires: { $gt: new Date() },
-    });
-    if (!user) return res.status(400).json({ message: 'This verification link is invalid or has expired' });
+    };
 
-    const alreadyVerified = user.emailVerified;
-    user.emailVerified = true;
-    // Deliberately keep the token valid until it expires: email scanners
-    // prefetching the link, double clicks, and React StrictMode's double
-    // effect all re-POST the same token, and a single-use token would make
-    // the second call report failure after a successful verification.
-    // Re-verifying is idempotent, so reuse grants nothing extra.
-    await user.save();
+    // Atomically claim the false -> true transition so concurrent replays of
+    // the same token (email scanners, double clicks, StrictMode's double
+    // effect) can't both read emailVerified: false and both send the welcome
+    // email. Only the request whose update actually flips the flag is the
+    // real first verification.
+    let user = await User.findOneAndUpdate(
+      { ...filter, emailVerified: false },
+      { $set: { emailVerified: true } },
+      { new: true }
+    );
+    const isFirstVerification = !!user;
 
-    // Only the false -> true transition is a real first verification; welcome
-    // email must not resend on every idempotent re-POST of the same token.
-    if (!alreadyVerified) {
+    if (!user) {
+      // Either already verified (idempotent re-POST) or the token doesn't
+      // match/has expired. Deliberately keep the token valid until it
+      // expires rather than making it single-use, so this re-fetch (without
+      // the emailVerified constraint) still succeeds for a repeat call.
+      user = await User.findOne(filter);
+      if (!user) return res.status(400).json({ message: 'This verification link is invalid or has expired' });
+    }
+
+    if (isFirstVerification) {
       try {
         await sendWelcomeEmail(user.email, user.name);
       } catch (err) {

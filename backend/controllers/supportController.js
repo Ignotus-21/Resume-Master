@@ -5,14 +5,15 @@ const CONTACT_SUBJECTS = ['More tokens', 'General', 'Bug report'];
 const MESSAGE_MAX_LENGTH = 5000;
 
 const submitContact = async (req, res) => {
-  const { subject, message } = req.body;
+  const { subject, message } = req.body ?? {};
   if (!CONTACT_SUBJECTS.includes(subject)) {
     return res.status(400).json({ message: 'Subject must be one of: ' + CONTACT_SUBJECTS.join(', ') });
   }
   if (typeof message !== 'string' || !message.trim()) {
     return res.status(400).json({ message: 'Message is required' });
   }
-  if (message.length > MESSAGE_MAX_LENGTH) {
+  const trimmedMessage = message.trim();
+  if (trimmedMessage.length > MESSAGE_MAX_LENGTH) {
     return res.status(400).json({ message: `Message must be ${MESSAGE_MAX_LENGTH} characters or fewer` });
   }
 
@@ -21,7 +22,7 @@ const submitContact = async (req, res) => {
     await sendContactNotification({
       fromEmail: req.user.email,
       subject,
-      message: message.trim(),
+      message: trimmedMessage,
       usage,
     });
     res.json({ message: 'Message sent' });

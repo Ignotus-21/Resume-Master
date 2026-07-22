@@ -8,6 +8,17 @@ const APP_URL = process.env.APP_URL || 'http://localhost:3000';
 // has a default) rather than the raw env var, so this can't end up undefined.
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || EMAIL_FROM;
 
+// User-controlled values (name, email, subject, message) get interpolated into
+// these HTML templates, so they need escaping to prevent markup injection.
+const escapeHtml = (value) =>
+  String(value).replace(/[&<>"']/g, (char) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  })[char]);
+
 const send = async ({ to, subject, html }) => {
   if (!RESEND_API_KEY) {
     console.log(`[email:dev] To: ${to} | ${subject}\n${html}`);
@@ -61,7 +72,7 @@ const sendPasswordResetEmail = (to, token) => {
 };
 
 const sendWelcomeEmail = (to, name) => {
-  const greeting = name ? `Hi ${name},` : 'Hi,';
+  const greeting = name ? `Hi ${escapeHtml(name)},` : 'Hi,';
   return send({
     to,
     subject: 'Welcome to Resume Master',
@@ -83,15 +94,16 @@ const sendContactNotification = ({ fromEmail, subject, message, usage }) => {
   const usageLine = usage.isByok
     ? 'Using their own Gemini API key (BYOK) — not on shared quota.'
     : `Shared quota: ${usage.remaining} / ${usage.limit} tokens remaining.`;
+  const safeMessage = escapeHtml(message).replace(/\r?\n/g, '<br>');
   return send({
     to: ADMIN_EMAIL,
     subject: `[Contact] ${subject} — ${fromEmail}`,
     html: `
-      <p><strong>From:</strong> ${fromEmail}</p>
-      <p><strong>Subject:</strong> ${subject}</p>
-      <p><strong>Usage context:</strong> ${usageLine}</p>
+      <p><strong>From:</strong> ${escapeHtml(fromEmail)}</p>
+      <p><strong>Subject:</strong> ${escapeHtml(subject)}</p>
+      <p><strong>Usage context:</strong> ${escapeHtml(usageLine)}</p>
       <p><strong>Message:</strong></p>
-      <p>${message}</p>
+      <p>${safeMessage}</p>
     `,
   });
 };

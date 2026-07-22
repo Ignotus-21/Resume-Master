@@ -16,7 +16,10 @@ export function ContactModal({ open, onClose }: { open: boolean; onClose: () => 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!message.trim()) return;
+    if (!message.trim()) {
+      showToast('Message is required', 'error');
+      return;
+    }
     setSubmitting(true);
     try {
       await apiJson('/api/support/contact', 'POST', { subject, message: message.trim() });
